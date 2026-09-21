@@ -39,10 +39,6 @@ export function layout({ config, role, path, body, theme = "dark", person = null
           </div>
         </div>
       </header>
-      ${path === "/dashboard" || path === "/sign-in" ? "" : `
-      <div class="disclaimer-bar">
-        <p>${escapeHtml(config.illustrativeNotice)}</p>
-      </div>`}
       <main id="main" class="app-main" tabindex="-1">${body}</main>
       <footer class="app-footer">
         <div class="footer-inner">

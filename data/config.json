@@ -2,7 +2,6 @@
   "appName": "Incident Lab",
   "serviceName": "Virtual Desktop Service (VDS)",
   "prototypeNotice": "Virtual Team · Incident Lab. Sign-in on this browser stands in for Microsoft Entra ID. An administrator assigns User, Assessor, or Administrator access. Assessment records stay in this browser until a shared service exists.",
-  "illustrativeNotice": "All sample incidents, runbooks, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. This application does not invent or approve bank-specific policy.",
   "capabilityDomains": [
     {
       "id": "incident-assessment",
