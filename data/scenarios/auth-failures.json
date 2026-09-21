@@ -90,8 +90,8 @@
       "type": "written",
       "prompt": "What would you check first, and why?",
       "capabilityDomainIds": [
-        "incident-assessment",
-        "avd-technical"
+        "platform-troubleshooting",
+        "avd-infrastructure"
       ],
       "assessorGuidance": "A strong answer covers: Prove the blast radius: one group versus whole platform, and whether failure is at sign-in or after the desktop appears. (Stops a false Microsoft-wide outage narrative and targets identity vs host health.). Do not treat the response as demonstrated if it relies on: Restart the AVD broker and all session hosts because authentication is 'platform'.; Disable MFA for the tenant to restore access quickly.; Tell the 35 users to wait for Monday identity support.."
     },
@@ -100,8 +100,8 @@
       "type": "written",
       "prompt": "What additional information do you need from Identity and from the AVD configuration?",
       "capabilityDomainIds": [
-        "incident-assessment",
-        "documentation"
+        "platform-troubleshooting",
+        "m365-stack"
       ],
       "assessorGuidance": "A strong answer covers: Entra sign-in logs for a failed and a successful user, including Conditional Access results. (Primary evidence source.); Whether the desktop application group still includes the Payments Ops assignment group. (Rules in/out a VDI assignment mistake.); Details of CHG004398 and any group membership impact. (Known change in the story.). Do not treat the response as demonstrated if it relies on: BitLocker recovery keys for all session hosts.."
     },
@@ -110,8 +110,9 @@
       "type": "written",
       "prompt": "What fault domains still fit after you see a Conditional Access failure and intact application group assignment?",
       "capabilityDomainIds": [
-        "avd-technical",
-        "escalation"
+        "avd-infrastructure",
+        "trm-escalation-ops",
+        "m365-stack"
       ],
       "assessorGuidance": "A strong answer covers: Identity / Conditional Access / authentication strength for that group. (Matches AADSTS50076 and policy evidence.); User MFA method enrolment after the helper group was emptied. (Explains why the policy now fails.); A residual VDI assignment issue if nested groups were used for the application group — already weakened but worth a sentence. (Fair residual; evidence already shows direct assignment remains.). Do not treat the response as demonstrated if it relies on: Microsoft-wide Entra outage.; Prisma / firewall path to the Payments web app.."
     },
@@ -120,8 +121,8 @@
       "type": "written",
       "prompt": "Explain how the evidence supports or weakens a platform assignment fault versus an identity configuration fault. What would change your mind?",
       "capabilityDomainIds": [
-        "avd-technical",
-        "documentation"
+        "avd-infrastructure",
+        "platform-troubleshooting"
       ],
       "assessorGuidance": "Assignment still present weakens 'removed from AVD'. Sign-in error and emptied helper group support identity configuration. Changing their mind: if a working Payments user existed with the same CA result, or if DAG assignment was actually missing."
     },
@@ -130,8 +131,9 @@
       "type": "written",
       "prompt": "Which tools or logs would you use with Identity, and what would you look for?",
       "capabilityDomainIds": [
-        "documentation",
-        "microsoft-engagement"
+        "platform-troubleshooting",
+        "vendor-management",
+        "m365-stack"
       ],
       "assessorGuidance": "A strong answer covers: Entra sign-in logs, Conditional Access insights, group membership including nesting, and the illustrative VDI access runbook — with Identity on the bridge. (Correct tooling and collaboration.); Only AVD host event logs for Kerberos after forcing cached credentials. (Wrong layer for a cloud sign-in failure.). Do not treat the response as demonstrated if it relies on: Azure Advisor cost recommendations.; A packet capture of MFA SMS on the public internet.."
     },
@@ -140,9 +142,9 @@
       "type": "written",
       "prompt": "When would you engage Microsoft, Identity, MIM, and senior engineers? What must you not change yourself?",
       "capabilityDomainIds": [
-        "microsoft-engagement",
-        "escalation",
-        "incident-process"
+        "vendor-management",
+        "trm-escalation-ops",
+        "m365-stack"
       ],
       "assessorGuidance": "Identity immediately; MIM because it is Sev1 OOH with business impact; senior VDI for assignment confirmation. Microsoft Entra support only if logs show a platform fault, not a customer-configured CA policy. Must not: tenant-wide CA off, mass password reset, bypassing phishing-resistant requirements without identity authority.",
       "feedbackExamples": {
@@ -159,7 +161,7 @@
       "type": "written",
       "prompt": "Draft a stakeholder update for the Payments duty manager and the incident bridge.",
       "capabilityDomainIds": [
-        "communication"
+        "trm-escalation-ops"
       ],
       "assessorGuidance": "Scoped impact (Payments Ops only), failure at sign-in, identity change in play, other VDI users OK, Identity leading the configuration check, no request to disable MFA tenant-wide, next update time."
     },
@@ -168,8 +170,8 @@
       "type": "written",
       "prompt": "Identity restores a supported MFA path for the group. How do you confirm recovery?",
       "capabilityDomainIds": [
-        "communication",
-        "incident-assessment"
+        "trm-escalation-ops",
+        "platform-troubleshooting"
       ],
       "assessorGuidance": "A strong answer covers: Two affected users sign in successfully, sign-in logs show CA success, and Service Desk watches for further Payments Ops failures. (User plus log confirmation, scoped watch.); Declare recovery because the change ticket is closed, without a user test. (Weak confirmation.). Do not treat the response as demonstrated if it relies on: Force every VDI user in the company to re-register MFA.; Remove Payments Ops from Conditional Access entirely as a permanent workaround.."
     }
@@ -178,7 +180,7 @@
     {
       "id": "c-impact",
       "label": "Scopes impact to a defined group rather than a platform-wide outage",
-      "domainId": "incident-assessment",
+      "domainId": "platform-troubleshooting",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
@@ -190,7 +192,7 @@
     {
       "id": "c-process",
       "label": "Runs Sev1 process with Identity and MIM at the right time",
-      "domainId": "incident-process",
+      "domainId": "trm-escalation-ops",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
@@ -201,7 +203,7 @@
     {
       "id": "c-msft",
       "label": "Uses Microsoft only when evidence suggests a platform identity fault",
-      "domainId": "microsoft-engagement",
+      "domainId": "vendor-management",
       "maxScore": 3,
       "mandatory": false,
       "safetyCritical": false,
@@ -213,7 +215,7 @@
     {
       "id": "c-avd",
       "label": "Checks application group assignment before changing hosts",
-      "domainId": "avd-technical",
+      "domainId": "avd-infrastructure",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
@@ -237,7 +239,7 @@
     {
       "id": "c-docs",
       "label": "Uses access/assignment and identity runbooks with sign-in logs",
-      "domainId": "documentation",
+      "domainId": "m365-stack",
       "maxScore": 3,
       "mandatory": false,
       "safetyCritical": false,
@@ -250,7 +252,7 @@
     {
       "id": "c-esc",
       "label": "Escalates to Identity; does not disable tenant-wide controls",
-      "domainId": "escalation",
+      "domainId": "trm-escalation-ops",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": true,
@@ -262,7 +264,7 @@
     {
       "id": "c-comms",
       "label": "Scoped, factual updates and confirmed recovery",
-      "domainId": "communication",
+      "domainId": "trm-escalation-ops",
       "maxScore": 3,
       "mandatory": false,
       "safetyCritical": false,

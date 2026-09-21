@@ -90,9 +90,8 @@
       "type": "written",
       "prompt": "What would you check first, and why? Describe what belongs in the initial five minutes.",
       "capabilityDomainIds": [
-        "incident-assessment",
-        "documentation",
-        "avd-technical"
+        "platform-troubleshooting",
+        "avd-infrastructure"
       ],
       "assessorGuidance": "Full credit if the engineer protects existing sessions, uses the runbook, and checks health/impact. Selecting a reboot-all or image rebuild should not receive a demonstrated score. A strong answer covers: Confirm who is affected, which host pool is named, and whether existing sessions survive — before changing hosts. (Establishes blast radius and avoids treating a control-plane issue as a local host fault.); Open the illustrative AVD connectivity runbook and Azure Service Health for the region. (Documentation use and service-health awareness are expected first steps.); Ask Service Desk to keep gathering user counts, error text, and whether HP02 remains usable. (Improves impact assessment without delaying the platform checks.). Do not treat the response as demonstrated if it relies on: Immediately reboot every session host in VDI-UK-PROD-HP01 to clear a probable local freeze.; Rebuild the host pool golden image as the first action so users can connect to new hosts..",
       "helpText": "More than one investigation path can be valid. Focus on safe, high-value first checks rather than a single root-cause guess.",
@@ -105,8 +104,8 @@
       "type": "written",
       "prompt": "What additional information would you ask for next, once the initial call details are captured?",
       "capabilityDomainIds": [
-        "incident-assessment",
-        "avd-technical"
+        "platform-troubleshooting",
+        "avd-infrastructure"
       ],
       "assessorGuidance": "A strong answer covers: Whether users fail before a Windows desktop appears, and whether any existing AVD sessions in HP01 are still working. (Separates connection/control-plane failure from desktop or app failure and shows if hosts themselves are still alive.); Whether the Service Desk can recreate the issue on a physical PC unconnected to AVD. (A weak discriminator; physical PCs are out of scope if the fault is AVD connection.). Do not treat the response as demonstrated if it relies on: Each user’s favourite application list so you can reinstall line-of-business software.; A full memory dump from every unavailable session host before any other investigation..",
       "helpText": "Think about what distinguishes a Microsoft dependency from a local pool fault."
@@ -116,9 +115,9 @@
       "type": "written",
       "prompt": "What fault domains would you keep in play after you see host status and the Service Health advisory?",
       "capabilityDomainIds": [
-        "avd-technical",
+        "avd-infrastructure",
         "networking",
-        "microsoft-engagement"
+        "vendor-management"
       ],
       "assessorGuidance": "A strong answer covers: Azure Virtual Desktop control plane / gateway in UK South (Microsoft dependency). (Service Health plus new-connection failures with surviving sessions support this domain.); This host pool’s broker registration or agent health, still worth confirming with logs. (A parallel local domain that should be confirmed, not assumed away.); Client-side Workspace feed issues for some users, as a secondary check if symptoms split. (Valid lesser domain; not the primary widespread pattern, but reasonable to keep in view.). Do not treat the response as demonstrated if it relies on: A core internal DNS outage for all company services, as the most likely single cause.; A simultaneous storage-account key rotation on an unrelated subscription.."
     },
@@ -128,8 +127,8 @@
       "prompt": "What evidence supports or weakens a Microsoft service dependency versus a local host-pool fault? Explain your current working hypothesis and what would change your mind.",
       "helpText": "Assessors look for reasoning against the evidence, not a lucky guess at the final root cause.",
       "capabilityDomainIds": [
-        "avd-technical",
-        "microsoft-engagement"
+        "avd-infrastructure",
+        "vendor-management"
       ],
       "assessorGuidance": "Look for: new connections fail, existing sessions survive, Service Health investigating AVD in UK South, HP02 less affected, local path from a working host succeeds. Weakening a purely local story: many hosts unavailable at once with no change. A strong answer keeps a local agent issue as a residual check.",
       "feedbackExamples": {
@@ -146,8 +145,8 @@
       "type": "written",
       "prompt": "What tools or logs would you use next, and what would you look for?",
       "capabilityDomainIds": [
-        "avd-technical",
-        "documentation"
+        "avd-infrastructure",
+        "platform-troubleshooting"
       ],
       "assessorGuidance": "A strong answer covers: Connection diagnostics / WVDConnections for failure error codes, plus the connectivity runbook’s Service Health and host-agent checks. (Matches the staged evidence and rewards runbook usage.); A full packet capture on every session host before notifying anyone. (Disproportionate and delays incident process.). Do not treat the response as demonstrated if it relies on: Only the Windows Event Log on a random user’s laptop, looking for Outlook errors.; Azure Cost Management anomalies for the subscription.."
     },
@@ -157,9 +156,8 @@
       "prompt": "When would you engage Microsoft, Major Incident Management, and any internal teams? What would you prepare for a Microsoft case?",
       "helpText": "Independent OOH response includes using the support model. Asking for help is expected.",
       "capabilityDomainIds": [
-        "microsoft-engagement",
-        "escalation",
-        "incident-process"
+        "vendor-management",
+        "trm-escalation-ops"
       ],
       "assessorGuidance": "Expect prompt MIM notification for Sev1 OOH with business impact; Microsoft engagement now that AVD Service Health is investigating and new connections fail across the pool; do not wait to 'fix it personally'. Case prep: correlation IDs, host pool name, region, error codes, timeline, impact count. Networking or identity teams only if evidence later points there.",
       "feedbackExamples": {
@@ -176,8 +174,8 @@
       "type": "written",
       "prompt": "Draft the stakeholder update you would send at this point (about 30–40 minutes in). Include what you know, what you do not know, impact, and next update time.",
       "capabilityDomainIds": [
-        "communication",
-        "incident-assessment"
+        "trm-escalation-ops",
+        "platform-troubleshooting"
       ],
       "assessorGuidance": "Factual, non-blaming language. State affected pool, connection-time failure, existing sessions may still work, Microsoft investigating UK South AVD, no unsanctioned host reboots, next update time. Do not claim full restoration or name an unconfirmed root cause as fact."
     },
@@ -186,8 +184,8 @@
       "type": "written",
       "prompt": "Microsoft later marks the incident as mitigating. How would you confirm service recovery?",
       "capabilityDomainIds": [
-        "communication",
-        "avd-technical"
+        "trm-escalation-ops",
+        "avd-infrastructure"
       ],
       "assessorGuidance": "A strong answer covers: Ask Service Desk / a named user in HP01 to start a new connection, confirm host statuses return to Available, and watch for new failure events before declaring recovery. (User confirmation plus platform telemetry; does not trust a portal colour alone.). Do not treat the response as demonstrated if it relies on: Close the incident as soon as Service Health text contains the word mitigating, without a user test.; Delete and recreate the host pool to be certain.; Wait 24 hours with no communication because overnight users can try again tomorrow.."
     }
@@ -196,7 +194,7 @@
     {
       "id": "c-impact",
       "label": "Establishes blast radius and customer impact before making platform changes",
-      "domainId": "incident-assessment",
+      "domainId": "platform-troubleshooting",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
@@ -209,7 +207,7 @@
     {
       "id": "c-process",
       "label": "Uses Sev1 OOH process, including MIM and a managed investigation",
-      "domainId": "incident-process",
+      "domainId": "trm-escalation-ops",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
@@ -220,7 +218,7 @@
     {
       "id": "c-msft",
       "label": "Engages Microsoft with appropriate evidence when control-plane symptoms appear",
-      "domainId": "microsoft-engagement",
+      "domainId": "vendor-management",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
@@ -233,7 +231,7 @@
     {
       "id": "c-avd",
       "label": "Interprets host pool, gateway, and connection evidence in a sound order",
-      "domainId": "avd-technical",
+      "domainId": "avd-infrastructure",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
@@ -258,7 +256,7 @@
     {
       "id": "c-docs",
       "label": "Uses the connectivity runbook and known diagnostic sources rather than improvising",
-      "domainId": "documentation",
+      "domainId": "platform-troubleshooting",
       "maxScore": 3,
       "mandatory": false,
       "safetyCritical": false,
@@ -270,7 +268,7 @@
     {
       "id": "c-esc",
       "label": "Uses the support model instead of attempting to personally restore a Microsoft fault",
-      "domainId": "escalation",
+      "domainId": "trm-escalation-ops",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
@@ -281,7 +279,7 @@
     {
       "id": "c-comms",
       "label": "Produces a factual update and confirms recovery with users",
-      "domainId": "communication",
+      "domainId": "trm-escalation-ops",
       "maxScore": 3,
       "mandatory": false,
       "safetyCritical": false,
@@ -293,7 +291,7 @@
     {
       "id": "c-safe",
       "label": "Avoids unsafe mass host restarts or rebuilds during an undiagnosed Sev1",
-      "domainId": "avd-technical",
+      "domainId": "avd-infrastructure",
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": true,

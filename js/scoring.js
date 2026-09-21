@@ -174,7 +174,7 @@ export function buildCriterionResults(scenario, answers, review = null) {
   });
 }
 
-// Roll criteria up to the eight capability areas for the bar chart.
+// Roll criteria up to the capability areas for the chart and readiness map.
 export function summariseDomains(domains, criterionResults) {
   return domains.map((domain) => {
     const items = criterionResults.filter((item) => item.domainId === domain.id);

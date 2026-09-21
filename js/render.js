@@ -62,24 +62,26 @@ export function layout({ config, role, path, body, theme = "dark", person = null
           <input type="search" data-global-search placeholder="Search…" aria-label="Search this page">
         </label>
         <nav class="sidebar-nav" aria-label="Primary">${nav}</nav>
-        ${person ? `
-          <div class="sidebar-user">
-            <span class="avatar">${escapeHtml(initialsOf(person.name))}</span>
-            <span>
-              <strong>${escapeHtml(person.name)}</strong>
-              <span>${roleLabel(person.role)}${person.source === "entra" ? "" : " · Local"}</span>
-            </span>
+        <div class="sidebar-account">
+          ${person ? `
+            <div class="sidebar-user">
+              <span class="avatar">${escapeHtml(initialsOf(person.name))}</span>
+              <span>
+                <strong>${escapeHtml(person.name)}</strong>
+                <span>${roleLabel(person.role)}${person.source === "entra" ? "" : " · Local"}</span>
+              </span>
+            </div>
+          ` : ""}
+          <div class="sidebar-user-actions">
+            <button type="button" class="theme-toggle" data-action="toggle-theme" aria-pressed="${light}">${light ? "Dark mode" : "Light mode"}</button>
+            ${showMicrosoft ? `<button type="button" class="theme-toggle header-entra" data-action="entra-sign-in">Sign in with Microsoft</button>` : ""}
+            ${person ? `<button type="button" class="theme-toggle" data-action="sign-out">Sign out</button>` : ""}
           </div>
-        ` : ""}
+        </div>
       </aside>
       <div class="app-frame">
         <header class="topbar">
           <button type="button" class="sidebar-toggle" data-action="toggle-sidebar" aria-label="Open menu">${icon("menu")}</button>
-          <div class="topbar-actions">
-            <button type="button" class="icon-btn" data-action="toggle-theme" aria-pressed="${light}" aria-label="${light ? "Switch to dark mode" : "Switch to light mode"}">${light ? icon("moon") : icon("sun")}</button>
-            ${showMicrosoft ? `<button type="button" class="theme-toggle header-entra" data-action="entra-sign-in">Sign in with Microsoft</button>` : ""}
-            ${person ? `<button type="button" class="theme-toggle" data-action="sign-out">Sign out</button>` : ""}
-          </div>
         </header>
         <main id="main" class="app-main" tabindex="-1">${body}</main>
         <p class="app-footnote">${escapeHtml(config.prototypeNotice)}</p>
@@ -360,15 +362,27 @@ export function criterionTable(results, { showAssessorHints = false, domains = [
 }
 
 const DOMAIN_SHORT = {
-  "incident-assessment": "Assessment",
-  "incident-process": "Process",
-  "microsoft-engagement": "Microsoft",
-  "avd-technical": "AVD",
+  "avd-infrastructure": "AVD",
   "networking": "Network",
-  "documentation": "Docs",
-  "escalation": "Escalation",
-  "communication": "Comms"
+  "trm-escalation-ops": "TRM / Ops",
+  "proxy-solution": "Proxy",
+  "vendor-management": "Vendor",
+  "platform-troubleshooting": "Platform",
+  "m365-stack": "M365"
 };
+
+function wrapSpokeLabel(text) {
+  const value = String(text || "").trim();
+  if (value.length <= 14) return [value];
+  if (value.includes(",")) {
+    const idx = value.indexOf(",");
+    return [value.slice(0, idx + 1).trim(), value.slice(idx + 1).trim()];
+  }
+  const words = value.split(/\s+/);
+  if (words.length < 2) return [value];
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
+}
 
 function domainState(domain) {
   if (domain.mandatoryUnmet?.length) return "gap";
@@ -384,10 +398,10 @@ function polarPoint(cx, cy, radius, index, total) {
 
 // Interactive map of capability areas. Gaps glow so weak spots stand out against the rest of the graph.
 export function readinessNetwork(domains, { personName = "You" } = {}) {
-  const width = 900;
-  const height = 620;
-  const hub = { x: 450, y: 312 };
-  const ring = 228;
+  const width = 920;
+  const height = 680;
+  const hub = { x: 460, y: 340 };
+  const ring = 240;
   const points = Object.fromEntries(domains.map((domain, index) => [domain.id, polarPoint(hub.x, hub.y, ring, index, domains.length)]));
   const payload = domains.map((domain) => ({
     id: domain.id,
@@ -409,12 +423,15 @@ export function readinessNetwork(domains, { personName = "You" } = {}) {
     const point = points[domain.id];
     const state = domainState(domain);
     const score = domain.percentage == null ? 16 : 18 + Math.round((domain.percentage / 100) * 14);
-    const label = DOMAIN_SHORT[domain.id] || domain.name;
+    const lines = wrapSpokeLabel(domain.name);
+    const labels = lines.map((line, index) =>
+      `<text class="neural-label" x="${point.x}" y="${point.y + score + 16 + index * 13}" text-anchor="middle">${escapeHtml(line)}</text>`
+    ).join("");
     return `
       <g class="neural-node" data-node-id="${escapeHtml(domain.id)}" data-state="${state}" data-action="neural-focus" tabindex="0" role="button" aria-label="${escapeHtml(domain.name)}">
         <circle class="neural-core" cx="${point.x}" cy="${point.y}" r="${score}" />
         <circle class="neural-halo" cx="${point.x}" cy="${point.y}" r="${score + 10}" />
-        <text class="neural-label" x="${point.x}" y="${point.y + score + 18}" text-anchor="middle">${escapeHtml(label)}</text>
+        ${labels}
       </g>
     `;
   }).join("");

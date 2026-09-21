@@ -10,44 +10,39 @@
   },
   "capabilityDomains": [
     {
-      "id": "incident-assessment",
-      "name": "Incident assessment and customer impact",
-      "summary": "Establish what is broken, who is affected, and how severe the impact is before narrowing the investigation."
-    },
-    {
-      "id": "incident-process",
-      "name": "Incident management process",
-      "summary": "Use the Sev1 out-of-hours model: record, communicate, bridge, and hand over without treating the ticket as a solo puzzle."
-    },
-    {
-      "id": "microsoft-engagement",
-      "name": "Microsoft engagement",
-      "summary": "Know when a Microsoft support case or service-health dependency is appropriate, and what evidence to prepare."
-    },
-    {
-      "id": "avd-technical",
-      "name": "Azure and AVD technical understanding and investigation",
-      "summary": "Interpret host pool, gateway, session host, and control-plane evidence in a safe order."
+      "id": "avd-infrastructure",
+      "name": "AVD Infrastructure",
+      "summary": "Host pools, session hosts, gateways, and the AVD control plane — in a safe investigation order."
     },
     {
       "id": "networking",
-      "name": "Networking and dependency troubleshooting",
-      "summary": "Consider DNS, routing, Secure Access / Prisma, firewalls, and name resolution as first-class fault domains."
+      "name": "Networking",
+      "summary": "DNS, routing, firewalls, and name resolution as first-class fault domains for VDI connectivity."
     },
     {
-      "id": "documentation",
-      "name": "Documentation and runbook usage",
-      "summary": "Use approved runbooks and known-error information rather than improvising from memory."
+      "id": "trm-escalation-ops",
+      "name": "TRM, Escalation & Ops",
+      "summary": "Use TRM, MIM, and the out-of-hours support model: escalate, update, and hand over rather than treating the ticket as a solo puzzle."
     },
     {
-      "id": "escalation",
-      "name": "Escalation and support model awareness",
-      "summary": "Involve Major Incident Management, senior engineers, identity, networking, or application teams at the right time."
+      "id": "proxy-solution",
+      "name": "Proxy Solution",
+      "summary": "Secure Access / Prisma, inspection, and connector path issues between the desktop and the application."
     },
     {
-      "id": "communication",
-      "name": "Communication and stakeholder updates",
-      "summary": "Give timely, factual updates and confirm recovery with users rather than assuming a green portal means service is restored."
+      "id": "vendor-management",
+      "name": "Vendor Management",
+      "summary": "Know when a Microsoft or other vendor case is appropriate, and what evidence to prepare."
+    },
+    {
+      "id": "platform-troubleshooting",
+      "name": "Platform Troubleshooting",
+      "summary": "Establish impact, use runbooks, and follow evidence before changing the platform."
+    },
+    {
+      "id": "m365-stack",
+      "name": "M365 Stack",
+      "summary": "Entra ID, Conditional Access, and other Microsoft 365 dependencies that sit in front of the desktop."
     }
   ],
   "readinessCriteria": {

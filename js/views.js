@@ -958,28 +958,28 @@ function sampleTemplate() {
         id: "q1",
         type: "written",
         prompt: "What would you check first, and why?",
-        capabilityDomainIds: ["incident-assessment"],
+        capabilityDomainIds: ["platform-troubleshooting"],
         assessorGuidance: "Reward a scoped first check before any platform change. Do not score an unsafe first action as demonstrated."
       },
       {
         id: "q2",
         type: "written",
         prompt: "What fault domains would you consider, and which would you set aside?",
-        capabilityDomainIds: ["avd-technical", "networking"],
+        capabilityDomainIds: ["avd-infrastructure", "networking"],
         assessorGuidance: "Look for more than one relevant fault domain, and for the engineer setting aside an unsupported one."
       },
       {
         id: "q3",
         type: "written",
         prompt: "When would you engage Microsoft or another team?",
-        capabilityDomainIds: ["escalation"],
+        capabilityDomainIds: ["trm-escalation-ops"],
         assessorGuidance: "Written answers require assessor review. Do not use keyword matching."
       },
       {
         id: "q4",
         type: "written",
         prompt: "How would you confirm service recovery?",
-        capabilityDomainIds: ["communication"],
+        capabilityDomainIds: ["trm-escalation-ops"],
         assessorGuidance: "Expect user confirmation plus telemetry. Closing from a green portal tile alone is not enough."
       }
     ],
@@ -987,7 +987,7 @@ function sampleTemplate() {
       {
         id: "c1",
         label: "Establishes impact before changes",
-        domainId: "incident-assessment",
+        domainId: "platform-troubleshooting",
         maxScore: 3,
         mandatory: true,
         safetyCritical: false,
@@ -996,7 +996,7 @@ function sampleTemplate() {
       {
         id: "c2",
         label: "Uses the support model",
-        domainId: "escalation",
+        domainId: "trm-escalation-ops",
         maxScore: 3,
         mandatory: true,
         safetyCritical: true,

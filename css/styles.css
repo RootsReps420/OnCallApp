@@ -276,13 +276,17 @@ body {
   flex-shrink: 0;
 }
 
+.sidebar-account {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
 .sidebar-user {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  margin-top: auto;
-  padding: 0.85rem 0.55rem 0.35rem;
-  border-top: 1px solid var(--line);
+  padding: 0.15rem 0.45rem 0.65rem;
 }
 
 .sidebar-user > span:last-child {
@@ -327,6 +331,20 @@ body {
   font-weight: 500;
 }
 
+.sidebar-user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0 0.15rem 0.15rem;
+}
+
+.sidebar-user-actions .theme-toggle,
+.sidebar-user-actions .header-entra {
+  width: 100%;
+  justify-content: center;
+  border-radius: 10px;
+}
+
 .app-frame {
   flex: 1;
   min-width: 0;
@@ -336,7 +354,7 @@ body {
 }
 
 .topbar {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: flex-end;
   gap: 0.85rem;
@@ -1449,6 +1467,7 @@ kbd {
   }
   .app-shell.sidebar-open .sidebar { transform: none; }
   .sidebar-toggle { display: inline-flex; margin-right: auto; }
+  .topbar { display: flex; }
   .domain-row { grid-template-columns: 1fr; }
 }
 
