@@ -4,7 +4,7 @@
 
 let instance = null;
 
-const LOGIN_SCOPES = ["openid", "profile", "User.Read"];
+const LOGIN_SCOPES = ["openid", "profile"];
 
 // True when config.json has a client and tenant id and Entra is switched on.
 export function isEntraConfigured(config) {
@@ -114,7 +114,7 @@ function friendlyAuthError(error) {
     return "Microsoft rejected the return address. The SPA redirect URI must match this page exactly, including http or https and the port.";
   }
   if (message.includes("AADSTS65001") || message.toLowerCase().includes("consent")) {
-    return "This app needs admin consent for User.Read in the ignitemyfire.co.uk tenant.";
+    return "A tenant administrator still needs to approve Incident Lab for ignitemyfire.co.uk. Subscription Owner is not enough for that step.";
   }
   if (message.includes("AADSTS50105") || message.toLowerCase().includes("not assigned")) {
     return "This account is not assigned to Incident Lab. An administrator must add it on the enterprise application.";

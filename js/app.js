@@ -6,9 +6,9 @@ import { createId, nowIso, parseHash, navigate, downloadJson } from "./util.js";
 import * as storage from "./storage.js";
 import { loadConfig, loadLibrary } from "./content.js";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel } from "./render.js?v=12";
-import * as views from "./views.js?v=12";
-import * as auth from "./auth.js?v=12";
+import { layout, errorPage, roleLabel } from "./render.js?v=13";
+import * as views from "./views.js?v=13";
+import * as auth from "./auth.js?v=13";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
 import { runVerification } from "./tests.js";
 
