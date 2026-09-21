@@ -1,0 +1,275 @@
+{
+  "id": "vds-auth-group-003",
+  "version": "1.1.0",
+  "status": "published",
+  "title": "Authentication failures for a defined user group",
+  "description": "A named cohort cannot complete AVD sign-in after a late configuration change. Other users succeed. The engineer must investigate identity, Conditional Access, group assignment, and host-pool application group configuration without guessing at a directory-wide outage.",
+  "scope": "Out-of-hours Sev1 affecting AVD authentication for one business group, with possible identity or platform assignment causes.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": true,
+  "illustrativeDisclaimer": "This scenario, its mock incident, identity procedures, runbook titles, and escalation routes are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward scoped investigation: one group fails, others work — not a Microsoft-wide Entra outage by default. Look for application group assignment, Conditional Access, MFA method, and recent identity change. Safety-critical: do not disable Conditional Access tenant-wide or reset unrelated users’ credentials in bulk.",
+  "acceptableAlternativeApproaches": [
+    "Compare a failed user and a working user in Entra sign-in logs, then check AVD application group assignment.",
+    "Check the illustrative identity change calendar first after hearing 'only Payments Ops'.",
+    "Involve identity on-call early once AVD assignment looks correct and sign-in logs show Conditional Access failure."
+  ],
+  "documentationReferences": [
+    {
+      "title": "VDS AVD access and application groups (illustrative runbook)",
+      "note": "Would normally cover desktop vs RemoteApp assignment and group nesting. Confirm locally."
+    },
+    {
+      "title": "Entra / Conditional Access triage with Identity (illustrative)",
+      "note": "Would normally describe how VDS and Identity share sign-in logs. Confirm locally."
+    },
+    {
+      "title": "Joiner-mover-leaver impact on VDS (illustrative)",
+      "note": "Would normally cover nested group risk. Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "23:41 UTC, Thursday. Payments Operations (about 35 users) cannot launch AVD. They receive 'Takeover attempt was detected' or stay on the Microsoft sign-in page with AADSTS50076 / Conditional Access prompts that never complete. Traders and Service Desk testers on the same host pool sign in normally. Identity mentioned a planned nested-group cleanup CHG004398 completed at 22:10 UTC.",
+    "serviceNow": {
+      "incidentNumber": "INC0002011",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDS Platform Support (illustrative)",
+      "opened": "2026-09-17 23:44 UTC",
+      "caller": "Payments Operations Duty Manager",
+      "affectedCI": "VDS-UK-PROD-HP01 application group / Entra group sg-vds-payments-ops (illustrative)",
+      "shortDescription": "Payments Operations unable to authenticate to AVD",
+      "description": "Failure at identity prompt, not inside Windows. Other host-pool users succeed. Recent identity change CHG004398 (illustrative) — nested security group rationalisation."
+    },
+    "impact": {
+      "customers": "Payments Operations cohort (~35). Other VDS users not reporting the same sign-in failure.",
+      "colleagues": "Identity on-call aware of a completed change; not yet on a MIM bridge.",
+      "business": "Overnight payments exception queue cannot be processed from VDS. Illustrative impact."
+    }
+  },
+  "evidence": [
+    {
+      "id": "e-scope",
+      "title": "Early impact check",
+      "type": "Notes",
+      "revealAfterQuestionIndex": 0,
+      "content": "Service Desk test account (sg-vds-servicedesk): AVD launch OK.\nTrader test (sg-vds-markets): OK.\nTwo Payments Ops users: fail at Entra prompt.\nHost pool HP01 session hosts: Available.\nAzure Service Health: no Entra or AVD advisory.\nIllustrative notes."
+    },
+    {
+      "id": "e-signin",
+      "title": "Entra sign-in log excerpt (failed user)",
+      "type": "Logs",
+      "revealAfterQuestionIndex": 1,
+      "content": "User: a.nolan@example (illustrative)\nApp: Azure Virtual Desktop\nStatus: Failure\nError: AADSTS50076 — Due to a configuration change made by your administrator, or because you moved to a new location, you must use multi-factor authentication to access.\nConditional Access: 'VDS-Payments-MFA-StepUp' (illustrative) Result: failure — authentication strength not satisfied.\nDevice: AVD Windows client.\nLocation: Corporate egress.\nThis is sample log text, not a live tenant export."
+    },
+    {
+      "id": "e-assign",
+      "title": "Application group assignments",
+      "type": "Portal snapshot (text)",
+      "revealAfterQuestionIndex": 2,
+      "content": "Host pool: VDS-UK-PROD-HP01\nDesktop application group DAG-HP01 assigned to:\n  sg-vds-markets\n  sg-vds-servicedesk\n  sg-vds-payments-ops   <- still assigned\n\nsg-vds-payments-ops members: 35 users (unchanged count).\nNested member group sg-id-payments-mfa-methods: 0 members after CHG004398.\nIllustrative directory snapshot."
+    },
+    {
+      "id": "e-ca",
+      "title": "Conditional Access policy excerpt",
+      "type": "Identity config",
+      "revealAfterQuestionIndex": 3,
+      "content": "Policy: VDS-Payments-MFA-StepUp (illustrative)\nUsers: Include sg-vds-payments-ops\nCloud apps: Azure Virtual Desktop, Microsoft Remote Desktop\nGrant: Require authentication strength 'Phishing-resistant or TAP' (illustrative)\nSession: Sign-in frequency 4 hours\nChange CHG004398 removed users from helper group that previously satisfied the strength via a temporary access path.\nNot an approved production policy document."
+    },
+    {
+      "id": "e-working",
+      "title": "Working user contrast",
+      "type": "Logs",
+      "revealAfterQuestionIndex": 4,
+      "content": "User: j.trader@example (illustrative)\nApp: Azure Virtual Desktop\nStatus: Success\nConditional Access: Payments policy not in scope.\nApplied policies: VDS-Baseline-MFA (satisfied).\nIllustrative contrast only."
+    }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "What would you check first, and why?",
+      "capabilityDomainIds": [
+        "incident-assessment",
+        "avd-technical"
+      ],
+      "assessorGuidance": "A strong answer covers: Prove the blast radius: one group versus whole platform, and whether failure is at sign-in or after the desktop appears. (Stops a false Microsoft-wide outage narrative and targets identity vs host health.). Do not treat the response as demonstrated if it relies on: Restart the AVD broker and all session hosts because authentication is 'platform'.; Disable MFA for the tenant to restore access quickly.; Tell the 35 users to wait for Monday identity support.."
+    },
+    {
+      "id": "q2",
+      "type": "written",
+      "prompt": "What additional information do you need from Identity and from the AVD configuration?",
+      "capabilityDomainIds": [
+        "incident-assessment",
+        "documentation"
+      ],
+      "assessorGuidance": "A strong answer covers: Entra sign-in logs for a failed and a successful user, including Conditional Access results. (Primary evidence source.); Whether the desktop application group still includes the Payments Ops assignment group. (Rules in/out a VDS assignment mistake.); Details of CHG004398 and any group membership impact. (Known change in the story.). Do not treat the response as demonstrated if it relies on: BitLocker recovery keys for all session hosts.."
+    },
+    {
+      "id": "q3",
+      "type": "written",
+      "prompt": "What fault domains still fit after you see a Conditional Access failure and intact application group assignment?",
+      "capabilityDomainIds": [
+        "avd-technical",
+        "escalation"
+      ],
+      "assessorGuidance": "A strong answer covers: Identity / Conditional Access / authentication strength for that group. (Matches AADSTS50076 and policy evidence.); User MFA method enrolment after the helper group was emptied. (Explains why the policy now fails.); A residual VDS assignment issue if nested groups were used for the application group — already weakened but worth a sentence. (Fair residual; evidence already shows direct assignment remains.). Do not treat the response as demonstrated if it relies on: Microsoft-wide Entra outage.; Prisma / firewall path to the Payments web app.."
+    },
+    {
+      "id": "q4",
+      "type": "written",
+      "prompt": "Explain how the evidence supports or weakens a platform assignment fault versus an identity configuration fault. What would change your mind?",
+      "capabilityDomainIds": [
+        "avd-technical",
+        "documentation"
+      ],
+      "assessorGuidance": "Assignment still present weakens 'removed from AVD'. Sign-in error and emptied helper group support identity configuration. Changing their mind: if a working Payments user existed with the same CA result, or if DAG assignment was actually missing."
+    },
+    {
+      "id": "q5",
+      "type": "written",
+      "prompt": "Which tools or logs would you use with Identity, and what would you look for?",
+      "capabilityDomainIds": [
+        "documentation",
+        "microsoft-engagement"
+      ],
+      "assessorGuidance": "A strong answer covers: Entra sign-in logs, Conditional Access insights, group membership including nesting, and the illustrative VDS access runbook — with Identity on the bridge. (Correct tooling and collaboration.); Only AVD host event logs for Kerberos after forcing cached credentials. (Wrong layer for a cloud sign-in failure.). Do not treat the response as demonstrated if it relies on: Azure Advisor cost recommendations.; A packet capture of MFA SMS on the public internet.."
+    },
+    {
+      "id": "q6",
+      "type": "written",
+      "prompt": "When would you engage Microsoft, Identity, MIM, and senior engineers? What must you not change yourself?",
+      "capabilityDomainIds": [
+        "microsoft-engagement",
+        "escalation",
+        "incident-process"
+      ],
+      "assessorGuidance": "Identity immediately; MIM because it is Sev1 OOH with business impact; senior VDS for assignment confirmation. Microsoft Entra support only if logs show a platform fault, not a customer-configured CA policy. Must not: tenant-wide CA off, mass password reset, bypassing phishing-resistant requirements without identity authority.",
+      "feedbackExamples": {
+        "strengths": [
+          "Treats Identity as the owning team rather than fighting Conditional Access alone."
+        ],
+        "development": [
+          "If they propose disabling CA globally, mark the safety-critical criterion as not yet demonstrated."
+        ]
+      }
+    },
+    {
+      "id": "q7",
+      "type": "written",
+      "prompt": "Draft a stakeholder update for the Payments duty manager and the incident bridge.",
+      "capabilityDomainIds": [
+        "communication"
+      ],
+      "assessorGuidance": "Scoped impact (Payments Ops only), failure at sign-in, identity change in play, other VDS users OK, Identity leading the configuration check, no request to disable MFA tenant-wide, next update time."
+    },
+    {
+      "id": "q8",
+      "type": "written",
+      "prompt": "Identity restores a supported MFA path for the group. How do you confirm recovery?",
+      "capabilityDomainIds": [
+        "communication",
+        "incident-assessment"
+      ],
+      "assessorGuidance": "A strong answer covers: Two affected users sign in successfully, sign-in logs show CA success, and Service Desk watches for further Payments Ops failures. (User plus log confirmation, scoped watch.); Declare recovery because the change ticket is closed, without a user test. (Weak confirmation.). Do not treat the response as demonstrated if it relies on: Force every VDS user in the company to re-register MFA.; Remove Payments Ops from Conditional Access entirely as a permanent workaround.."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-impact",
+      "label": "Scopes impact to a defined group rather than a platform-wide outage",
+      "domainId": "incident-assessment",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": [
+        "q1",
+        "q2"
+      ]
+    },
+    {
+      "id": "c-process",
+      "label": "Runs Sev1 process with Identity and MIM at the right time",
+      "domainId": "incident-process",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": [
+        "q6"
+      ]
+    },
+    {
+      "id": "c-msft",
+      "label": "Uses Microsoft only when evidence suggests a platform identity fault",
+      "domainId": "microsoft-engagement",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": [
+        "q5",
+        "q6"
+      ]
+    },
+    {
+      "id": "c-avd",
+      "label": "Checks application group assignment before changing hosts",
+      "domainId": "avd-technical",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": [
+        "q2",
+        "q3",
+        "q4"
+      ]
+    },
+    {
+      "id": "c-net",
+      "label": "Does not force a network hypothesis when sign-in never completes",
+      "domainId": "networking",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": [
+        "q3"
+      ]
+    },
+    {
+      "id": "c-docs",
+      "label": "Uses access/assignment and identity runbooks with sign-in logs",
+      "domainId": "documentation",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": [
+        "q2",
+        "q4",
+        "q5"
+      ]
+    },
+    {
+      "id": "c-esc",
+      "label": "Escalates to Identity; does not disable tenant-wide controls",
+      "domainId": "escalation",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": [
+        "q1",
+        "q6"
+      ]
+    },
+    {
+      "id": "c-comms",
+      "label": "Scoped, factual updates and confirmed recovery",
+      "domainId": "communication",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": [
+        "q7",
+        "q8"
+      ]
+    }
+  ]
+}

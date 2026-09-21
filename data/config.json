@@ -1,0 +1,64 @@
+{
+  "appName": "Incident Lab",
+  "serviceName": "Virtual Desktop Service (VDS)",
+  "prototypeNotice": "Virtual Team · Incident Lab. Sign-in on this browser stands in for Microsoft Entra ID. An administrator assigns User, Assessor, or Administrator access. Assessment records stay in this browser until a shared service exists.",
+  "illustrativeNotice": "All sample incidents, runbooks, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. This application does not invent or approve bank-specific policy.",
+  "capabilityDomains": [
+    {
+      "id": "incident-assessment",
+      "name": "Incident assessment and customer impact",
+      "summary": "Establish what is broken, who is affected, and how severe the impact is before narrowing the investigation."
+    },
+    {
+      "id": "incident-process",
+      "name": "Incident management process",
+      "summary": "Use the Sev1 out-of-hours model: record, communicate, bridge, and hand over without treating the ticket as a solo puzzle."
+    },
+    {
+      "id": "microsoft-engagement",
+      "name": "Microsoft engagement",
+      "summary": "Know when a Microsoft support case or service-health dependency is appropriate, and what evidence to prepare."
+    },
+    {
+      "id": "avd-technical",
+      "name": "Azure and AVD technical understanding and investigation",
+      "summary": "Interpret host pool, gateway, session host, and control-plane evidence in a safe order."
+    },
+    {
+      "id": "networking",
+      "name": "Networking and dependency troubleshooting",
+      "summary": "Consider DNS, routing, Secure Access / Prisma, firewalls, and name resolution as first-class fault domains."
+    },
+    {
+      "id": "documentation",
+      "name": "Documentation and runbook usage",
+      "summary": "Use approved runbooks and known-error information rather than improvising from memory."
+    },
+    {
+      "id": "escalation",
+      "name": "Escalation and support model awareness",
+      "summary": "Involve Major Incident Management, senior engineers, identity, networking, or application teams at the right time."
+    },
+    {
+      "id": "communication",
+      "name": "Communication and stakeholder updates",
+      "summary": "Give timely, factual updates and confirm recovery with users rather than assuming a green portal means service is restored."
+    }
+  ],
+  "readinessCriteria": {
+    "requiredMandatoryScenarios": true,
+    "allRequiredReviewed": true,
+    "mandatoryCriterionMinimum": 2,
+    "notes": "A high domain average must not hide an unmet mandatory criterion. Completion of attempts is not readiness."
+  },
+  "demoPeople": {
+    "engineer": { "id": "demo-engineer", "name": "Alex Chen", "roleTitle": "VDS Platform Engineer" },
+    "assessor": { "id": "demo-assessor", "name": "Jordan Blake", "roleTitle": "VDS Senior Engineer / Assessor" },
+    "administrator": { "id": "demo-admin", "name": "Sam Rivera", "roleTitle": "VDS Enablement Administrator" }
+  },
+  "bundledScenarioFiles": [
+    "data/scenarios/avd-connection-failures.json",
+    "data/scenarios/app-access-failures.json",
+    "data/scenarios/auth-failures.json"
+  ]
+}

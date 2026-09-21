@@ -1,0 +1,871 @@
+import { escapeHtml, formatDateTime, nl } from "./util.js";
+import {
+  pillsForScenario,
+  snowCard,
+  evidenceBlock,
+  domainBars,
+  readinessBanner,
+  criterionTable,
+  docsList,
+  statusLabel,
+  statusClass,
+  errorPage,
+  formatAttemptMeta,
+  roleLabel
+} from "./render.js";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, scoreObjectiveQuestion } from "./scoring.js";
+import { publishedScenarios } from "./content.js";
+
+function latestAttempt(attempts, scenarioId) {
+  return attempts
+    .filter((item) => item.scenarioId === scenarioId)
+    .sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""))[0];
+}
+
+function attemptsFor(attempts, engineerId) {
+  return attempts.filter((item) => item.engineerId === engineerId);
+}
+
+export function dashboardView(state) {
+  const { config, scenarios, attempts, person } = state;
+  const mine = attemptsFor(attempts, person.id);
+  const published = publishedScenarios(scenarios);
+  const required = published.filter((item) => item.mandatory);
+  const awaiting = mine.filter((item) => item.status === "submitted");
+  const released = mine.filter((item) => item.status === "released");
+  const inProgress = mine.filter((item) => item.status === "in-progress");
+  const domainSummaries = aggregateReleasedDomains(state);
+
+  const firstName = person.name.split(" ")[0];
+  return `
+    <section class="dash-hero">
+      <p class="eyebrow">${escapeHtml(person.roleTitle)}</p>
+      <h1>${escapeHtml(firstName)}</h1>
+      <p class="lede">Your Sev1 out-of-hours practice for ${escapeHtml(config.serviceName)}. Complete a scenario, then read released feedback. Involving the right team is part of a strong response.</p>
+    </section>
+    <div class="stat-row">
+      <a class="stat" href="#/library"><span>${inProgress.length}</span>In progress</a>
+      <a class="stat" href="#/library"><span>${awaiting.length}</span>Awaiting review</a>
+      <a class="stat" href="#/readiness"><span>${released.length}</span>Feedback</a>
+    </div>
+    ${inProgress.length ? `
+      <section class="card">
+        <h2>Continue</h2>
+        <ul class="work-list">
+          ${inProgress.map((item) => `<li><a href="#/assess/${item.id}"><span>${escapeHtml(item.scenarioSnapshot.title)}</span><span class="pill progress">Resume</span></a></li>`).join("")}
+        </ul>
+      </section>` : ""}
+    <section class="card">
+      <div class="card-head">
+        <h2>Required scenarios</h2>
+        <a href="#/library">All scenarios</a>
+      </div>
+      <ul class="work-list">
+        ${required.map((scenario) => {
+          const attempt = latestAttempt(mine, scenario.id);
+          const label = attempt ? statusLabel(attempt.status) : "Not started";
+          return `<li><a href="#/scenario/${encodeURIComponent(scenario.id)}"><span>${escapeHtml(scenario.title)}</span><span class="pill ${attempt ? statusClass(attempt.status) : ""}">${escapeHtml(label)}</span></a></li>`;
+        }).join("") || `<li class="muted">No required scenarios.</li>`}
+      </ul>
+    </section>
+    <div class="grid grid-2 dash-lower">
+      <section class="card">
+        <h2>Development actions</h2>
+        ${released.length ? released.slice(0, 3).map((item) => `
+          <p><a href="#/feedback/${item.id}">${escapeHtml(item.scenarioSnapshot.title)}</a></p>
+          <p class="subtle">${item.review?.developmentActions ? nl(item.review.developmentActions) : "No actions recorded."}</p>
+        `).join("") : `<p class="muted">Released feedback will appear here.</p>`}
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Capability</h2>
+          <a href="#/readiness">Summary</a>
+        </div>
+        ${domainBars(domainSummaries, { compact: true })}
+      </section>
+    </div>
+  `;
+}
+
+export function libraryView(state) {
+  const published = state.role === "administrator" ? state.scenarios : publishedScenarios(state.scenarios);
+  const mine = attemptsFor(state.attempts, state.person.id);
+  return `
+    <div class="page-header">
+      <h1>Scenario library</h1>
+      <p class="lede">Preset Sev1 out-of-hours situations for VDS, including AVD. Each attempt is saved separately so earlier evidence is preserved if you retry.</p>
+    </div>
+    <div class="stack">
+      ${published.map((scenario) => {
+        const attempt = latestAttempt(mine, scenario.id);
+        return `
+          <article class="card">
+            ${pillsForScenario(scenario, attempt)}
+            <h2>${escapeHtml(scenario.title)}</h2>
+            <p class="summary">${escapeHtml(scenario.description)}</p>
+            <p class="subtle">${escapeHtml(scenario.scope)} · Version ${escapeHtml(scenario.version)}</p>
+            <div class="btn-row">
+              <a class="btn" href="#/scenario/${encodeURIComponent(scenario.id)}">View scenario</a>
+              ${attempt?.status === "in-progress" ? `<a class="btn secondary" href="#/assess/${attempt.id}">Resume</a>` : ""}
+            </div>
+          </article>
+        `;
+      }).join("") || `<div class="empty-state">No scenarios available.</div>`}
+    </div>
+  `;
+}
+
+export function scenarioIntroView(state, scenario) {
+  if (!scenario) return errorPage("Scenario not found", "That scenario id is not in the library.");
+  if (scenario.status !== "published" && state.role !== "administrator") {
+    return errorPage("Not published", "This scenario is not available for assessment yet.");
+  }
+  const mine = attemptsFor(state.attempts, state.person.id).filter((item) => item.scenarioId === scenario.id);
+  const active = mine.find((item) => item.status === "in-progress");
+  return `
+    <div class="page-header">
+      ${pillsForScenario(scenario, active)}
+      <h1>${escapeHtml(scenario.title)}</h1>
+      <p class="lede">${escapeHtml(scenario.description)}</p>
+    </div>
+    <div class="callout warn">
+      <p>${escapeHtml(scenario.illustrativeDisclaimer)}</p>
+    </div>
+    <div class="grid grid-2">
+      <section class="card">
+        <h2>Initial support call</h2>
+        <p>${nl(scenario.initialIncident.callSummary)}</p>
+        <h3>Known impact</h3>
+        <ul>
+          <li><strong>Users:</strong> ${escapeHtml(scenario.initialIncident.impact.customers)}</li>
+          <li><strong>Colleagues:</strong> ${escapeHtml(scenario.initialIncident.impact.colleagues)}</li>
+          <li><strong>Business:</strong> ${escapeHtml(scenario.initialIncident.impact.business)}</li>
+        </ul>
+      </section>
+      ${snowCard(scenario.initialIncident.serviceNow)}
+    </div>
+    <div class="grid grid-2" style="margin-top:1rem">
+      ${docsList(scenario.documentationReferences)}
+      <section class="card">
+        <h2>How this assessment works</h2>
+        <ul>
+          <li>${scenario.questions.length} written questions. Answer in your own words.</li>
+          <li>Further evidence is revealed as you progress.</li>
+          <li>You can save and resume. Review your answers before submitting.</li>
+          <li>An assessor scores each answer. Nothing is marked by keyword matching.</li>
+          <li>Retries create a new attempt and keep earlier ones.</li>
+        </ul>
+        <div class="btn-row">
+          ${state.role === "engineer"
+            ? `${active
+              ? `<button class="btn" data-action="resume-attempt" data-attempt-id="${active.id}">Resume saved attempt</button>`
+              : `<button class="btn" data-action="start-scenario" data-scenario-id="${escapeHtml(scenario.id)}">${mine.length ? "Start a new attempt" : "Start assessment"}</button>`}
+            ${active
+              ? `<button class="btn secondary" data-action="start-scenario" data-scenario-id="${escapeHtml(scenario.id)}">Start a separate attempt</button>`
+              : ""}`
+            : `<p class="muted">Starting an attempt is for users. Assessors review submitted work, and administrators publish scenarios.</p>`}
+        </div>
+        ${mine.length ? `<h3>Previous attempts</h3><ul>${mine.map((item) => `<li>${statusLabel(item.status)} · ${formatAttemptMeta(item)} · version ${escapeHtml(item.scenarioVersion)}</li>`).join("")}</ul>` : ""}
+      </section>
+    </div>
+  `;
+}
+
+export function workspaceView(state, attempt) {
+  if (!attempt) return errorPage("Attempt not found", "That assessment could not be opened.");
+  if (attempt.status !== "in-progress") {
+    return errorPage("Attempt locked", "This attempt has been submitted. Open feedback or start a new attempt.");
+  }
+  const scenario = attempt.scenarioSnapshot;
+  const index = attempt.currentQuestionIndex || 0;
+  const question = scenario.questions[index];
+  const visibleEvidence = (scenario.evidence || []).filter((item) => (item.revealAfterQuestionIndex || 0) <= index);
+  const selectedEvidenceId = attempt.ui?.evidenceId || visibleEvidence[0]?.id;
+  const selectedEvidence = visibleEvidence.find((item) => item.id === selectedEvidenceId) || visibleEvidence[0];
+  const answer = attempt.answers?.[question.id];
+
+  return `
+    <div class="page-header">
+      <p class="subtle">Assessed attempt · scenario version ${escapeHtml(attempt.scenarioVersion)} · model guidance is withheld until an assessor releases feedback</p>
+      <h1>${escapeHtml(scenario.title)}</h1>
+      <p>Question ${index + 1} of ${scenario.questions.length}</p>
+    </div>
+    <div class="question-nav" role="navigation" aria-label="Questions">
+      ${scenario.questions.map((item, i) => `
+        <button type="button" class="${i === index ? "current" : ""} ${hasAnswer(attempt.answers?.[item.id]) ? "answered" : ""}"
+          data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${i}"
+          aria-current="${i === index ? "step" : "false"}">${i + 1}<span class="sr-only"> ${escapeHtml(item.prompt.slice(0, 40))}</span></button>
+      `).join("")}
+    </div>
+    <div class="workspace">
+      <section class="card">
+        <h2>Question</h2>
+        <p>${escapeHtml(question.prompt)}</p>
+        ${question.helpText ? `<p class="hint muted">${escapeHtml(question.helpText)}</p>` : ""}
+        ${renderAnswerInput(question, answer, attempt.id)}
+        <p class="status-msg" data-save-status aria-live="polite"></p>
+        <div class="btn-row">
+          <button class="btn secondary" data-action="save-progress" data-attempt-id="${attempt.id}">Save progress</button>
+          <button class="btn ghost" ${index === 0 ? "disabled" : ""} data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${index - 1}">Previous</button>
+          <button class="btn ghost" ${index >= scenario.questions.length - 1 ? "disabled" : ""} data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${index + 1}">Next</button>
+          <a class="btn" href="#/review/${attempt.id}">Review answers</a>
+        </div>
+      </section>
+      <aside class="stack">
+        <section class="card">
+          <h2>Initial report</h2>
+          <p>${nl(scenario.initialIncident.callSummary)}</p>
+        </section>
+        <section class="card">
+          <h2>Supporting evidence</h2>
+          <p class="subtle">Additional panels appear as you move through the questions. All panels are illustrative.</p>
+          <div class="evidence-tabs" role="tablist">
+            ${visibleEvidence.map((item) => `
+              <button type="button" role="tab" aria-selected="${item.id === selectedEvidence?.id}"
+                data-action="select-evidence" data-attempt-id="${attempt.id}" data-evidence-id="${escapeHtml(item.id)}">${escapeHtml(item.title)}</button>
+            `).join("")}
+          </div>
+          ${evidenceBlock(selectedEvidence)}
+        </section>
+      </aside>
+    </div>
+  `;
+}
+
+function hasAnswer(value) {
+  if (value == null) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function renderAnswerInput(question, answer, attemptId) {
+  if (question.type === "written" || !question.options) {
+    return `
+      <div class="field">
+        <label for="answer-${question.id}">Your answer</label>
+        <textarea id="answer-${question.id}" class="answer-box" name="answer" data-attempt-id="${attemptId}" data-question-id="${question.id}" data-answer-type="written" placeholder="Write the approach you would take. Include what you would check, who you would involve, and what you would avoid.">${escapeHtml(typeof answer === "string" ? answer : "")}</textarea>
+      </div>
+    `;
+  }
+  const multiple = question.type === "multiple";
+  return `
+    <div class="option-list" role="${multiple ? "group" : "radiogroup"}" aria-label="Answer options">
+      ${question.options.map((option) => {
+        const checked = multiple
+          ? (Array.isArray(answer) && answer.includes(option.id) ? "checked" : "")
+          : (answer === option.id ? "checked" : "");
+        return `
+          <label>
+            <input type="${multiple ? "checkbox" : "radio"}" name="answer-${question.id}" value="${escapeHtml(option.id)}" ${checked}
+              data-attempt-id="${attemptId}" data-question-id="${question.id}" data-answer-type="${question.type}">
+            <span>${escapeHtml(option.text)}</span>
+          </label>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+export function reviewAnswersView(attempt) {
+  if (!attempt) return errorPage("Attempt not found", "Nothing to review.");
+  const scenario = attempt.scenarioSnapshot;
+  const missing = scenario.questions.filter((q) => !hasAnswer(attempt.answers?.[q.id]));
+  return `
+    <div class="page-header">
+      <h1>Review your answers</h1>
+      <p class="lede">Check your responses before submitting. You can still go back and edit. After you submit, an assessor reads each answer. This attempt keeps scenario version ${escapeHtml(attempt.scenarioVersion)}.</p>
+    </div>
+    ${missing.length ? `<div class="callout warn"><p>${missing.length} question(s) have no answer yet. You can still submit, but unanswered criteria will show as not answered rather than zero.</p></div>` : ""}
+    <div class="stack">
+      ${scenario.questions.map((question, index) => `
+        <section class="card">
+          <h2>Question ${index + 1}</h2>
+          <p>${escapeHtml(question.prompt)}</p>
+          <p><strong>Your answer</strong><br>${formatAnswer(question, attempt.answers?.[question.id])}</p>
+          <p><a href="#/assess/${attempt.id}" data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${index}">Edit this answer</a></p>
+        </section>
+      `).join("")}
+    </div>
+    <div class="btn-row">
+      <a class="btn secondary" href="#/assess/${attempt.id}">Back to workspace</a>
+      <button class="btn" data-action="submit-attempt" data-attempt-id="${attempt.id}">Submit for review</button>
+    </div>
+  `;
+}
+
+function formatAnswer(question, answer) {
+  if (!hasAnswer(answer)) return "<span class='muted'>Not answered</span>";
+  if (question.type === "written") return nl(answer);
+  const ids = Array.isArray(answer) ? answer : [answer];
+  return `<ul>${ids.map((id) => {
+    const option = question.options?.find((item) => item.id === id);
+    return `<li>${escapeHtml(option?.text || id)}</li>`;
+  }).join("")}</ul>`;
+}
+
+export function submittedView(attempt) {
+  if (!attempt) return errorPage("Attempt not found", "Submission not found.");
+  return `
+    <div class="page-header">
+      <h1>Submitted</h1>
+      <p class="lede">Thank you. Your assessment for <strong>${escapeHtml(attempt.scenarioSnapshot.title)}</strong> is with an assessor. Objective answers have been scored from the configured mappings. Written explanations remain pending until review. Model guidance and scores will appear when feedback is released.</p>
+    </div>
+    <div class="card">
+      <p>Submitted ${formatDateTime(attempt.submittedAt)} · Scenario version ${escapeHtml(attempt.scenarioVersion)}</p>
+      <div class="btn-row">
+        <a class="btn" href="#/dashboard">Return to dashboard</a>
+        <a class="btn secondary" href="#/library">Scenario library</a>
+      </div>
+    </div>
+  `;
+}
+
+export function feedbackView(state, attempt) {
+  if (!attempt) return errorPage("Attempt not found", "Feedback is not available.");
+  if (attempt.status !== "released") {
+    return `
+      <div class="page-header">
+        <h1>Feedback not released</h1>
+        <p class="lede">This attempt is ${escapeHtml(statusLabel(attempt.status))}. Scores and model guidance stay with the assessor until they release feedback.</p>
+        <a class="btn" href="#/dashboard">Dashboard</a>
+      </div>
+    `;
+  }
+  const scenario = attempt.scenarioSnapshot;
+  const results = buildCriterionResults(scenario, attempt.answers, attempt.review);
+  const domains = summariseDomains(state.config.capabilityDomains, results);
+  return `
+    <div class="page-header">
+      <h1>Feedback · ${escapeHtml(scenario.title)}</h1>
+      <p class="subtle">${formatAttemptMeta(attempt)} · version ${escapeHtml(attempt.scenarioVersion)}</p>
+    </div>
+    ${readinessBanner(attempt.review?.readinessRecommendation)}
+    <div class="card">
+      <h2>Assessor commentary</h2>
+      <p>${nl(attempt.review?.overallCommentary || "No overall commentary recorded.")}</p>
+      <h3>Strengths demonstrated</h3>
+      <p>${nl(attempt.review?.strengths || "None recorded on this attempt.")}</p>
+      <h3>Development areas</h3>
+      <p>${nl(attempt.review?.developmentAreas || "None recorded on this attempt.")}</p>
+      <h3>Agreed development actions</h3>
+      <p>${nl(attempt.review?.developmentActions || "None recorded on this attempt.")}</p>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h2>Scores by capability domain</h2>
+      ${domainBars(domains)}
+      ${criterionTable(results, { domains: state.config.capabilityDomains })}
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h2>Your answers and question-level notes</h2>
+      ${scenario.questions.map((question, index) => {
+        const auto = scoreObjectiveQuestion(question, attempt.answers?.[question.id]);
+        return `
+          <div class="review-block">
+            <h3>Question ${index + 1}</h3>
+            <p>${escapeHtml(question.prompt)}</p>
+            <p><strong>Your answer</strong><br>${formatAnswer(question, attempt.answers?.[question.id])}</p>
+            <p class="subtle">${escapeHtml(auto.detail)}</p>
+          </div>
+        `;
+      }).join("")}
+    </div>
+    <p class="btn-row"><a class="btn secondary" href="#/scenario/${encodeURIComponent(scenario.id)}">Retry as a new attempt</a></p>
+  `;
+}
+
+export function readinessView(state) {
+  const mine = attemptsFor(state.attempts, state.person.id);
+  const published = publishedScenarios(state.scenarios);
+  const required = published.filter((item) => item.mandatory);
+  const requiredComplete = required.every((scenario) =>
+    mine.some((item) => item.scenarioId === scenario.id && item.status === "released")
+  );
+  const released = mine.filter((item) => item.status === "released");
+  const allResults = released.flatMap((item) => buildCriterionResults(item.scenarioSnapshot, item.answers, item.review));
+  const domains = summariseDomains(state.config.capabilityDomains, allResults);
+  const hints = attemptOutcomeHints(allResults, domains, requiredComplete);
+  const latestRec = released
+    .slice()
+    .sort((a, b) => (a.review?.releasedAt || "").localeCompare(b.review?.releasedAt || ""))
+    .map((item) => item.review?.readinessRecommendation)
+    .filter(Boolean)
+    .at(-1);
+
+  return `
+    <div class="page-header">
+      <h1>Readiness summary</h1>
+      <p class="lede">This summary is for development and assessor review. It is not an automatic certification. A human assessor makes the recommendation after required scenarios and capability criteria have been reviewed.</p>
+    </div>
+    ${latestRec ? readinessBanner(latestRec) : `<div class="callout warn"><p>No assessor recommendation has been released yet. Incomplete evidence is not the same as a score of zero, and completing scenarios does not by itself mean ready.</p></div>`}
+    <div class="grid grid-2">
+      <section class="card">
+        <h2>Required scenario coverage</h2>
+        <ul>
+          ${required.map((scenario) => {
+            const releasedAttempt = mine.find((item) => item.scenarioId === scenario.id && item.status === "released");
+            const other = latestAttempt(mine, scenario.id);
+            return `<li><strong>${escapeHtml(scenario.title)}</strong> — ${
+              releasedAttempt ? "Reviewed and released" : other ? statusLabel(other.status) : "Not started"
+            }</li>`;
+          }).join("")}
+        </ul>
+        <p>${requiredComplete ? "Required scenarios have released reviews." : "Required scenarios are not all reviewed yet — treat readiness evidence as incomplete."}</p>
+      </section>
+      <section class="card">
+        <h2>Mandatory criteria</h2>
+        ${hints.mandatoryUnmet.length
+          ? `<p class="error-msg">Unmet mandatory criteria must be visible even if some domain averages look strong:</p><ul>${hints.mandatoryUnmet.map((item) => `<li>${escapeHtml(item.label)} (${item.score}/${item.maxScore})</li>`).join("")}</ul>`
+          : `<p>No scored mandatory criterion is currently below “Demonstrated” (2) in released attempts.</p>`}
+        <p class="subtle">Pending or unanswered mandatory items: ${hints.hasIncompleteEvidence ? "yes — incomplete evidence" : "none recorded"}.</p>
+      </section>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h2>Capability coverage</h2>
+      ${domainBars(domains)}
+    </div>
+  `;
+}
+
+export function proposeView() {
+  return `
+    <div class="page-header">
+      <h1>Propose a scenario</h1>
+      <p class="lede">Suggest a new Sev1 OOH practice scenario. An administrator will review it before publication. Do not include live incident data, personal data, or unapproved policy.</p>
+    </div>
+    <form class="card" data-form="propose">
+      <div class="field">
+        <label for="p-title">Title</label>
+        <input id="p-title" name="title" type="text" required minlength="8">
+      </div>
+      <div class="field">
+        <label for="p-summary">Incident outline</label>
+        <textarea id="p-summary" name="summary" required minlength="30"></textarea>
+        <span class="hint">Fictionalised situation, impact, and why it would help OOH readiness.</span>
+      </div>
+      <div class="field">
+        <label for="p-questions">Draft questions or learning points</label>
+        <textarea id="p-questions" name="questions" required></textarea>
+      </div>
+      <div class="field">
+        <label for="p-domains">Capability domains this would exercise</label>
+        <input id="p-domains" name="domains" type="text">
+      </div>
+      <button class="btn" type="submit">Send for review</button>
+      <p class="status-msg" data-form-status></p>
+    </form>
+  `;
+}
+
+export function assessorQueueView(state) {
+  const queue = state.attempts.filter((item) => item.status === "submitted" || item.status === "released");
+  return `
+    <div class="page-header">
+      <h1>Assessor review queue</h1>
+      <p class="lede">Score written responses against the rubric, explain any adjustment to automated scores, and release constructive feedback. This prototype shows attempts stored in this browser only.</p>
+    </div>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Engineer</th><th>Scenario</th><th>Version</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+        <tbody>
+          ${queue.length ? queue.map((item) => `
+            <tr>
+              <td>${escapeHtml(item.engineerName)}</td>
+              <td>${escapeHtml(item.scenarioSnapshot.title)}</td>
+              <td>${escapeHtml(item.scenarioVersion)}</td>
+              <td><span class="pill ${statusClass(item.status)}">${statusLabel(item.status)}</span></td>
+              <td>${formatDateTime(item.submittedAt)}</td>
+              <td><a class="btn secondary" href="#/assessor/review/${item.id}">Open</a></td>
+            </tr>
+          `).join("") : `<tr><td colspan="6">No submitted attempts yet. A user completes a scenario, then an assessor opens it here.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+export function assessorReviewView(state, attempt) {
+  if (!attempt) return errorPage("Attempt not found", "Nothing to review.");
+  const scenario = attempt.scenarioSnapshot;
+  const review = attempt.review || {};
+  const results = buildCriterionResults(scenario, attempt.answers, review);
+  const domains = summariseDomains(state.config.capabilityDomains, results);
+  const hints = attemptOutcomeHints(results, domains, true);
+  return `
+    <div class="page-header">
+      <h1>Review · ${escapeHtml(scenario.title)}</h1>
+      <p class="subtle">${escapeHtml(attempt.engineerName)} · version ${escapeHtml(attempt.scenarioVersion)} · ${formatAttemptMeta(attempt)}</p>
+    </div>
+    ${hints.safetyFlags.length ? `<div class="callout danger"><p><strong>Safety-critical criteria need attention.</strong> ${hints.safetyFlags.map((item) => escapeHtml(item.label)).join("; ")}</p></div>` : ""}
+    <div class="card">
+      <h2>Coverage</h2>
+      ${domainBars(domains)}
+      <p class="coverage-note">Do not let a high average hide an unmet mandatory criterion. Unreviewed written criteria are pending, not zero.</p>
+    </div>
+    <form data-form="review" data-attempt-id="${attempt.id}">
+      ${scenario.questions.map((question, index) => {
+        const auto = scoreObjectiveQuestion(question, attempt.answers?.[question.id]);
+        return `
+          <section class="card review-block">
+            <h2>Question ${index + 1}${question.type === "written" ? "" : ` · ${escapeHtml(question.type)}`}</h2>
+            <p>${escapeHtml(question.prompt)}</p>
+            <p><strong>Engineer answer</strong><br>${formatAnswer(question, attempt.answers?.[question.id])}</p>
+            ${question.type === "written" ? "" : `<p class="subtle">Automated result: ${escapeHtml(auto.status)}${auto.credit != null ? ` · credit ${auto.credit}` : ""} — ${escapeHtml(auto.detail)}</p>`}
+            ${question.assessorGuidance ? `<div class="callout"><p><strong>Assessor guidance (not shown to engineers until release context).</strong> ${escapeHtml(question.assessorGuidance)}</p></div>` : ""}
+            ${question.acceptableApproaches ? `<p class="subtle">Acceptable approaches: ${escapeHtml((question.acceptableApproaches || []).join(" · "))}</p>` : ""}
+          </section>
+        `;
+      }).join("")}
+      <section class="card">
+        <h2>Criterion scores</h2>
+        ${results.map((item) => {
+          const saved = review.criterionScores?.[item.id] || {};
+          const autoVal = item.source === "objective" || item.source === "assessor" ? item.score : "";
+          return `
+            <fieldset class="review-block">
+              <legend><strong>${escapeHtml(item.label)}</strong>
+                ${item.mandatory ? `<span class="pill required">Mandatory</span>` : ""}
+                ${item.safetyCritical ? `<span class="pill critical">Safety-critical</span>` : ""}
+              </legend>
+              <p class="subtle">${escapeHtml((state.config.capabilityDomains.find((d) => d.id === item.domainId) || {}).name || item.domainId)} · current status: ${escapeHtml(item.status)} ${item.score != null ? `(${item.score}/${item.maxScore})` : ""}</p>
+              <div class="score-scale">
+                <label><input type="radio" name="crit-${item.id}" value="" ${saved.score == null || saved.score === "" ? "checked" : ""}> Leave unreviewed (not zero)</label>
+                ${SCORE_SCALE.map((scale) => `
+                  <label>
+                    <input type="radio" name="crit-${item.id}" value="${scale.value}" ${String(saved.score) === String(scale.value) ? "checked" : ""}>
+                    <span><strong>${scale.value} — ${escapeHtml(scale.label)}</strong><br>${escapeHtml(scale.description)}</span>
+                  </label>
+                `).join("")}
+              </div>
+              <div class="field">
+                <label for="ev-${item.id}">What in the answer supports this score</label>
+                <textarea id="ev-${item.id}" name="ev-${item.id}">${escapeHtml(saved.evidence || item.evidence.join("\n"))}</textarea>
+              </div>
+              ${item.source === "objective" ? `
+              <div class="field">
+                <label for="adj-${item.id}">Explanation if you adjust an automated score</label>
+                <textarea id="adj-${item.id}" name="adj-${item.id}">${escapeHtml(saved.adjustmentExplanation || "")}</textarea>
+                <span class="hint">Required when changing a mapped objective result. Auto reference: ${autoVal === "" ? "none" : autoVal}</span>
+              </div>` : ""}
+            </fieldset>
+          `;
+        }).join("")}
+      </section>
+      <section class="card">
+        <div class="field">
+          <label for="strengths">Strengths demonstrated</label>
+          <textarea id="strengths" name="strengths">${escapeHtml(review.strengths || "")}</textarea>
+        </div>
+        <div class="field">
+          <label for="developmentAreas">Specific development areas</label>
+          <textarea id="developmentAreas" name="developmentAreas">${escapeHtml(review.developmentAreas || "")}</textarea>
+        </div>
+        <div class="field">
+          <label for="developmentActions">Suggested next steps</label>
+          <textarea id="developmentActions" name="developmentActions" placeholder="Example: review the illustrative connectivity runbook; shadow a Sev1; discuss an escalation route with a mentor.">${escapeHtml(review.developmentActions || "")}</textarea>
+        </div>
+        <div class="field">
+          <label for="overallCommentary">Overall constructive commentary</label>
+          <textarea id="overallCommentary" name="overallCommentary">${escapeHtml(review.overallCommentary || "")}</textarea>
+        </div>
+        <div class="field">
+          <label for="readinessRecommendation">Readiness recommendation</label>
+          <select id="readinessRecommendation" name="readinessRecommendation">
+            <option value="">Not set — do not imply readiness from completion</option>
+            <option value="ready" ${review.readinessRecommendation === "ready" ? "selected" : ""}>Ready</option>
+            <option value="ready-with-development" ${review.readinessRecommendation === "ready-with-development" ? "selected" : ""}>Ready with development areas</option>
+            <option value="not-yet-ready" ${review.readinessRecommendation === "not-yet-ready" ? "selected" : ""}>Not yet ready</option>
+          </select>
+        </div>
+        <p class="error-msg" data-review-error></p>
+        <div class="btn-row">
+          <button class="btn secondary" type="submit" data-review-mode="save">Save review</button>
+          <button class="btn" type="submit" data-review-mode="release">Save and release to engineer</button>
+        </div>
+      </section>
+    </form>
+  `;
+}
+
+export function signInView(state) {
+  const people = state.directory || [];
+  return `
+    <div class="page-header">
+      <h1>Sign in</h1>
+      <p class="lede">Choose your name. This browser keeps a local session in place of Microsoft Entra ID, which is how colleagues would sign in for a shared Incident Lab. There is no password here, because a password stored in the browser would not be a real control.</p>
+      <p class="lede">An administrator assigns User, Assessor, or Administrator before you arrive. Signing in does not let you pick a different role.</p>
+    </div>
+    <div class="people-grid">
+      ${people.map((person) => `
+        <button type="button" class="person-card" data-action="sign-in" data-person-id="${escapeHtml(person.id)}">
+          <strong>${escapeHtml(person.name)}</strong>
+          <span>${escapeHtml(person.roleTitle || roleLabel(person.role))}</span>
+          <span>${roleLabel(person.role)}</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+export function accessView(state) {
+  const people = state.directory || [];
+  const adminCount = people.filter((person) => person.role === "administrator").length;
+  return `
+    <div class="page-header">
+      <h1>Access</h1>
+      <p class="lede">Administrators add colleagues and assign one role each. Users practise scenarios and see their own released feedback. Assessors review submissions. Administrators manage scenarios, criteria, and this directory. In production those assignments would be Entra ID groups, checked on the server.</p>
+      ${state.flash ? `<p class="status-msg">${escapeHtml(state.flash)}</p>` : ""}
+    </div>
+    <div class="card table-wrap access-table">
+      <table>
+        <thead><tr><th>Colleague</th><th>Job title</th><th>Access</th><th></th></tr></thead>
+        <tbody>
+          ${people.map((person) => `
+            <tr>
+              <td>${escapeHtml(person.name)}</td>
+              <td>${escapeHtml(person.roleTitle || "—")}</td>
+              <td>
+                <select data-person-role="${escapeHtml(person.id)}" aria-label="Access for ${escapeHtml(person.name)}">
+                  ${["engineer", "assessor", "administrator"].map((role) => `
+                    <option value="${role}" ${person.role === role ? "selected" : ""}>${roleLabel(role)}</option>
+                  `).join("")}
+                </select>
+              </td>
+              <td>
+                <button type="button" class="btn ghost" data-action="remove-person" data-person-id="${escapeHtml(person.id)}" ${person.role === "administrator" && adminCount < 2 ? "disabled" : ""}>Remove</button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+    <form class="card" data-form="add-person" style="margin-top:1rem">
+      <h2>Add a colleague</h2>
+      <div class="field">
+        <label for="person-name">Name</label>
+        <input id="person-name" name="name" type="text" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="person-title">Job title</label>
+        <input id="person-title" name="roleTitle" type="text" placeholder="VDS Platform Engineer">
+      </div>
+      <div class="field">
+        <label for="person-role">Access</label>
+        <select id="person-role" name="role">
+          <option value="engineer">User</option>
+          <option value="assessor">Assessor</option>
+          <option value="administrator">Administrator</option>
+        </select>
+      </div>
+      <button class="btn" type="submit">Add colleague</button>
+      <p class="status-msg" data-form-status></p>
+    </form>
+  `;
+}
+
+export function adminScenariosView(state) {
+  return `
+    <div class="page-header">
+      <h1>Scenario management</h1>
+      <p class="lede">Create or import JSON, validate, and publish. Bundled sample scenarios can be overridden in this browser without changing the source files until you export.</p>
+    </div>
+    <div class="btn-row">
+      <a class="btn" href="#/admin/import">Import or create JSON</a>
+      <button class="btn danger" data-action="reset-demo">Reset demo data</button>
+    </div>
+    <div class="card table-wrap" style="margin-top:1rem">
+      <table>
+        <thead><tr><th>Title</th><th>Id / version</th><th>Status</th><th>Mandatory</th><th></th></tr></thead>
+        <tbody>
+          ${state.scenarios.map((item) => `
+            <tr>
+              <td>${escapeHtml(item.title)}</td>
+              <td>${escapeHtml(item.id)} · ${escapeHtml(item.version)}</td>
+              <td><span class="pill ${statusClass(item.status)}">${statusLabel(item.status)}</span></td>
+              <td>${item.mandatory ? "Yes" : "No"}</td>
+              <td>
+                <a href="#/admin/scenario/${encodeURIComponent(item.id)}">Edit</a>
+                · <button class="btn ghost" data-action="toggle-publish" data-scenario-id="${escapeHtml(item.id)}">${item.status === "published" ? "Unpublish" : "Publish"}</button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+export function adminImportView(scenario) {
+  const json = scenario ? JSON.stringify(scenario, null, 2) : sampleTemplate();
+  return `
+    <div class="page-header">
+      <h1>${scenario ? "Edit scenario JSON" : "Import or create a scenario"}</h1>
+      <p class="lede">JSON is validated before it is stored. User-entered content is escaped when rendered. Keep illustrative disclaimers on every scenario.</p>
+    </div>
+    <form class="card" data-form="import-scenario">
+      <div class="field">
+        <label for="scenario-file">Optional file import</label>
+        <input id="scenario-file" type="file" accept="application/json,.json">
+      </div>
+      <div class="field">
+        <label for="scenario-json">Scenario JSON</label>
+        <textarea id="scenario-json" name="json" class="json-editor" required>${escapeHtml(json)}</textarea>
+      </div>
+      <p class="error-msg" data-import-error></p>
+      <div class="btn-row">
+        <button class="btn secondary" type="submit" data-import-mode="draft">Validate and save draft</button>
+        <button class="btn" type="submit" data-import-mode="published">Validate and publish</button>
+      </div>
+    </form>
+  `;
+}
+
+export function adminProposalsView(state) {
+  return `
+    <div class="page-header">
+      <h1>Scenario proposals</h1>
+      <p class="lede">Engineer suggestions await review. Publishing still requires valid scenario JSON.</p>
+    </div>
+    <div class="stack">
+      ${(state.proposals || []).length ? state.proposals.map((item) => `
+        <article class="card">
+          <p class="subtle">${escapeHtml(item.authorName)} · ${formatDateTime(item.createdAt)} · ${escapeHtml(item.status)}</p>
+          <h2>${escapeHtml(item.title)}</h2>
+          <p>${nl(item.summary)}</p>
+          <p><strong>Draft questions</strong><br>${nl(item.questions)}</p>
+          <p><strong>Domains</strong> ${escapeHtml(item.domains || "—")}</p>
+          ${item.status === "open" ? `<button class="btn secondary" data-action="close-proposal" data-proposal-id="${item.id}">Mark reviewed</button>` : ""}
+        </article>
+      `).join("") : `<div class="empty-state">No proposals yet.</div>`}
+    </div>
+  `;
+}
+
+export function adminCriteriaView(state) {
+  const cfg = state.readinessConfig;
+  return `
+    <div class="page-header">
+      <h1>Readiness criteria</h1>
+      <p class="lede">These gates support the assessor. They do not auto-certify anyone.</p>
+    </div>
+    <form class="card" data-form="criteria">
+      <div class="field">
+        <label>
+          <input type="checkbox" name="requiredMandatoryScenarios" ${cfg.requiredMandatoryScenarios ? "checked" : ""}>
+          Required scenarios must have released reviews
+        </label>
+      </div>
+      <div class="field">
+        <label>
+          <input type="checkbox" name="allRequiredReviewed" ${cfg.allRequiredReviewed ? "checked" : ""}>
+          Capability criteria on those attempts should be reviewed before a Ready outcome
+        </label>
+      </div>
+      <div class="field">
+        <label for="mandatoryCriterionMinimum">Minimum score for mandatory criteria (0–3)</label>
+        <input id="mandatoryCriterionMinimum" name="mandatoryCriterionMinimum" type="number" min="0" max="3" step="1" value="${escapeHtml(cfg.mandatoryCriterionMinimum)}">
+      </div>
+      <div class="field">
+        <label for="notes">Assessor notes</label>
+        <textarea id="notes" name="notes">${escapeHtml(cfg.notes || "")}</textarea>
+      </div>
+      <button class="btn" type="submit">Save criteria</button>
+      <p class="status-msg" data-form-status></p>
+    </form>
+  `;
+}
+
+function sampleTemplate() {
+  return JSON.stringify({
+    id: "vds-custom-001",
+    version: "1.0.0",
+    status: "draft",
+    title: "Custom illustrative scenario title",
+    description: "Describe the Sev1 OOH situation in at least twenty characters.",
+    scope: "Out-of-hours VDS practice scenario.",
+    difficulty: "foundation",
+    estimatedMinutes: 30,
+    mandatory: false,
+    illustrativeDisclaimer: "Illustrative content. Validate against approved operational sources before use.",
+    assessorGuidance: "Reward sound investigation order and appropriate escalation.",
+    acceptableAlternativeApproaches: ["Document-led investigation before platform changes."],
+    documentationReferences: [{ title: "Illustrative runbook title", note: "Confirm locally." }],
+    initialIncident: {
+      callSummary: "Replace with a fictional support call summary for the engineer.",
+      serviceNow: {
+        incidentNumber: "INC0000000",
+        priority: "1 — Critical",
+        assignmentGroup: "VDS Platform Support (illustrative)",
+        opened: "2026-01-01 00:00 UTC",
+        caller: "Service Desk",
+        affectedCI: "VDS-UK-PROD",
+        shortDescription: "Short description",
+        description: "Longer illustrative description."
+      },
+      impact: {
+        customers: "Illustrative user impact.",
+        colleagues: "Illustrative colleague impact.",
+        business: "Illustrative business impact."
+      }
+    },
+    evidence: [{ id: "e1", title: "Sample evidence", type: "Notes", revealAfterQuestionIndex: 0, content: "Illustrative panel." }],
+    questions: [
+      {
+        id: "q1",
+        type: "written",
+        prompt: "What would you check first, and why?",
+        capabilityDomainIds: ["incident-assessment"],
+        assessorGuidance: "Reward a scoped first check before any platform change. Do not score an unsafe first action as demonstrated."
+      },
+      {
+        id: "q2",
+        type: "written",
+        prompt: "What fault domains would you consider, and which would you set aside?",
+        capabilityDomainIds: ["avd-technical", "networking"],
+        assessorGuidance: "Look for more than one relevant fault domain, and for the engineer setting aside an unsupported one."
+      },
+      {
+        id: "q3",
+        type: "written",
+        prompt: "When would you engage Microsoft or another team?",
+        capabilityDomainIds: ["escalation"],
+        assessorGuidance: "Written answers require assessor review. Do not use keyword matching."
+      },
+      {
+        id: "q4",
+        type: "written",
+        prompt: "How would you confirm service recovery?",
+        capabilityDomainIds: ["communication"],
+        assessorGuidance: "Expect user confirmation plus telemetry. Closing from a green portal tile alone is not enough."
+      }
+    ],
+    scoringCriteria: [
+      {
+        id: "c1",
+        label: "Establishes impact before changes",
+        domainId: "incident-assessment",
+        maxScore: 3,
+        mandatory: true,
+        safetyCritical: false,
+        questionIds: ["q1"]
+      },
+      {
+        id: "c2",
+        label: "Uses the support model",
+        domainId: "escalation",
+        maxScore: 3,
+        mandatory: true,
+        safetyCritical: true,
+        questionIds: ["q3"]
+      }
+    ]
+  }, null, 2);
+}
+
+function aggregateReleasedDomains(state) {
+  const mine = attemptsFor(state.attempts, state.person.id).filter((item) => item.status === "released");
+  const results = mine.flatMap((item) => buildCriterionResults(item.scenarioSnapshot, item.answers, item.review));
+  return summariseDomains(state.config.capabilityDomains, results);
+}
+
+export { formatAnswer, hasAnswer };

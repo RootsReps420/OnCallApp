@@ -1,0 +1,208 @@
+import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints } from "./scoring.js";
+import { validateScenario } from "./validation.js";
+import * as storage from "./storage.js";
+
+function fixtureQuestionSingle() {
+  return {
+    id: "q-single",
+    type: "single",
+    prompt: "Choose the most appropriate first check.",
+    capabilityDomainIds: ["incident-assessment"],
+    options: [
+      { id: "good", text: "Good", credit: 1, rationale: "full" },
+      { id: "ok", text: "Partial", credit: 0.5, rationale: "half" },
+      { id: "bad", text: "Poor", credit: 0, rationale: "none" }
+    ]
+  };
+}
+
+function fixtureQuestionMulti() {
+  return {
+    id: "q-multi",
+    type: "multiple",
+    prompt: "Choose every action that belongs in the first checks.",
+    capabilityDomainIds: ["networking"],
+    options: [
+      { id: "a", text: "A", credit: 0.5, rationale: "needed" },
+      { id: "b", text: "B", credit: 0.5, rationale: "needed" },
+      { id: "c", text: "C", credit: -0.5, rationale: "unsafe" }
+    ],
+    partialCreditRules: {
+      method: "sum-option-credits",
+      requiredIds: ["a"],
+      missingRequiredMax: 0.4,
+      clampMin: 0,
+      clampMax: 1
+    }
+  };
+}
+
+function fixtureQuestionWritten() {
+  return {
+    id: "q-write",
+    type: "written",
+    prompt: "Explain when you would engage another team.",
+    capabilityDomainIds: ["communication"]
+  };
+}
+
+function fixtureScenario() {
+  return {
+    id: "fixture-001",
+    version: "1.0.0",
+    status: "published",
+    title: "Fixture scenario for tests",
+    description: "Used only by the verification page to exercise scoring rules.",
+    scope: "Tests",
+    difficulty: "foundation",
+    estimatedMinutes: 10,
+    mandatory: true,
+    illustrativeDisclaimer: "Illustrative content used for automated verification only.",
+    initialIncident: {
+      callSummary: "A fictional call summary used by verification only.",
+      serviceNow: {
+        incidentNumber: "INC1",
+        priority: "1",
+        assignmentGroup: "VDS",
+        opened: "now",
+        shortDescription: "short",
+        description: "desc",
+        caller: "desk",
+        affectedCI: "ci"
+      },
+      impact: { customers: "c", colleagues: "c", business: "b" }
+    },
+    evidence: [{ id: "e1", title: "E", content: "x" }],
+    questions: [
+      fixtureQuestionSingle(),
+      fixtureQuestionMulti(),
+      fixtureQuestionWritten(),
+      {
+        id: "q-recover",
+        type: "single",
+        prompt: "How would you confirm recovery?",
+        capabilityDomainIds: ["communication"],
+        options: [
+          { id: "a", text: "Ask a user and check telemetry", credit: 1, rationale: "full" },
+          { id: "b", text: "Close immediately", credit: 0, rationale: "none" }
+        ]
+      }
+    ],
+    scoringCriteria: [
+      {
+        id: "c-obj",
+        label: "Objective criterion",
+        domainId: "incident-assessment",
+        maxScore: 3,
+        mandatory: true,
+        safetyCritical: false,
+        questionIds: ["q-single"]
+      },
+      {
+        id: "c-write",
+        label: "Written criterion",
+        domainId: "communication",
+        maxScore: 3,
+        mandatory: true,
+        safetyCritical: true,
+        questionIds: ["q-write"]
+      }
+    ]
+  };
+}
+
+export function runVerification() {
+  const results = [];
+  const check = (name, condition, detail = "") => {
+    results.push({ name, ok: Boolean(condition), detail });
+  };
+
+  const singleGood = scoreObjectiveQuestion(fixtureQuestionSingle(), "good");
+  check("Single-choice full credit uses option mapping", singleGood.credit === 1, singleGood.detail);
+
+  const singlePartial = scoreObjectiveQuestion(fixtureQuestionSingle(), "ok");
+  check("Single-choice partial credit", singlePartial.credit === 0.5);
+
+  const unanswered = scoreObjectiveQuestion(fixtureQuestionSingle(), "");
+  check("Unanswered objective is not scored as zero", unanswered.status === "unanswered" && unanswered.credit == null);
+
+  const multi = scoreObjectiveQuestion(fixtureQuestionMulti(), ["a", "b"]);
+  check("Multiple-choice summed credits clamp at 1", multi.credit === 1);
+
+  const multiPenalty = scoreObjectiveQuestion(fixtureQuestionMulti(), ["a", "c"]);
+  check("Multiple-choice applies explicit negative credit and clamp", multiPenalty.credit === 0);
+
+  const missingRequired = scoreObjectiveQuestion(fixtureQuestionMulti(), ["b"]);
+  check("Missing required option caps credit", missingRequired.credit === 0.4);
+
+  const writtenEmpty = scoreObjectiveQuestion(fixtureQuestionWritten(), "  ");
+  check("Empty written remains unanswered, not zero", writtenEmpty.status === "unanswered");
+
+  const writtenPending = scoreObjectiveQuestion(fixtureQuestionWritten(), "I would page MIM and Identity.");
+  check("Written answers stay pending-review with no keyword score", writtenPending.status === "pending-review" && writtenPending.credit == null);
+
+  check("Credit 1 maps to score 3", creditToScore(1) === 3);
+  check("Credit 0.5 maps to score 1.5", creditToScore(0.5) === 1.5);
+
+  const scenario = fixtureScenario();
+  const pendingResults = buildCriterionResults(scenario, { "q-single": "good", "q-write": "A thoughtful paragraph." }, null);
+  const writtenCrit = pendingResults.find((item) => item.id === "c-write");
+  const objCrit = pendingResults.find((item) => item.id === "c-obj");
+  check("Written criterion is pending, not zero", writtenCrit.status === "pending-review" && writtenCrit.score == null);
+  check("Objective criterion auto-scores from mapping", objCrit.status === "auto-scored" && objCrit.score === 3);
+
+  const reviewed = buildCriterionResults(scenario, { "q-single": "good", "q-write": "text" }, {
+    criterionScores: { "c-write": { score: 2, evidence: "Sound escalation." } }
+  });
+  check("Assessor review replaces pending written score", reviewed.find((item) => item.id === "c-write").score === 2);
+
+  const domains = summariseDomains([
+    { id: "incident-assessment", name: "Impact" },
+    { id: "communication", name: "Comms" }
+  ], pendingResults);
+  check("Domain percentage ignores pending written criteria", domains[0].percentage === 100 && domains[1].percentage == null);
+
+  const hints = attemptOutcomeHints(pendingResults, domains, false);
+  check("Incomplete evidence is distinct from demonstrated capability", hints.hasIncompleteEvidence === true);
+  check("Suggested band withheld while evidence is incomplete", hints.suggestedBand == null);
+
+  const unmet = attemptOutcomeHints(
+    [{ mandatory: true, score: 1, maxScore: 3, pendingReview: false, unanswered: false, label: "Mandatory gap", safetyCritical: false, domainId: "x" }],
+    [{ percentage: 90 }],
+    true
+  );
+  check("High average cannot hide unmet mandatory criterion", unmet.averageCannotHideMandatory === true && unmet.suggestedBand === "not-yet-ready");
+
+  const valid = validateScenario(scenario);
+  check("Fixture scenario validates", valid.ok, valid.errors?.map((e) => `${e.path}: ${e.message}`).join("; "));
+
+  const invalid = validateScenario({ id: "x" });
+  check("Incomplete JSON is rejected", invalid.ok === false && invalid.errors.length > 0);
+
+  const key = "incident-lab:attempts";
+  const previous = localStorage.getItem(key);
+  try {
+    storage.saveAttempt({
+      id: "attempt-verify-temp",
+      scenarioId: "fixture-001",
+      scenarioVersion: "1.0.0",
+      status: "in-progress",
+      answers: { "q-single": "ok" },
+      startedAt: "2026-01-01T00:00:00.000Z"
+    });
+    const loaded = storage.getAttempt("attempt-verify-temp");
+    check("Attempt persists and restores answers", loaded?.answers?.["q-single"] === "ok");
+    check("Submitted attempt keeps scenario version", loaded?.scenarioVersion === "1.0.0");
+    const remaining = storage.getAttempts().filter((item) => item.id !== "attempt-verify-temp");
+    localStorage.setItem(key, JSON.stringify(remaining));
+  } catch (error) {
+    check("Persistence round-trip", false, String(error));
+  } finally {
+    if (previous == null) {
+      const remaining = storage.getAttempts().filter((item) => item.id !== "attempt-verify-temp");
+      localStorage.setItem(key, JSON.stringify(remaining));
+    }
+  }
+
+  return results;
+}

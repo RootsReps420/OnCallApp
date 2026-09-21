@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Incident Lab is a supportive assessment and development tool for Virtual Desktop Service engineers.">
+  <title>Incident Lab — VDS readiness</title>
+  <script>
+    try {
+      var storedTheme = localStorage.getItem("incident-lab:theme");
+      document.documentElement.dataset.theme = storedTheme === "light" ? "light" : "dark";
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="css/styles.css?v=7">
+  <link rel="icon" href="assets/lloyds-horse.svg">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="app">
+    <p class="boot-status">Loading Incident Lab…</p>
+  </div>
+  <script type="module" src="js/app.js?v=7"></script>
+</body>
+</html>

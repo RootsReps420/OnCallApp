@@ -1,0 +1,137 @@
+const QUESTION_TYPES = new Set(["single", "multiple", "written"]);
+const DIFFICULTIES = new Set(["foundation", "intermediate", "advanced"]);
+const STATUSES = new Set(["draft", "published"]);
+
+function fail(errors, path, message) {
+  errors.push({ path, message });
+}
+
+function requireString(errors, path, value, min = 1) {
+  if (typeof value !== "string" || value.trim().length < min) {
+    fail(errors, path, `Expected a non-empty string (min ${min} characters).`);
+  }
+}
+
+function requireArray(errors, path, value) {
+  if (!Array.isArray(value)) {
+    fail(errors, path, "Expected an array.");
+    return false;
+  }
+  return true;
+}
+
+export function validateScenario(scenario) {
+  const errors = [];
+  if (!scenario || typeof scenario !== "object" || Array.isArray(scenario)) {
+    return { ok: false, errors: [{ path: "$", message: "Scenario must be a JSON object." }] };
+  }
+
+  requireString(errors, "id", scenario.id);
+  requireString(errors, "version", scenario.version);
+  if (!STATUSES.has(scenario.status)) fail(errors, "status", "Status must be draft or published.");
+  requireString(errors, "title", scenario.title, 8);
+  requireString(errors, "description", scenario.description, 20);
+  requireString(errors, "scope", scenario.scope);
+  if (!DIFFICULTIES.has(scenario.difficulty)) {
+    fail(errors, "difficulty", "Difficulty must be foundation, intermediate, or advanced.");
+  }
+  if (typeof scenario.estimatedMinutes !== "number" || scenario.estimatedMinutes < 5) {
+    fail(errors, "estimatedMinutes", "Estimated minutes must be a number of at least 5.");
+  }
+  if (typeof scenario.mandatory !== "boolean") fail(errors, "mandatory", "mandatory must be true or false.");
+  requireString(errors, "illustrativeDisclaimer", scenario.illustrativeDisclaimer, 20);
+
+  if (!scenario.initialIncident || typeof scenario.initialIncident !== "object") {
+    fail(errors, "initialIncident", "initialIncident is required.");
+  } else {
+    requireString(errors, "initialIncident.callSummary", scenario.initialIncident.callSummary, 20);
+    const snow = scenario.initialIncident.serviceNow;
+    if (!snow) fail(errors, "initialIncident.serviceNow", "A mock ServiceNow record is required.");
+    else {
+      ["incidentNumber", "priority", "assignmentGroup", "opened", "shortDescription", "description", "caller", "affectedCI"]
+        .forEach((key) => requireString(errors, `initialIncident.serviceNow.${key}`, snow[key]));
+    }
+    if (!scenario.initialIncident.impact) fail(errors, "initialIncident.impact", "Impact details are required.");
+  }
+
+  if (!requireArray(errors, "questions", scenario.questions)) {
+    return { ok: false, errors };
+  }
+  if (scenario.questions.length < 4 || scenario.questions.length > 12) {
+    fail(errors, "questions", "Provide between 4 and 12 questions (MVP target is 6–8).");
+  }
+
+  const questionIds = new Set();
+  scenario.questions.forEach((question, index) => {
+    const path = `questions[${index}]`;
+    if (!question?.id) fail(errors, `${path}.id`, "Question id is required.");
+    else if (questionIds.has(question.id)) fail(errors, `${path}.id`, "Question ids must be unique.");
+    else questionIds.add(question.id);
+    if (!QUESTION_TYPES.has(question.type)) fail(errors, `${path}.type`, "Type must be single, multiple, or written.");
+    requireString(errors, `${path}.prompt`, question.prompt, 10);
+    if (!Array.isArray(question.capabilityDomainIds) || !question.capabilityDomainIds.length) {
+      fail(errors, `${path}.capabilityDomainIds`, "Map the question to at least one capability domain.");
+    }
+    if (question.type !== "written") {
+      if (!Array.isArray(question.options) || question.options.length < 2) {
+        fail(errors, `${path}.options`, "Objective questions need at least two options.");
+      } else {
+        const optionIds = new Set();
+        question.options.forEach((option, optionIndex) => {
+          if (!option?.id) fail(errors, `${path}.options[${optionIndex}].id`, "Option id required.");
+          else if (optionIds.has(option.id)) fail(errors, `${path}.options[${optionIndex}].id`, "Option ids must be unique.");
+          else optionIds.add(option.id);
+          requireString(errors, `${path}.options[${optionIndex}].text`, option.text);
+          if (typeof option.credit !== "number") {
+            fail(errors, `${path}.options[${optionIndex}].credit`, "Each option needs an explicit numeric credit.");
+          }
+        });
+      }
+      if (question.type === "multiple" && !question.partialCreditRules) {
+        fail(errors, `${path}.partialCreditRules`, "Multiple-choice questions need explicit partial-credit rules.");
+      }
+    } else if (question.options) {
+      fail(errors, `${path}.options`, "Written questions must not include scored options.");
+    }
+  });
+
+  if (!requireArray(errors, "scoringCriteria", scenario.scoringCriteria)) {
+    return { ok: false, errors };
+  }
+  if (!scenario.scoringCriteria.length) fail(errors, "scoringCriteria", "At least one scoring criterion is required.");
+  const criterionIds = new Set();
+  scenario.scoringCriteria.forEach((criterion, index) => {
+    const path = `scoringCriteria[${index}]`;
+    if (!criterion?.id) fail(errors, `${path}.id`, "Criterion id required.");
+    else if (criterionIds.has(criterion.id)) fail(errors, `${path}.id`, "Criterion ids must be unique.");
+    else criterionIds.add(criterion.id);
+    requireString(errors, `${path}.label`, criterion.label);
+    requireString(errors, `${path}.domainId`, criterion.domainId);
+    if (criterion.maxScore !== 3) fail(errors, `${path}.maxScore`, "MVP criterion scale maximum must be 3.");
+    if (typeof criterion.mandatory !== "boolean") fail(errors, `${path}.mandatory`, "mandatory flag required.");
+    if (typeof criterion.safetyCritical !== "boolean") fail(errors, `${path}.safetyCritical`, "safetyCritical flag required.");
+    if (!Array.isArray(criterion.questionIds) || !criterion.questionIds.length) {
+      fail(errors, `${path}.questionIds`, "Link the criterion to at least one question.");
+    } else {
+      criterion.questionIds.forEach((id) => {
+        if (!questionIds.has(id)) fail(errors, `${path}.questionIds`, `Unknown question id ${id}.`);
+      });
+    }
+  });
+
+  if (Array.isArray(scenario.evidence)) {
+    scenario.evidence.forEach((item, index) => {
+      requireString(errors, `evidence[${index}].id`, item?.id);
+      requireString(errors, `evidence[${index}].title`, item?.title);
+      requireString(errors, `evidence[${index}].content`, item?.content);
+    });
+  } else {
+    fail(errors, "evidence", "Evidence array is required.");
+  }
+
+  return { ok: errors.length === 0, errors };
+}
+
+export function formatValidationErrors(errors) {
+  return errors.map((error) => `${error.path}: ${error.message}`).join("\n");
+}
