@@ -1,6 +1,6 @@
 # Incident Lab
 
-Incident Lab is a practice tool for Virtual Desktop Service engineers. They work through a fictional Sev1 out-of-hours incident, write what they would do, and an assessor reads the answers.
+Incident Lab is a practice tool for Virtual Desktop Infrastructure engineers. They work through a fictional Sev1 out-of-hours incident, write what they would do, and an assessor reads the answers.
 
 It does not connect to Azure, ServiceNow, or a live incident. The sample tickets and runbooks are for practice. Completing a scenario is not a certificate, and there is no leaderboard.
 

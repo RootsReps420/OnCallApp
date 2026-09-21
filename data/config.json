@@ -1,6 +1,6 @@
 {
   "appName": "Incident Lab",
-  "serviceName": "Virtual Desktop Service (VDS)",
+  "serviceName": "Virtual Desktop Infrastructure (VDI)",
   "prototypeNotice": "Virtual Team · Incident Lab. Sign in with an ignitemyfire.co.uk account. An administrator assigns User, Assessor, or Administrator in Entra ID. Assessment records still stay in this browser until a shared service exists.",
   "entra": {
     "enabled": true,
@@ -57,9 +57,9 @@
     "notes": "A high domain average must not hide an unmet mandatory criterion. Completion of attempts is not readiness."
   },
   "demoPeople": {
-    "engineer": { "id": "demo-engineer", "name": "Alex Chen", "roleTitle": "VDS Platform Engineer" },
-    "assessor": { "id": "demo-assessor", "name": "Jordan Blake", "roleTitle": "VDS Senior Engineer / Assessor" },
-    "administrator": { "id": "demo-admin", "name": "Sam Rivera", "roleTitle": "VDS Enablement Administrator" }
+    "engineer": { "id": "demo-engineer", "name": "Alex Chen", "roleTitle": "VDI Platform Engineer" },
+    "assessor": { "id": "demo-assessor", "name": "Jordan Blake", "roleTitle": "VDI Senior Engineer / Assessor" },
+    "administrator": { "id": "demo-admin", "name": "Sam Rivera", "roleTitle": "VDI Enablement Administrator" }
   },
   "bundledScenarioFiles": [
     "data/scenarios/avd-connection-failures.json",

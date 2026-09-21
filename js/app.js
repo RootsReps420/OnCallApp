@@ -6,9 +6,9 @@ import { createId, nowIso, parseHash, navigate, downloadJson } from "./util.js";
 import * as storage from "./storage.js";
 import { loadConfig, loadLibrary } from "./content.js";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel } from "./render.js?v=13";
-import * as views from "./views.js?v=13";
-import * as auth from "./auth.js?v=13";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=18";
+import * as views from "./views.js?v=18";
+import * as auth from "./auth.js?v=18";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
 import { runVerification } from "./tests.js";
 
@@ -101,8 +101,11 @@ function render() {
     path: state.person ? path : "/sign-in",
     body,
     person: state.person,
-    theme: document.documentElement.dataset.theme || storage.getTheme()
+    theme: document.documentElement.dataset.theme || storage.getTheme(),
+    entraEnabled: state.entraEnabled
   });
+  bindReadinessGraph();
+  bindPageFilters();
   const main = document.getElementById("main");
   if (main && document.activeElement === document.body) {
     main.focus({ preventScroll: true });
@@ -243,6 +246,17 @@ function onClick(event) {
     const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
     storage.setTheme(next);
     render();
+    return;
+  }
+  if (action === "toggle-sidebar") {
+    document.querySelector(".app-shell")?.classList.toggle("sidebar-open");
+    return;
+  }
+  if (action === "dash-range") {
+    document.querySelectorAll("[data-action='dash-range']").forEach((item) => {
+      item.setAttribute("aria-pressed", item === button ? "true" : "false");
+    });
+    applyPageFilters();
     return;
   }
   if (action === "start-scenario") {
@@ -653,3 +667,28 @@ document.addEventListener("click", (event) => {
 });
 
 boot();
+
+function bindPageFilters() {
+  const input = document.querySelector("[data-global-search]");
+  if (input) {
+    input.addEventListener("input", applyPageFilters);
+  }
+}
+
+function applyPageFilters() {
+  const query = (document.querySelector("[data-global-search]")?.value || "").trim().toLowerCase();
+  const pressed = document.querySelector("[data-action='dash-range'][aria-pressed='true']");
+  const range = pressed?.getAttribute("data-range") || "all";
+  const windowMs = range === "7" ? 7 * 86400000 : range === "30" ? 30 * 86400000 : 0;
+  const now = Date.now();
+  document.querySelectorAll("[data-search], [data-started]").forEach((el) => {
+    const hay = (el.getAttribute("data-search") || el.textContent || "").toLowerCase();
+    const matchesSearch = !query || hay.includes(query);
+    let matchesRange = true;
+    if (windowMs && el.hasAttribute("data-started")) {
+      const started = Date.parse(el.getAttribute("data-started"));
+      matchesRange = Number.isFinite(started) && now - started <= windowMs;
+    }
+    el.hidden = !(matchesSearch && matchesRange);
+  });
+}

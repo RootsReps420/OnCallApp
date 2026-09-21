@@ -17,7 +17,7 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDS AVD connectivity investigation (illustrative runbook)",
+      "title": "VDI AVD connectivity investigation (illustrative runbook)",
       "note": "Would normally cover feed, gateway, host health, and known Microsoft advisories. Confirm the current approved document."
     },
     {
@@ -30,19 +30,19 @@
     }
   ],
   "initialIncident": {
-    "callSummary": "22:14 UTC, Friday. Service Desk calls VDS on-call. Overnight operations and several remote users cannot launch desktops from host pool VDS-UK-PROD-HP01. The client shows “We couldn’t connect. Try connecting again.” A few users on VDS-UK-PROD-HP02 connected successfully. About 180 users are in the affected pool. Overnight finance batch monitoring sits on that pool.",
+    "callSummary": "22:14 UTC, Friday. Service Desk calls VDI on-call. Overnight operations and several remote users cannot launch desktops from host pool VDI-UK-PROD-HP01. The client shows “We couldn’t connect. Try connecting again.” A few users on VDI-UK-PROD-HP02 connected successfully. About 180 users are in the affected pool. Overnight finance batch monitoring sits on that pool.",
     "serviceNow": {
       "incidentNumber": "INC0001847",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDS Platform Support (illustrative)",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
       "opened": "2026-09-18 22:16 UTC",
       "caller": "Service Desk on behalf of Overnight Operations",
-      "affectedCI": "VDS-UK-PROD-HP01 (host pool)",
-      "shortDescription": "Multiple users unable to connect to AVD host pool VDS-UK-PROD-HP01",
+      "affectedCI": "VDI-UK-PROD-HP01 (host pool)",
+      "shortDescription": "Multiple users unable to connect to AVD host pool VDI-UK-PROD-HP01",
       "description": "Users report failure at connection time, not after login to Windows. Error text: We couldn’t connect to the remote PC. Try connecting again. First report 22:09 UTC. Impact growing. No recent approved change recorded against this host pool in the mock change calendar."
     },
     "impact": {
-      "customers": "Internal desktop users of VDS-UK-PROD-HP01, including overnight operations (~180 users in pool; reports still arriving).",
+      "customers": "Internal desktop users of VDI-UK-PROD-HP01, including overnight operations (~180 users in pool; reports still arriving).",
       "colleagues": "Service Desk handling repeat contacts; finance operations awaiting batch monitoring access.",
       "business": "Overnight monitoring of finance batch jobs cannot be performed from the affected desktops. Duration 20+ minutes at raise time."
     }
@@ -60,14 +60,14 @@
       "title": "Host pool session host status",
       "type": "Portal snapshot (text)",
       "revealAfterQuestionIndex": 1,
-      "content": "Host pool: VDS-UK-PROD-HP01\nLoad balancing: Breadth-first\nMax session limit: 16\n\nvdshp01-sh-01  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-02  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-03  Power: Running  Status: Available    Sessions: 2  (pre-existing)\nvdshp01-sh-04  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-05  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-06  Power: Running  Status: Available    Sessions: 1  (pre-existing)\nvdshp01-sh-07  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-08  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-09  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-10 Power: Running  Status: Available    Sessions: 3  (pre-existing)\nvdshp01-sh-11 Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-12 Power: Running  Status: Unavailable  Sessions: 0\n\nNote: Available hosts are not accepting new connections from the client; existing sessions remain. Illustrative snapshot."
+      "content": "Host pool: VDI-UK-PROD-HP01\nLoad balancing: Breadth-first\nMax session limit: 16\n\nvdshp01-sh-01  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-02  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-03  Power: Running  Status: Available    Sessions: 2  (pre-existing)\nvdshp01-sh-04  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-05  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-06  Power: Running  Status: Available    Sessions: 1  (pre-existing)\nvdshp01-sh-07  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-08  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-09  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-10 Power: Running  Status: Available    Sessions: 3  (pre-existing)\nvdshp01-sh-11 Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-12 Power: Running  Status: Unavailable  Sessions: 0\n\nNote: Available hosts are not accepting new connections from the client; existing sessions remain. Illustrative snapshot."
     },
     {
       "id": "e-logs",
       "title": "Connection diagnostics (Log Analytics excerpt)",
       "type": "Logs",
       "revealAfterQuestionIndex": 2,
-      "content": "WVDConnections | where TimeGenerated > ago(1h) | where State == 'Failed'\n\n22:11:04  User: ops.night.04  HostPool: VDS-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: GatewayTimeout  Code: 0x3000047\n22:12:19  User: ops.night.11  HostPool: VDS-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: ConnectionFailed  Code: 0x3000047\n22:14:02  User: trader.batch.2 HostPool: VDS-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: GatewayTimeout  Code: 0x3000047\n\nWVDCheckpoints for successful pre-existing sessions on sh-03/06/10 show no recent disconnects.\nIllustrative log extract — not live data."
+      "content": "WVDConnections | where TimeGenerated > ago(1h) | where State == 'Failed'\n\n22:11:04  User: ops.night.04  HostPool: VDI-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: GatewayTimeout  Code: 0x3000047\n22:12:19  User: ops.night.11  HostPool: VDI-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: ConnectionFailed  Code: 0x3000047\n22:14:02  User: trader.batch.2 HostPool: VDI-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: GatewayTimeout  Code: 0x3000047\n\nWVDCheckpoints for successful pre-existing sessions on sh-03/06/10 show no recent disconnects.\nIllustrative log extract — not live data."
     },
     {
       "id": "e-network",
@@ -94,7 +94,7 @@
         "documentation",
         "avd-technical"
       ],
-      "assessorGuidance": "Full credit if the engineer protects existing sessions, uses the runbook, and checks health/impact. Selecting a reboot-all or image rebuild should not receive a demonstrated score. A strong answer covers: Confirm who is affected, which host pool is named, and whether existing sessions survive — before changing hosts. (Establishes blast radius and avoids treating a control-plane issue as a local host fault.); Open the illustrative AVD connectivity runbook and Azure Service Health for the region. (Documentation use and service-health awareness are expected first steps.); Ask Service Desk to keep gathering user counts, error text, and whether HP02 remains usable. (Improves impact assessment without delaying the platform checks.). Do not treat the response as demonstrated if it relies on: Immediately reboot every session host in VDS-UK-PROD-HP01 to clear a probable local freeze.; Rebuild the host pool golden image as the first action so users can connect to new hosts..",
+      "assessorGuidance": "Full credit if the engineer protects existing sessions, uses the runbook, and checks health/impact. Selecting a reboot-all or image rebuild should not receive a demonstrated score. A strong answer covers: Confirm who is affected, which host pool is named, and whether existing sessions survive — before changing hosts. (Establishes blast radius and avoids treating a control-plane issue as a local host fault.); Open the illustrative AVD connectivity runbook and Azure Service Health for the region. (Documentation use and service-health awareness are expected first steps.); Ask Service Desk to keep gathering user counts, error text, and whether HP02 remains usable. (Improves impact assessment without delaying the platform checks.). Do not treat the response as demonstrated if it relies on: Immediately reboot every session host in VDI-UK-PROD-HP01 to clear a probable local freeze.; Rebuild the host pool golden image as the first action so users can connect to new hosts..",
       "helpText": "More than one investigation path can be valid. Focus on safe, high-value first checks rather than a single root-cause guess.",
       "acceptableApproaches": [
         "Runbook + Service Health + impact confirmation, in any order, before host changes."

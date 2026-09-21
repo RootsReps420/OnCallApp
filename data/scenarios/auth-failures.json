@@ -17,15 +17,15 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDS AVD access and application groups (illustrative runbook)",
+      "title": "VDI AVD access and application groups (illustrative runbook)",
       "note": "Would normally cover desktop vs RemoteApp assignment and group nesting. Confirm locally."
     },
     {
       "title": "Entra / Conditional Access triage with Identity (illustrative)",
-      "note": "Would normally describe how VDS and Identity share sign-in logs. Confirm locally."
+      "note": "Would normally describe how VDI and Identity share sign-in logs. Confirm locally."
     },
     {
-      "title": "Joiner-mover-leaver impact on VDS (illustrative)",
+      "title": "Joiner-mover-leaver impact on VDI (illustrative)",
       "note": "Would normally cover nested group risk. Confirm locally."
     }
   ],
@@ -34,17 +34,17 @@
     "serviceNow": {
       "incidentNumber": "INC0002011",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDS Platform Support (illustrative)",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
       "opened": "2026-09-17 23:44 UTC",
       "caller": "Payments Operations Duty Manager",
-      "affectedCI": "VDS-UK-PROD-HP01 application group / Entra group sg-vds-payments-ops (illustrative)",
+      "affectedCI": "VDI-UK-PROD-HP01 application group / Entra group sg-vds-payments-ops (illustrative)",
       "shortDescription": "Payments Operations unable to authenticate to AVD",
       "description": "Failure at identity prompt, not inside Windows. Other host-pool users succeed. Recent identity change CHG004398 (illustrative) — nested security group rationalisation."
     },
     "impact": {
-      "customers": "Payments Operations cohort (~35). Other VDS users not reporting the same sign-in failure.",
+      "customers": "Payments Operations cohort (~35). Other VDI users not reporting the same sign-in failure.",
       "colleagues": "Identity on-call aware of a completed change; not yet on a MIM bridge.",
-      "business": "Overnight payments exception queue cannot be processed from VDS. Illustrative impact."
+      "business": "Overnight payments exception queue cannot be processed from VDI. Illustrative impact."
     }
   },
   "evidence": [
@@ -60,28 +60,28 @@
       "title": "Entra sign-in log excerpt (failed user)",
       "type": "Logs",
       "revealAfterQuestionIndex": 1,
-      "content": "User: a.nolan@example (illustrative)\nApp: Azure Virtual Desktop\nStatus: Failure\nError: AADSTS50076 — Due to a configuration change made by your administrator, or because you moved to a new location, you must use multi-factor authentication to access.\nConditional Access: 'VDS-Payments-MFA-StepUp' (illustrative) Result: failure — authentication strength not satisfied.\nDevice: AVD Windows client.\nLocation: Corporate egress.\nThis is sample log text, not a live tenant export."
+      "content": "User: a.nolan@example (illustrative)\nApp: Azure Virtual Desktop\nStatus: Failure\nError: AADSTS50076 — Due to a configuration change made by your administrator, or because you moved to a new location, you must use multi-factor authentication to access.\nConditional Access: 'VDI-Payments-MFA-StepUp' (illustrative) Result: failure — authentication strength not satisfied.\nDevice: AVD Windows client.\nLocation: Corporate egress.\nThis is sample log text, not a live tenant export."
     },
     {
       "id": "e-assign",
       "title": "Application group assignments",
       "type": "Portal snapshot (text)",
       "revealAfterQuestionIndex": 2,
-      "content": "Host pool: VDS-UK-PROD-HP01\nDesktop application group DAG-HP01 assigned to:\n  sg-vds-markets\n  sg-vds-servicedesk\n  sg-vds-payments-ops   <- still assigned\n\nsg-vds-payments-ops members: 35 users (unchanged count).\nNested member group sg-id-payments-mfa-methods: 0 members after CHG004398.\nIllustrative directory snapshot."
+      "content": "Host pool: VDI-UK-PROD-HP01\nDesktop application group DAG-HP01 assigned to:\n  sg-vds-markets\n  sg-vds-servicedesk\n  sg-vds-payments-ops   <- still assigned\n\nsg-vds-payments-ops members: 35 users (unchanged count).\nNested member group sg-id-payments-mfa-methods: 0 members after CHG004398.\nIllustrative directory snapshot."
     },
     {
       "id": "e-ca",
       "title": "Conditional Access policy excerpt",
       "type": "Identity config",
       "revealAfterQuestionIndex": 3,
-      "content": "Policy: VDS-Payments-MFA-StepUp (illustrative)\nUsers: Include sg-vds-payments-ops\nCloud apps: Azure Virtual Desktop, Microsoft Remote Desktop\nGrant: Require authentication strength 'Phishing-resistant or TAP' (illustrative)\nSession: Sign-in frequency 4 hours\nChange CHG004398 removed users from helper group that previously satisfied the strength via a temporary access path.\nNot an approved production policy document."
+      "content": "Policy: VDI-Payments-MFA-StepUp (illustrative)\nUsers: Include sg-vds-payments-ops\nCloud apps: Azure Virtual Desktop, Microsoft Remote Desktop\nGrant: Require authentication strength 'Phishing-resistant or TAP' (illustrative)\nSession: Sign-in frequency 4 hours\nChange CHG004398 removed users from helper group that previously satisfied the strength via a temporary access path.\nNot an approved production policy document."
     },
     {
       "id": "e-working",
       "title": "Working user contrast",
       "type": "Logs",
       "revealAfterQuestionIndex": 4,
-      "content": "User: j.trader@example (illustrative)\nApp: Azure Virtual Desktop\nStatus: Success\nConditional Access: Payments policy not in scope.\nApplied policies: VDS-Baseline-MFA (satisfied).\nIllustrative contrast only."
+      "content": "User: j.trader@example (illustrative)\nApp: Azure Virtual Desktop\nStatus: Success\nConditional Access: Payments policy not in scope.\nApplied policies: VDI-Baseline-MFA (satisfied).\nIllustrative contrast only."
     }
   ],
   "questions": [
@@ -103,7 +103,7 @@
         "incident-assessment",
         "documentation"
       ],
-      "assessorGuidance": "A strong answer covers: Entra sign-in logs for a failed and a successful user, including Conditional Access results. (Primary evidence source.); Whether the desktop application group still includes the Payments Ops assignment group. (Rules in/out a VDS assignment mistake.); Details of CHG004398 and any group membership impact. (Known change in the story.). Do not treat the response as demonstrated if it relies on: BitLocker recovery keys for all session hosts.."
+      "assessorGuidance": "A strong answer covers: Entra sign-in logs for a failed and a successful user, including Conditional Access results. (Primary evidence source.); Whether the desktop application group still includes the Payments Ops assignment group. (Rules in/out a VDI assignment mistake.); Details of CHG004398 and any group membership impact. (Known change in the story.). Do not treat the response as demonstrated if it relies on: BitLocker recovery keys for all session hosts.."
     },
     {
       "id": "q3",
@@ -113,7 +113,7 @@
         "avd-technical",
         "escalation"
       ],
-      "assessorGuidance": "A strong answer covers: Identity / Conditional Access / authentication strength for that group. (Matches AADSTS50076 and policy evidence.); User MFA method enrolment after the helper group was emptied. (Explains why the policy now fails.); A residual VDS assignment issue if nested groups were used for the application group — already weakened but worth a sentence. (Fair residual; evidence already shows direct assignment remains.). Do not treat the response as demonstrated if it relies on: Microsoft-wide Entra outage.; Prisma / firewall path to the Payments web app.."
+      "assessorGuidance": "A strong answer covers: Identity / Conditional Access / authentication strength for that group. (Matches AADSTS50076 and policy evidence.); User MFA method enrolment after the helper group was emptied. (Explains why the policy now fails.); A residual VDI assignment issue if nested groups were used for the application group — already weakened but worth a sentence. (Fair residual; evidence already shows direct assignment remains.). Do not treat the response as demonstrated if it relies on: Microsoft-wide Entra outage.; Prisma / firewall path to the Payments web app.."
     },
     {
       "id": "q4",
@@ -133,7 +133,7 @@
         "documentation",
         "microsoft-engagement"
       ],
-      "assessorGuidance": "A strong answer covers: Entra sign-in logs, Conditional Access insights, group membership including nesting, and the illustrative VDS access runbook — with Identity on the bridge. (Correct tooling and collaboration.); Only AVD host event logs for Kerberos after forcing cached credentials. (Wrong layer for a cloud sign-in failure.). Do not treat the response as demonstrated if it relies on: Azure Advisor cost recommendations.; A packet capture of MFA SMS on the public internet.."
+      "assessorGuidance": "A strong answer covers: Entra sign-in logs, Conditional Access insights, group membership including nesting, and the illustrative VDI access runbook — with Identity on the bridge. (Correct tooling and collaboration.); Only AVD host event logs for Kerberos after forcing cached credentials. (Wrong layer for a cloud sign-in failure.). Do not treat the response as demonstrated if it relies on: Azure Advisor cost recommendations.; A packet capture of MFA SMS on the public internet.."
     },
     {
       "id": "q6",
@@ -144,7 +144,7 @@
         "escalation",
         "incident-process"
       ],
-      "assessorGuidance": "Identity immediately; MIM because it is Sev1 OOH with business impact; senior VDS for assignment confirmation. Microsoft Entra support only if logs show a platform fault, not a customer-configured CA policy. Must not: tenant-wide CA off, mass password reset, bypassing phishing-resistant requirements without identity authority.",
+      "assessorGuidance": "Identity immediately; MIM because it is Sev1 OOH with business impact; senior VDI for assignment confirmation. Microsoft Entra support only if logs show a platform fault, not a customer-configured CA policy. Must not: tenant-wide CA off, mass password reset, bypassing phishing-resistant requirements without identity authority.",
       "feedbackExamples": {
         "strengths": [
           "Treats Identity as the owning team rather than fighting Conditional Access alone."
@@ -161,7 +161,7 @@
       "capabilityDomainIds": [
         "communication"
       ],
-      "assessorGuidance": "Scoped impact (Payments Ops only), failure at sign-in, identity change in play, other VDS users OK, Identity leading the configuration check, no request to disable MFA tenant-wide, next update time."
+      "assessorGuidance": "Scoped impact (Payments Ops only), failure at sign-in, identity change in play, other VDI users OK, Identity leading the configuration check, no request to disable MFA tenant-wide, next update time."
     },
     {
       "id": "q8",
@@ -171,7 +171,7 @@
         "communication",
         "incident-assessment"
       ],
-      "assessorGuidance": "A strong answer covers: Two affected users sign in successfully, sign-in logs show CA success, and Service Desk watches for further Payments Ops failures. (User plus log confirmation, scoped watch.); Declare recovery because the change ticket is closed, without a user test. (Weak confirmation.). Do not treat the response as demonstrated if it relies on: Force every VDS user in the company to re-register MFA.; Remove Payments Ops from Conditional Access entirely as a permanent workaround.."
+      "assessorGuidance": "A strong answer covers: Two affected users sign in successfully, sign-in logs show CA success, and Service Desk watches for further Payments Ops failures. (User plus log confirmation, scoped watch.); Declare recovery because the change ticket is closed, without a user test. (Weak confirmation.). Do not treat the response as demonstrated if it relies on: Force every VDI user in the company to re-register MFA.; Remove Payments Ops from Conditional Access entirely as a permanent workaround.."
     }
   ],
   "scoringCriteria": [

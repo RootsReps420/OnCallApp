@@ -70,7 +70,7 @@ function fixtureScenario() {
       serviceNow: {
         incidentNumber: "INC1",
         priority: "1",
-        assignmentGroup: "VDS",
+        assignmentGroup: "VDI",
         opened: "now",
         shortDescription: "short",
         description: "desc",

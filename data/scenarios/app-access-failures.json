@@ -17,11 +17,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDS application access from AVD (illustrative runbook)",
+      "title": "VDI application access from AVD (illustrative runbook)",
       "note": "Would normally cover DNS suffixes, proxy/Secure Access, and known application VIPs. Confirm the current approved document."
     },
     {
-      "title": "Network incident handover from VDS (illustrative)",
+      "title": "Network incident handover from VDI (illustrative)",
       "note": "Would normally cover what evidence network teams expect. Confirm locally."
     },
     {
@@ -30,14 +30,14 @@
     }
   ],
   "initialIncident": {
-    "callSummary": "01:07 UTC, Saturday. Users in host pools VDS-UK-PROD-HP01 and HP02 can launch Windows desktops, but Payments Portal, HR Self-Service, and the overnight batch console fail to load in Edge. Errors are 'Hmm… can’t reach this page' or spinning until timeout. Outlook web and Microsoft 365 appear to work. Service Desk has 40+ calls. A change window for an edge firewall policy was due at 00:30 UTC; completion status is unknown.",
+    "callSummary": "01:07 UTC, Saturday. Users in host pools VDI-UK-PROD-HP01 and HP02 can launch Windows desktops, but Payments Portal, HR Self-Service, and the overnight batch console fail to load in Edge. Errors are 'Hmm… can’t reach this page' or spinning until timeout. Outlook web and Microsoft 365 appear to work. Service Desk has 40+ calls. A change window for an edge firewall policy was due at 00:30 UTC; completion status is unknown.",
     "serviceNow": {
       "incidentNumber": "INC0001902",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDS Platform Support (illustrative)",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
       "opened": "2026-09-19 01:09 UTC",
       "caller": "Service Desk on behalf of Payments Operations",
-      "affectedCI": "VDS-UK-PROD (desktop service) / apps.internal.example (illustrative)",
+      "affectedCI": "VDI-UK-PROD (desktop service) / apps.internal.example (illustrative)",
       "shortDescription": "Multiple business web apps unreachable from AVD sessions",
       "description": "Desktop connect OK. Internal HTTPS apps fail. External Microsoft 365 sites OK from the same desktop. First user report 00:51 UTC. Possible related change CHG004412 (illustrative) — edge firewall policy update, scheduled 00:30 UTC."
     },
@@ -53,14 +53,14 @@
       "title": "Host pool health",
       "type": "Portal snapshot (text)",
       "revealAfterQuestionIndex": 0,
-      "content": "VDS-UK-PROD-HP01: 12/12 session hosts Available. New connections succeeding.\nVDS-UK-PROD-HP02: 8/8 Available.\nAzure Service Health: No AVD incidents in UK South.\nIllustrative snapshot."
+      "content": "VDI-UK-PROD-HP01: 12/12 session hosts Available. New connections succeeding.\nVDI-UK-PROD-HP02: 8/8 Available.\nAzure Service Health: No AVD incidents in UK South.\nIllustrative snapshot."
     },
     {
       "id": "e-dns",
       "title": "Name resolution from a session host",
       "type": "Logs",
       "revealAfterQuestionIndex": 1,
-      "content": "From vdshp01-sh-04 (user session):\nnslookup payments.internal.example\n  Server:  10.20.8.11  (illustrative VDS DNS forwarder)\n  payments.internal.example\n  canonical name = pay-vip.internal.example\n  Address: 10.45.12.20\n\nnslookup hr.internal.example -> 10.45.12.21\nnslookup batchconsole.internal.example -> 10.45.12.20\nResolve works. Illustrative output."
+      "content": "From vdshp01-sh-04 (user session):\nnslookup payments.internal.example\n  Server:  10.20.8.11  (illustrative VDI DNS forwarder)\n  payments.internal.example\n  canonical name = pay-vip.internal.example\n  Address: 10.45.12.20\n\nnslookup hr.internal.example -> 10.45.12.21\nnslookup batchconsole.internal.example -> 10.45.12.20\nResolve works. Illustrative output."
     },
     {
       "id": "e-curl",
@@ -74,7 +74,7 @@
       "title": "Secure Access / Prisma path note",
       "type": "Service health / tool",
       "revealAfterQuestionIndex": 3,
-      "content": "Illustrative VDI egress: session hosts send internal RFC1918 HTTPS via Secure Access connector group 'VDS-UK-OOH'.\nConnector group status: 2 of 3 connectors InSync; connector vds-sa-03 Last seen 00:34 UTC then disconnected.\nPolicy lookup for 10.45.12.20:443 — recently attached security profile 'OOH-Tightened-Inspection' (change CHG004412, illustrative).\nMicrosoft 365 destinations bypass this profile.\nThis is sample data, not a live Prisma/Panorama view."
+      "content": "Illustrative VDI egress: session hosts send internal RFC1918 HTTPS via Secure Access connector group 'VDI-UK-OOH'.\nConnector group status: 2 of 3 connectors InSync; connector vds-sa-03 Last seen 00:34 UTC then disconnected.\nPolicy lookup for 10.45.12.20:443 — recently attached security profile 'OOH-Tightened-Inspection' (change CHG004412, illustrative).\nMicrosoft 365 destinations bypass this profile.\nThis is sample data, not a live Prisma/Panorama view."
     },
     {
       "id": "e-fw",
@@ -93,7 +93,7 @@
         "incident-assessment",
         "avd-technical"
       ],
-      "assessorGuidance": "A strong answer covers: Confirm that AVD connection and session host health are good, then treat this as application-path failure inside a working desktop. (Correct split of fault domains; avoids rebuilding hosts for an app-path issue.); Open a Microsoft AVD Sev1 first, because all VDS issues start with Microsoft. (Premature; Service Health and successful connections argue against AVD control plane.). Do not treat the response as demonstrated if it relies on: Redeploy the host pool immediately because users cannot 'use VDS'.; Reset every user profile to clear likely profile corruption.."
+      "assessorGuidance": "A strong answer covers: Confirm that AVD connection and session host health are good, then treat this as application-path failure inside a working desktop. (Correct split of fault domains; avoids rebuilding hosts for an app-path issue.); Open a Microsoft AVD Sev1 first, because all VDI issues start with Microsoft. (Premature; Service Health and successful connections argue against AVD control plane.). Do not treat the response as demonstrated if it relies on: Redeploy the host pool immediately because users cannot 'use VDI'.; Reset every user profile to clear likely profile corruption.."
     },
     {
       "id": "q2",
@@ -133,7 +133,7 @@
         "escalation",
         "incident-process"
       ],
-      "assessorGuidance": "A strong answer covers: Page network / Secure Access on-call with DNS, timeout, connector, and change evidence; notify MIM; do not disable inspection yourself. (Uses the support model; preserves safety.). Do not treat the response as demonstrated if it relies on: Detach the inspection profile from the VDS hosts using a personal admin login to test.; Add an Any/Any allow on the session host NSG toward 10.0.0.0/8.; Tell users to work from home on unmanaged PCs until Monday.."
+      "assessorGuidance": "A strong answer covers: Page network / Secure Access on-call with DNS, timeout, connector, and change evidence; notify MIM; do not disable inspection yourself. (Uses the support model; preserves safety.). Do not treat the response as demonstrated if it relies on: Detach the inspection profile from the VDI hosts using a personal admin login to test.; Add an Any/Any allow on the session host NSG toward 10.0.0.0/8.; Tell users to work from home on unmanaged PCs until Monday.."
     },
     {
       "id": "q6",

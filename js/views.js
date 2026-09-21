@@ -7,7 +7,11 @@ import {
   snowCard,
   evidenceBlock,
   domainBars,
+  kpiCard,
+  capabilityLineChart,
+  coverageDonut,
   readinessBanner,
+  readinessNetwork,
   criterionTable,
   docsList,
   statusLabel,
@@ -43,52 +47,133 @@ export function dashboardView(state) {
   const domainSummaries = aggregateReleasedDomains(state);
 
   const firstName = person.name.split(" ")[0];
+  const gaps = areasToImprove(domainSummaries);
+  const scored = domainSummaries.filter((item) => item.percentage != null);
+  const average = scored.length
+    ? Math.round(scored.reduce((sum, item) => sum + item.percentage, 0) / scored.length)
+    : null;
+  const recent = mine
+    .slice()
+    .sort((a, b) => String(b.updatedAt || b.startedAt || "").localeCompare(String(a.updatedAt || a.startedAt || "")))
+    .slice(0, 8);
   return `
     <section class="dash-hero">
-      <p class="eyebrow">${escapeHtml(person.roleTitle)}</p>
-      <h1>${escapeHtml(firstName)}</h1>
-      <p class="lede">Your Sev1 out-of-hours practice for ${escapeHtml(config.serviceName)}. Complete a scenario, then read released feedback. Involving the right team is part of a strong response.</p>
+      <div>
+        <p class="eyebrow">Welcome back, ${escapeHtml(firstName)}</p>
+        <h1>Dashboard Overview</h1>
+        <p class="lede">Track your SevA practice and readiness for ${escapeHtml(config.serviceName)} in real time.</p>
+      </div>
+      <a class="btn" href="#/library">Open library</a>
     </section>
-    <div class="stat-row">
-      <a class="stat" href="#/library"><span>${inProgress.length}</span>In progress</a>
-      <a class="stat" href="#/library"><span>${awaiting.length}</span>Awaiting review</a>
-      <a class="stat" href="#/readiness"><span>${released.length}</span>Feedback</a>
+    <div class="filter-row">
+      <div class="range-pills" role="group" aria-label="Activity range">
+        <button type="button" data-action="dash-range" data-range="all" aria-pressed="true">All</button>
+        <button type="button" data-action="dash-range" data-range="7">Last 7 days</button>
+        <button type="button" data-action="dash-range" data-range="30">Last 30 days</button>
+      </div>
     </div>
-    ${inProgress.length ? `
-      <section class="card">
-        <h2>Continue</h2>
-        <ul class="work-list">
-          ${inProgress.map((item) => `<li><a href="#/assess/${item.id}"><span>${escapeHtml(item.scenarioSnapshot.title)}</span><span class="pill progress">Resume</span></a></li>`).join("")}
-        </ul>
-      </section>` : ""}
+    <div class="kpi-grid">
+      ${kpiCard({
+        label: "In progress",
+        value: inProgress.length,
+        hint: inProgress.length ? `<span class="delta up">Resume a saved attempt</span>` : "No open attempts",
+        href: "#/library"
+      })}
+      ${kpiCard({
+        label: "Awaiting review",
+        value: awaiting.length,
+        hint: awaiting.length ? `<span class="delta down">With an assessor</span>` : "Nothing waiting",
+        href: "#/library"
+      })}
+      ${kpiCard({
+        label: "Feedback released",
+        value: released.length,
+        hint: released.length ? `<span class="delta up">Notes ready to read</span>` : "No released notes yet",
+        href: "#/readiness"
+      })}
+      ${kpiCard({
+        label: "Capability average",
+        value: average == null ? "—" : `${average}%`,
+        hint: gaps.length
+          ? `<span class="delta down">${gaps.length} gap${gaps.length === 1 ? "" : "s"} to close</span>`
+          : `<span class="delta up">No scored gaps yet</span>`,
+        href: "#/readiness"
+      })}
+    </div>
+    <div class="dash-charts">
+      <section class="card chart-card">
+        <div class="card-head">
+          <div>
+            <h2>Capability profile</h2>
+            <p class="subtle">Released scores across the eight domains</p>
+          </div>
+        </div>
+        ${capabilityLineChart(domainSummaries)}
+      </section>
+      <section class="card chart-card">
+        <div class="card-head">
+          <div>
+            <h2>Coverage</h2>
+            <p class="subtle">Where evidence is still missing</p>
+          </div>
+        </div>
+        ${coverageDonut(domainSummaries)}
+      </section>
+    </div>
     <section class="card">
       <div class="card-head">
-        <h2>Required scenarios</h2>
-        <a href="#/library">All scenarios</a>
+        <div>
+          <h2>Recent activity</h2>
+          <p class="subtle">Latest attempts in this browser</p>
+        </div>
+        <a href="#/library">View all</a>
       </div>
-      <ul class="work-list">
-        ${required.map((scenario) => {
-          const attempt = latestAttempt(mine, scenario.id);
-          const label = attempt ? statusLabel(attempt.status) : "Not started";
-          return `<li><a href="#/scenario/${encodeURIComponent(scenario.id)}"><span>${escapeHtml(scenario.title)}</span><span class="pill ${attempt ? statusClass(attempt.status) : ""}">${escapeHtml(label)}</span></a></li>`;
-        }).join("") || `<li class="muted">No required scenarios.</li>`}
-      </ul>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Scenario</th><th>Status</th><th>Started</th><th>Version</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            ${recent.length ? recent.map((item) => {
+              const href = item.status === "in-progress"
+                ? `#/assess/${item.id}`
+                : item.status === "released"
+                  ? `#/feedback/${item.id}`
+                  : `#/scenario/${encodeURIComponent(item.scenarioId)}`;
+              const action = item.status === "in-progress" ? "Resume" : item.status === "released" ? "Open" : "View";
+              return `
+                <tr data-search="${escapeHtml(item.scenarioSnapshot.title)} ${escapeHtml(statusLabel(item.status))}" data-started="${escapeHtml(item.startedAt || "")}">
+                  <td>${escapeHtml(item.scenarioSnapshot.title)}</td>
+                  <td><span class="pill ${statusClass(item.status)}">${escapeHtml(statusLabel(item.status))}</span></td>
+                  <td>${formatDateTime(item.startedAt)}</td>
+                  <td>${escapeHtml(item.scenarioVersion)}</td>
+                  <td><a class="btn ghost" href="${href}">${action}</a></td>
+                </tr>`;
+            }).join("") : `<tr><td colspan="5" class="muted">No attempts yet. Open the library to start a scenario.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
     </section>
     <div class="grid grid-2 dash-lower">
+      <section class="card">
+        <div class="card-head">
+          <h2>Required scenarios</h2>
+          <a href="#/library">All scenarios</a>
+        </div>
+        <ul class="work-list">
+          ${required.map((scenario) => {
+            const attempt = latestAttempt(mine, scenario.id);
+            const label = attempt ? statusLabel(attempt.status) : "Not started";
+            return `<li data-search="${escapeHtml(scenario.title)}"><a href="#/scenario/${encodeURIComponent(scenario.id)}"><span>${escapeHtml(scenario.title)}</span><span class="pill ${attempt ? statusClass(attempt.status) : ""}">${escapeHtml(label)}</span></a></li>`;
+          }).join("") || `<li class="muted">No required scenarios.</li>`}
+        </ul>
+      </section>
       <section class="card">
         <h2>Development actions</h2>
         ${released.length ? released.slice(0, 3).map((item) => `
           <p><a href="#/feedback/${item.id}">${escapeHtml(item.scenarioSnapshot.title)}</a></p>
           <p class="subtle">${item.review?.developmentActions ? nl(item.review.developmentActions) : "No actions recorded."}</p>
         `).join("") : `<p class="muted">Released feedback will appear here.</p>`}
-      </section>
-      <section class="card">
-        <div class="card-head">
-          <h2>${areasToImprove(domainSummaries).length ? "Areas to improve" : "Capability"}</h2>
-          <a href="#/readiness">Summary</a>
-        </div>
-        ${domainBars(areasToImprove(domainSummaries).length ? areasToImprove(domainSummaries) : domainSummaries, { compact: true })}
-        ${areasToImprove(domainSummaries).length ? `<p class="subtle">Below Demonstrated on released feedback.</p>` : ""}
       </section>
     </div>
   `;
@@ -101,13 +186,13 @@ export function libraryView(state) {
   return `
     <div class="page-header">
       <h1>Scenario library</h1>
-      <p class="lede">Preset Sev1 out-of-hours situations for VDS, including AVD. Each attempt is saved separately so earlier evidence is preserved if you retry.</p>
+      <p class="lede">Collection of prior SevA incidents to practice and test your experience against, each test has a rough timer next to it with a series of questions. Tests can be resat once reviewed by an assessor.</p>
     </div>
     <div class="stack">
       ${published.map((scenario) => {
         const attempt = latestAttempt(mine, scenario.id);
         return `
-          <article class="card">
+          <article class="card" data-search="${escapeHtml(scenario.title)} ${escapeHtml(scenario.description)}">
             ${pillsForScenario(scenario, attempt, { difficulty: false })}
             <h2>${escapeHtml(scenario.title)}</h2>
             <p class="summary">${escapeHtml(scenario.description)}</p>
@@ -419,40 +504,24 @@ export function readinessView(state) {
   return `
     <div class="page-header">
       <h1>Readiness summary</h1>
-      <p class="lede">This summary is for development and assessor review. It is not an automatic certification. A human assessor makes the recommendation after required scenarios and capability criteria have been reviewed.</p>
+      <p class="lede">A live map of your capability areas. Bright nodes are covered. Pulsing nodes are gaps from released feedback. Click a node to inspect it. This is not a certificate — an assessor still makes the recommendation.</p>
     </div>
     ${latestRec ? readinessBanner(latestRec) : `<div class="callout warn"><p>No assessor recommendation has been released yet. Incomplete evidence is not the same as a score of zero, and completing scenarios does not by itself mean ready.</p></div>`}
-    <div class="grid grid-2">
-      <section class="card">
-        <h2>Required scenario coverage</h2>
-        <ul>
-          ${required.map((scenario) => {
-            const releasedAttempt = mine.find((item) => item.scenarioId === scenario.id && item.status === "released");
-            const other = latestAttempt(mine, scenario.id);
-            return `<li><strong>${escapeHtml(scenario.title)}</strong> — ${
-              releasedAttempt ? "Reviewed and released" : other ? statusLabel(other.status) : "Not started"
-            }</li>`;
-          }).join("")}
-        </ul>
-        <p>${requiredComplete ? "Required scenarios have released reviews." : "Required scenarios are not all reviewed yet — treat readiness evidence as incomplete."}</p>
-      </section>
-      <section class="card">
-        <h2>Mandatory criteria</h2>
-        ${hints.mandatoryUnmet.length
-          ? `<p class="error-msg">Unmet mandatory criteria must be visible even if some domain averages look strong:</p><ul>${hints.mandatoryUnmet.map((item) => `<li>${escapeHtml(item.label)} (${item.score}/${item.maxScore})</li>`).join("")}</ul>`
-          : `<p>No scored mandatory criterion is currently below “Demonstrated” (2) in released attempts.</p>`}
-        <p class="subtle">Pending or unanswered mandatory items: ${hints.hasIncompleteEvidence ? "yes — incomplete evidence" : "none recorded"}.</p>
-      </section>
-    </div>
+    ${readinessNetwork(domains, { personName: state.person?.name || "You" })}
     <div class="card" style="margin-top:1rem">
-      <h2>Areas to improve</h2>
-      ${areasToImprove(domains).length
-        ? domainBars(areasToImprove(domains))
-        : `<p class="muted">Nothing released is below Demonstrated yet. A blank chart is incomplete evidence, not a strong score.</p>`}
-    </div>
-    <div class="card" style="margin-top:1rem">
-      <h2>Capability coverage</h2>
-      ${domainBars(domains)}
+      <h2>Required scenarios</h2>
+      <ul class="work-list">
+        ${required.map((scenario) => {
+          const releasedAttempt = mine.find((item) => item.scenarioId === scenario.id && item.status === "released");
+          const other = latestAttempt(mine, scenario.id);
+          const label = releasedAttempt ? "Reviewed and released" : other ? statusLabel(other.status) : "Not started";
+          return `<li><a href="#/scenario/${encodeURIComponent(scenario.id)}"><span>${escapeHtml(scenario.title)}</span><span class="pill ${releasedAttempt ? "released" : other ? statusClass(other.status) : ""}">${escapeHtml(label)}</span></a></li>`;
+        }).join("")}
+      </ul>
+      <p class="subtle">${requiredComplete ? "Required scenarios have released reviews." : "Required scenarios are not all reviewed yet — treat readiness evidence as incomplete."}</p>
+      ${hints.mandatoryUnmet.length
+        ? `<p class="error-msg">Unmet mandatory criteria stay visible even if some nodes look strong:</p><ul>${hints.mandatoryUnmet.map((item) => `<li>${escapeHtml(item.label)} (${item.score}/${item.maxScore})</li>`).join("")}</ul>`
+        : `<p class="subtle">No scored mandatory criterion is currently below Demonstrated (2) in released attempts.${hints.hasIncompleteEvidence ? " Incomplete evidence is still present." : ""}</p>`}
     </div>
   `;
 }
@@ -491,17 +560,34 @@ export function proposeView() {
 // Submitted and released attempts stored in this browser.
 export function assessorQueueView(state) {
   const queue = state.attempts.filter((item) => item.status === "submitted" || item.status === "released");
+  const submitted = queue.filter((item) => item.status === "submitted");
+  const released = queue.filter((item) => item.status === "released");
   return `
-    <div class="page-header">
-      <h1>Assessor review queue</h1>
-      <p class="lede">Score written responses against the rubric, explain any adjustment to automated scores, and release constructive feedback. This prototype shows attempts stored in this browser only.</p>
+    <section class="dash-hero">
+      <div>
+        <p class="eyebrow">Assessor</p>
+        <h1>Dashboard Overview</h1>
+        <p class="lede">Score written responses against the rubric and release feedback. This prototype shows attempts stored in this browser only.</p>
+      </div>
+    </section>
+    <div class="kpi-grid">
+      ${kpiCard({ label: "In queue", value: submitted.length, hint: submitted.length ? `<span class="delta down">Waiting on a review</span>` : "Queue is clear", href: "#/assessor" })}
+      ${kpiCard({ label: "Released", value: released.length, hint: "Feedback already sent", href: "#/assessor" })}
+      ${kpiCard({ label: "Library", value: state.scenarios.filter((item) => item.status === "published").length, hint: "Published scenarios", href: "#/library" })}
+      ${kpiCard({ label: "Readiness", value: "Open", hint: "Capability map", href: "#/readiness" })}
     </div>
     <div class="card table-wrap">
-      <table>
+      <div class="card-head">
+        <div>
+          <h2>Review queue</h2>
+          <p class="subtle">Submitted and released attempts</p>
+        </div>
+      </div>
+      <table class="data-table">
         <thead><tr><th>Engineer</th><th>Scenario</th><th>Version</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
         <tbody>
           ${queue.length ? queue.map((item) => `
-            <tr>
+            <tr data-search="${escapeHtml(item.engineerName)} ${escapeHtml(item.scenarioSnapshot.title)}">
               <td>${escapeHtml(item.engineerName)}</td>
               <td>${escapeHtml(item.scenarioSnapshot.title)}</td>
               <td>${escapeHtml(item.scenarioVersion)}</td>
@@ -607,7 +693,7 @@ export function signInView(state) {
     <div class="page-header">
       <h1>Sign in</h1>
       ${entra ? `
-        <p class="lede">Use your ignitemyfire.co.uk account. User, Assessor, or Administrator is assigned in Entra ID, not on this screen.</p>
+        <p class="lede">Use your ignitemyfire.co.uk account for authentication.</p>
       ` : `
         <p class="lede">Choose your name. This browser keeps a local session in place of Microsoft Entra ID. There is no password here, because a password stored in the browser would not be a real control.</p>
         <p class="lede">An administrator assigns User, Assessor, or Administrator before you arrive. Signing in does not let you pick a different role.</p>
@@ -688,7 +774,7 @@ export function accessView(state) {
       </div>
       <div class="field">
         <label for="person-title">Job title</label>
-        <input id="person-title" name="roleTitle" type="text" placeholder="VDS Platform Engineer">
+        <input id="person-title" name="roleTitle" type="text" placeholder="VDI Platform Engineer">
       </div>
       <div class="field">
         <label for="person-role">Access</label>
@@ -706,21 +792,33 @@ export function accessView(state) {
 
 // Publish, unpublish, and reset local demo data.
 export function adminScenariosView(state) {
+  const published = state.scenarios.filter((item) => item.status === "published").length;
+  const drafts = state.scenarios.filter((item) => item.status !== "published").length;
+  const openProposals = (state.proposals || []).filter((item) => item.status === "open").length;
   return `
-    <div class="page-header">
-      <h1>Scenario management</h1>
-      <p class="lede">Create or import JSON, validate, and publish. Bundled sample scenarios can be overridden in this browser without changing the source files until you export.</p>
+    <section class="dash-hero">
+      <div>
+        <p class="eyebrow">Administrator</p>
+        <h1>Dashboard Overview</h1>
+        <p class="lede">Create or import JSON, validate, and publish. Bundled sample scenarios can be overridden in this browser without changing the source files until you export.</p>
+      </div>
+      <a class="btn" href="#/admin/import">Import or create JSON</a>
+    </section>
+    <div class="kpi-grid">
+      ${kpiCard({ label: "Scenarios", value: state.scenarios.length, hint: "In this library" })}
+      ${kpiCard({ label: "Published", value: published, hint: `<span class="delta up">Live for users</span>` })}
+      ${kpiCard({ label: "Drafts", value: drafts, hint: drafts ? `<span class="delta down">Not yet live</span>` : "None" })}
+      ${kpiCard({ label: "Open proposals", value: openProposals, hint: "Awaiting review", href: "#/admin/proposals" })}
     </div>
     <div class="btn-row">
-      <a class="btn" href="#/admin/import">Import or create JSON</a>
       <button class="btn danger" data-action="reset-demo">Reset demo data</button>
     </div>
     <div class="card table-wrap" style="margin-top:1rem">
-      <table>
+      <table class="data-table">
         <thead><tr><th>Title</th><th>Id / version</th><th>Status</th><th>Mandatory</th><th></th></tr></thead>
         <tbody>
           ${state.scenarios.map((item) => `
-            <tr>
+            <tr data-search="${escapeHtml(item.title)} ${escapeHtml(item.id)}">
               <td>${escapeHtml(item.title)}</td>
               <td>${escapeHtml(item.id)} · ${escapeHtml(item.version)}</td>
               <td><span class="pill ${statusClass(item.status)}">${statusLabel(item.status)}</span></td>
@@ -823,12 +921,12 @@ export function adminCriteriaView(state) {
 // Starter JSON for a new written scenario.
 function sampleTemplate() {
   return JSON.stringify({
-    id: "vds-custom-001",
+    id: "vdi-custom-001",
     version: "1.0.0",
     status: "draft",
     title: "Custom illustrative scenario title",
     description: "Describe the Sev1 OOH situation in at least twenty characters.",
-    scope: "Out-of-hours VDS practice scenario.",
+    scope: "Out-of-hours VDI practice scenario.",
     difficulty: "foundation",
     estimatedMinutes: 30,
     mandatory: false,
@@ -841,10 +939,10 @@ function sampleTemplate() {
       serviceNow: {
         incidentNumber: "INC0000000",
         priority: "1 — Critical",
-        assignmentGroup: "VDS Platform Support (illustrative)",
+        assignmentGroup: "VDI Platform Support (illustrative)",
         opened: "2026-01-01 00:00 UTC",
         caller: "Service Desk",
-        affectedCI: "VDS-UK-PROD",
+        affectedCI: "VDI-UK-PROD",
         shortDescription: "Short description",
         description: "Longer illustrative description."
       },
