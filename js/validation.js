@@ -1,17 +1,23 @@
+// Checks a scenario JSON document before it can be saved or published.
+// It reports every problem it finds. It does not score answers.
+
 const QUESTION_TYPES = new Set(["single", "multiple", "written"]);
 const DIFFICULTIES = new Set(["foundation", "intermediate", "advanced"]);
 const STATUSES = new Set(["draft", "published"]);
 
+// Record one validation problem. The caller keeps going so the user sees every issue.
 function fail(errors, path, message) {
   errors.push({ path, message });
 }
 
+// Reject a missing, non-string, or too-short field.
 function requireString(errors, path, value, min = 1) {
   if (typeof value !== "string" || value.trim().length < min) {
     fail(errors, path, `Expected a non-empty string (min ${min} characters).`);
   }
 }
 
+// Reject anything that is not a list. Returns false so the caller can skip item checks.
 function requireArray(errors, path, value) {
   if (!Array.isArray(value)) {
     fail(errors, path, "Expected an array.");
@@ -20,6 +26,7 @@ function requireArray(errors, path, value) {
   return true;
 }
 
+// Full scenario check: identity, incident, questions, and scoring criteria. ok is false when errors is not empty.
 export function validateScenario(scenario) {
   const errors = [];
   if (!scenario || typeof scenario !== "object" || Array.isArray(scenario)) {
@@ -132,6 +139,7 @@ export function validateScenario(scenario) {
   return { ok: errors.length === 0, errors };
 }
 
+// Join path and message into one block of text for the import form.
 export function formatValidationErrors(errors) {
   return errors.map((error) => `${error.path}: ${error.message}`).join("\n");
 }

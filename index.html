@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Incident Lab is a supportive assessment and development tool for Virtual Desktop Service engineers.">
   <title>Incident Lab — VDS readiness</title>
+  <!-- Apply the saved theme before CSS loads, so the page does not flash white. -->
   <script>
     try {
       var storedTheme = localStorage.getItem("incident-lab:theme");
@@ -15,10 +16,12 @@
   <link rel="icon" href="assets/lloyds-horse.svg">
 </head>
 <body>
+  <!-- Skip link is for keyboard users. The app replaces #app on every page draw. -->
   <a class="skip-link" href="#main">Skip to content</a>
   <div id="app">
     <p class="boot-status">Loading Incident Lab…</p>
   </div>
-  <script type="module" src="js/app.js?v=7"></script>
+  <!-- app.js loads the other scripts. The ?v= query avoids a stale cached copy after a change. -->
+  <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>

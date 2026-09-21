@@ -1,12 +1,17 @@
+// Shared pieces of HTML: the header and footer, status pills, evidence, and charts.
+// Page-specific screens live in views.js. This file does not change stored data.
+
 import { escapeHtml, formatDateTime, nl, percent } from "./util.js";
 import { readinessCopy, scoreLabel } from "./scoring.js";
 
+// Screen name for a stored role. engineer is shown as User.
 export function roleLabel(role) {
   if (role === "administrator") return "Administrator";
   if (role === "assessor") return "Assessor";
   return "User";
 }
 
+// Wrap a page in the green header, optional notice, main column, and footer.
 export function layout({ config, role, path, body, theme = "dark", person = null }) {
   const nav = person ? navFor(role, path) : "";
   const light = theme === "light";
@@ -34,9 +39,10 @@ export function layout({ config, role, path, body, theme = "dark", person = null
           </div>
         </div>
       </header>
+      ${path === "/dashboard" || path === "/sign-in" ? "" : `
       <div class="disclaimer-bar">
         <p>${escapeHtml(config.illustrativeNotice)}</p>
-      </div>
+      </div>`}
       <main id="main" class="app-main" tabindex="-1">${body}</main>
       <footer class="app-footer">
         <div class="footer-inner">
@@ -54,6 +60,7 @@ export function layout({ config, role, path, body, theme = "dark", person = null
   `;
 }
 
+// Links for the signed-in role. Users, assessors, and administrators do not share one menu.
 function navFor(role, path) {
   const items = {
     engineer: [
@@ -83,6 +90,7 @@ function navFor(role, path) {
   }).join("");
 }
 
+// Which link is the current page, including a few child routes such as a review.
 function isCurrentNav(hrefPath, path) {
   if (path === hrefPath) return true;
   if (hrefPath === "/assessor" && path.startsWith("/assessor/")) return true;
@@ -91,16 +99,18 @@ function isCurrentNav(hrefPath, path) {
   return false;
 }
 
-export function pillsForScenario(scenario, attempt) {
+// Small labels above a scenario. The library hides the difficulty pill.
+export function pillsForScenario(scenario, attempt, { difficulty = true } = {}) {
   const bits = [
     `<span class="pill ${scenario.mandatory ? "required" : "optional"}">${scenario.mandatory ? "Required" : "Optional"}</span>`,
-    `<span class="pill">${escapeHtml(scenario.difficulty)}</span>`,
+    difficulty ? `<span class="pill">${escapeHtml(scenario.difficulty)}</span>` : "",
     `<span class="pill">${scenario.estimatedMinutes} min</span>`
-  ];
+  ].filter(Boolean);
   if (attempt) bits.push(`<span class="pill ${statusClass(attempt.status)}">${statusLabel(attempt.status)}</span>`);
   return `<div class="meta-row">${bits.join("")}</div>`;
 }
 
+// Human text for an attempt or scenario status.
 export function statusLabel(status) {
   return {
     "in-progress": "In progress",
@@ -111,6 +121,7 @@ export function statusLabel(status) {
   }[status] || status;
 }
 
+// CSS class that colours a status pill.
 export function statusClass(status) {
   return {
     "in-progress": "progress",
@@ -121,6 +132,7 @@ export function statusClass(status) {
   }[status] || "";
 }
 
+// The illustrative ServiceNow-style ticket on a scenario intro.
 export function snowCard(snow) {
   return `
     <div class="card">
@@ -140,6 +152,7 @@ export function snowCard(snow) {
   `;
 }
 
+// One evidence panel. Content is escaped, so it stays plain text.
 export function evidenceBlock(item, selected = true) {
   if (!item) return `<div class="empty-state">No evidence selected.</div>`;
   return `
@@ -150,6 +163,7 @@ export function evidenceBlock(item, selected = true) {
   `;
 }
 
+// Horizontal bars. A null percentage draws an empty bar, not zero.
 export function domainBars(summaries, { compact = false } = {}) {
   return `
     <div class="domain-list ${compact ? "compact" : ""}">
@@ -172,6 +186,7 @@ export function domainBars(summaries, { compact = false } = {}) {
   `;
 }
 
+// The assessor's recommendation, plus a reminder that completion is not a certificate.
 export function readinessBanner(value) {
   const copy = readinessCopy(value);
   const cls = value === "ready" ? "ready" : value === "ready-with-development" ? "develop" : value === "not-yet-ready" ? "not-ready" : "progress";
@@ -184,6 +199,7 @@ export function readinessBanner(value) {
   `;
 }
 
+// Table of criterion scores used on the feedback page.
 export function criterionTable(results, { showAssessorHints = false, domains = [] } = {}) {
   const names = Object.fromEntries((domains || []).map((item) => [item.id, item.name]));
   return `
@@ -219,6 +235,7 @@ export function criterionTable(results, { showAssessorHints = false, domains = [
   `;
 }
 
+// Short status word for one criterion row.
 function statusForCriterion(item) {
   if (item.unanswered) return "Not yet answered";
   if (item.status === "pending-review") return "Pending assessor review";
@@ -228,6 +245,7 @@ function statusForCriterion(item) {
   return "Unreviewed";
 }
 
+// Illustrative runbook titles. They are not live links.
 export function docsList(refs = []) {
   if (!refs.length) return "";
   return `
@@ -241,6 +259,7 @@ export function docsList(refs = []) {
   `;
 }
 
+// Simple title and message when a route or id cannot be opened.
 export function errorPage(title, message) {
   return `
     <div class="page-header">
@@ -251,6 +270,7 @@ export function errorPage(title, message) {
   `;
 }
 
+// Started, submitted, and released times for an attempt.
 export function formatAttemptMeta(attempt) {
   return `Started ${formatDateTime(attempt.startedAt)}${attempt.submittedAt ? ` · Submitted ${formatDateTime(attempt.submittedAt)}` : ""}${attempt.review?.releasedAt ? ` · Released ${formatDateTime(attempt.review.releasedAt)}` : ""}`;
 }

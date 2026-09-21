@@ -1,5 +1,10 @@
+// Turns answers and an assessor review into criterion scores and domain bars.
+// Written answers are never keyword-scored. They stay pending until a person marks them.
+// A missing answer is "unanswered", not zero.
+
 import { clamp, percent, round1 } from "./util.js";
 
+// 0 is not yet demonstrated. 2 is the "Demonstrated" line used by the areas-to-improve chart.
 export const SCORE_SCALE = [
   {
     value: 0,
@@ -23,10 +28,12 @@ export const SCORE_SCALE = [
   }
 ];
 
+// Word for a 0–3 score, such as Demonstrated.
 export function scoreLabel(value) {
   return SCORE_SCALE.find((item) => item.value === value)?.label || "Not scored";
 }
 
+// Blank text and an empty option list both count as not answered.
 function isEmptyAnswer(answer) {
   if (answer == null) return true;
   if (typeof answer === "string" && !answer.trim()) return true;
@@ -34,13 +41,16 @@ function isEmptyAnswer(answer) {
   return false;
 }
 
+// Map a 0–1 option credit onto the 0–3 criterion scale.
 export function creditToScore(credit, maxScore = 3) {
   if (credit == null || Number.isNaN(credit)) return null;
   const bounded = clamp(credit, 0, 1);
   return round1(bounded * maxScore);
 }
 
+// Score one question. Written text stays pending. Choice questions use the credit on the selected option.
 export function scoreObjectiveQuestion(question, answer) {
+  // The shipped scenarios are written. A person scores them. Do not scan the text for keywords.
   if (question.type === "written") {
     return {
       status: isEmptyAnswer(answer) ? "unanswered" : "pending-review",
@@ -105,6 +115,7 @@ export function scoreObjectiveQuestion(question, answer) {
   };
 }
 
+// One row per scoring criterion, using the linked answers and any saved review.
 export function buildCriterionResults(scenario, answers, review = null) {
   const questionScores = {};
   for (const question of scenario.questions) {
@@ -130,6 +141,7 @@ export function buildCriterionResults(scenario, answers, review = null) {
       status = "unanswered";
       evidence.push("No linked question has been answered.");
     } else if (reviewItem && reviewItem.score != null && reviewItem.score !== "") {
+      // A saved assessor score wins over any automatic credit.
       status = "reviewed";
       score = Number(reviewItem.score);
       source = "assessor";
@@ -138,6 +150,7 @@ export function buildCriterionResults(scenario, answers, review = null) {
         evidence.push(`Adjustment: ${reviewItem.adjustmentExplanation}`);
       }
     } else if (pendingWritten && objectiveParts.length === 0) {
+      // Waiting for a person. This must not become a zero on the chart.
       status = "pending-review";
       evidence.push("Written response awaiting assessor review. This is not scored as zero.");
     } else if (objectiveParts.length) {
@@ -161,6 +174,7 @@ export function buildCriterionResults(scenario, answers, review = null) {
   });
 }
 
+// Roll criteria up to the eight capability areas for the bar chart.
 export function summariseDomains(domains, criterionResults) {
   return domains.map((domain) => {
     const items = criterionResults.filter((item) => item.domainId === domain.id);
@@ -187,6 +201,7 @@ export function summariseDomains(domains, criterionResults) {
   });
 }
 
+// Short sentence under a bar: how many criteria are scored, pending, or unanswered.
 function coverageLabel(total, reviewed, pending, unanswered) {
   if (!total) return "No criteria mapped";
   if (pending || unanswered) {
@@ -195,6 +210,7 @@ function coverageLabel(total, reviewed, pending, unanswered) {
   return `${reviewed} of ${total} criteria scored`;
 }
 
+// Signals for the readiness page. A suggested band is withheld while evidence is incomplete.
 export function attemptOutcomeHints(criterionResults, domainSummaries, requiredScenariosComplete) {
   const pending = criterionResults.filter((item) => item.pendingReview || item.unanswered);
   const mandatoryUnmet = criterionResults.filter((item) => item.mandatory && item.score != null && item.score < 2);
@@ -221,6 +237,7 @@ export function attemptOutcomeHints(criterionResults, domainSummaries, requiredS
   };
 }
 
+// Only used after every required scenario is released and nothing is still pending.
 function suggestedBand({ pending, mandatoryUnmet, requiredScenariosComplete, average }) {
   if (!requiredScenariosComplete || pending) return null;
   if (mandatoryUnmet) return "not-yet-ready";
@@ -229,6 +246,7 @@ function suggestedBand({ pending, mandatoryUnmet, requiredScenariosComplete, ave
   return "not-yet-ready";
 }
 
+// Heading and explanation for Ready, Ready with development areas, or Not yet ready.
 export function readinessCopy(value) {
   return {
     ready: { label: "Ready", detail: "The assessor judges that the engineer can independently manage the initial Sev1 OOH response and use the established support model." },

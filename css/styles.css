@@ -1,3 +1,9 @@
+/* Incident Lab theme.
+   Dark mode is carbon black in the body and green in the header and footer.
+   Light mode keeps the green banner and uses a light neutral body.
+   Hover on clickable body items lifts them and turns the border green.
+   Colours are CSS variables so one data-theme switch restyles the page. */
+
 :root,
 html[data-theme="dark"] {
   color-scheme: dark;
@@ -49,6 +55,7 @@ html[data-theme="dark"] {
   --hover-shadow: 0 14px 32px rgba(31, 143, 98, 0.28);
 }
 
+/* Light mode overrides. Header and footer stay green. */
 html[data-theme="light"] {
   color-scheme: light;
   --ink: #161616;
@@ -148,6 +155,7 @@ body {
   flex-direction: column;
 }
 
+/* Green banner: brand, navigation, theme, and sign out. */
 .app-header {
   background: var(--header);
   border-bottom: 1px solid var(--header-line);
@@ -298,6 +306,7 @@ html[data-theme="light"] .brand-logo {
   box-shadow: inset 0 -2px 0 var(--mark);
 }
 
+/* Illustrative-content notice. Hidden on the dashboard and sign-in screen. */
 .disclaimer-bar {
   border-bottom: 1px solid var(--line);
   color: var(--ink-subtle);
@@ -319,6 +328,7 @@ html[data-theme="light"] .brand-logo {
   padding: 2rem 1.5rem 3.5rem;
 }
 
+/* Footer repeats the green banner and the Virtual Team mark. */
 .app-footer {
   background: var(--header);
   color: var(--header-muted);
@@ -506,6 +516,7 @@ a {
   font-size: 0.86rem;
 }
 
+/* Green lift for buttons, stats, list rows, and answer choices in the body. */
 .app-main a,
 .app-main .btn,
 .app-main .stat,
@@ -968,9 +979,70 @@ th {
   font-size: 0.88rem;
 }
 
-.score-scale {
-  display: grid;
+/* Cues under a question, the score beside an answer, and released reflection. */
+.answer-cues {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
+  list-style: none;
+  margin: 0.2rem 0 0.85rem;
+  padding: 0;
+}
+
+.answer-cues li {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.18rem 0.65rem;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.question-review {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(16rem, 0.95fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.question-review blockquote,
+.reflection blockquote {
+  margin: 0.35rem 0 0.8rem;
+  padding: 0.8rem 0.95rem;
+  border: 0;
+  border-left: 3px solid var(--mark);
+  background: var(--surface-alt);
+  border-radius: 0 8px 8px 0;
+}
+
+.guidance {
+  margin-top: 0.6rem;
+}
+
+.guidance summary {
+  cursor: pointer;
+  color: var(--ink-muted);
+  font-size: 0.84rem;
+}
+
+.reflection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.reflection:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.read-note {
+  margin-bottom: 0.85rem;
+}
+
+.read-note p {
+  margin-bottom: 0.35rem;
 }
 
 .score-scale label {
@@ -1106,7 +1178,9 @@ kbd {
 }
 
 @media (max-width: 900px) {
-  .workspace { grid-template-columns: 1fr; }
+  .workspace,
+  .question-review,
+  .reflection { grid-template-columns: 1fr; }
   .header-inner {
     grid-template-columns: 1fr;
     gap: 0.65rem;

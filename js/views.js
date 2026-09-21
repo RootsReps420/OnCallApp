@@ -1,3 +1,6 @@
+// One function per screen. Each function returns an HTML string.
+// Clicks are handled in app.js by looking for data-action on the element.
+
 import { escapeHtml, formatDateTime, nl } from "./util.js";
 import {
   pillsForScenario,
@@ -13,19 +16,22 @@ import {
   formatAttemptMeta,
   roleLabel
 } from "./render.js";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, scoreObjectiveQuestion } from "./scoring.js";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints } from "./scoring.js";
 import { publishedScenarios } from "./content.js";
 
+// Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
   return attempts
     .filter((item) => item.scenarioId === scenarioId)
     .sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""))[0];
 }
 
+// Attempts that belong to one colleague.
 function attemptsFor(attempts, engineerId) {
   return attempts.filter((item) => item.engineerId === engineerId);
 }
 
+// User home: continue, required scenarios, development actions, and weak areas.
 export function dashboardView(state) {
   const { config, scenarios, attempts, person } = state;
   const mine = attemptsFor(attempts, person.id);
@@ -78,15 +84,17 @@ export function dashboardView(state) {
       </section>
       <section class="card">
         <div class="card-head">
-          <h2>Capability</h2>
+          <h2>${areasToImprove(domainSummaries).length ? "Areas to improve" : "Capability"}</h2>
           <a href="#/readiness">Summary</a>
         </div>
-        ${domainBars(domainSummaries, { compact: true })}
+        ${domainBars(areasToImprove(domainSummaries).length ? areasToImprove(domainSummaries) : domainSummaries, { compact: true })}
+        ${areasToImprove(domainSummaries).length ? `<p class="subtle">Below Demonstrated on released feedback.</p>` : ""}
       </section>
     </div>
   `;
 }
 
+// Published scenarios. Administrators also see drafts.
 export function libraryView(state) {
   const published = state.role === "administrator" ? state.scenarios : publishedScenarios(state.scenarios);
   const mine = attemptsFor(state.attempts, state.person.id);
@@ -100,7 +108,7 @@ export function libraryView(state) {
         const attempt = latestAttempt(mine, scenario.id);
         return `
           <article class="card">
-            ${pillsForScenario(scenario, attempt)}
+            ${pillsForScenario(scenario, attempt, { difficulty: false })}
             <h2>${escapeHtml(scenario.title)}</h2>
             <p class="summary">${escapeHtml(scenario.description)}</p>
             <p class="subtle">${escapeHtml(scenario.scope)} · Version ${escapeHtml(scenario.version)}</p>
@@ -115,6 +123,7 @@ export function libraryView(state) {
   `;
 }
 
+// The page before an attempt starts. Only a user sees the start button.
 export function scenarioIntroView(state, scenario) {
   if (!scenario) return errorPage("Scenario not found", "That scenario id is not in the library.");
   if (scenario.status !== "published" && state.role !== "administrator") {
@@ -171,6 +180,7 @@ export function scenarioIntroView(state, scenario) {
   `;
 }
 
+// One question at a time, with the incident report and evidence beside the text box.
 export function workspaceView(state, attempt) {
   if (!attempt) return errorPage("Attempt not found", "That assessment could not be opened.");
   if (attempt.status !== "in-progress") {
@@ -202,7 +212,13 @@ export function workspaceView(state, attempt) {
         <h2>Question</h2>
         <p>${escapeHtml(question.prompt)}</p>
         ${question.helpText ? `<p class="hint muted">${escapeHtml(question.helpText)}</p>` : ""}
+        <ul class="answer-cues" aria-label="Cover these in your answer">
+          <li>What you would check</li>
+          <li>Who you would involve</li>
+          <li>What you would not change</li>
+        </ul>
         ${renderAnswerInput(question, answer, attempt.id)}
+        <p class="subtle">A short paragraph is enough.</p>
         <p class="status-msg" data-save-status aria-live="polite"></p>
         <div class="btn-row">
           <button class="btn secondary" data-action="save-progress" data-attempt-id="${attempt.id}">Save progress</button>
@@ -232,6 +248,7 @@ export function workspaceView(state, attempt) {
   `;
 }
 
+// True when the saved answer has text or at least one selected option.
 function hasAnswer(value) {
   if (value == null) return false;
   if (typeof value === "string") return value.trim().length > 0;
@@ -239,34 +256,18 @@ function hasAnswer(value) {
   return true;
 }
 
+// The answer box. Older choice questions are shown as a text box too.
 function renderAnswerInput(question, answer, attemptId) {
-  if (question.type === "written" || !question.options) {
-    return `
-      <div class="field">
-        <label for="answer-${question.id}">Your answer</label>
-        <textarea id="answer-${question.id}" class="answer-box" name="answer" data-attempt-id="${attemptId}" data-question-id="${question.id}" data-answer-type="written" placeholder="Write the approach you would take. Include what you would check, who you would involve, and what you would avoid.">${escapeHtml(typeof answer === "string" ? answer : "")}</textarea>
-      </div>
-    `;
-  }
-  const multiple = question.type === "multiple";
+  const text = typeof answer === "string" && answer.trim().length > 12 ? answer : "";
   return `
-    <div class="option-list" role="${multiple ? "group" : "radiogroup"}" aria-label="Answer options">
-      ${question.options.map((option) => {
-        const checked = multiple
-          ? (Array.isArray(answer) && answer.includes(option.id) ? "checked" : "")
-          : (answer === option.id ? "checked" : "");
-        return `
-          <label>
-            <input type="${multiple ? "checkbox" : "radio"}" name="answer-${question.id}" value="${escapeHtml(option.id)}" ${checked}
-              data-attempt-id="${attemptId}" data-question-id="${question.id}" data-answer-type="${question.type}">
-            <span>${escapeHtml(option.text)}</span>
-          </label>
-        `;
-      }).join("")}
+    <div class="field">
+      <label for="answer-${question.id}">Your answer</label>
+      <textarea id="answer-${question.id}" class="answer-box" name="answer" data-attempt-id="${attemptId}" data-question-id="${question.id}" data-answer-type="written" placeholder="Write the approach you would take. Include what you would check, who you would involve, and what you would avoid.">${escapeHtml(text)}</textarea>
     </div>
   `;
 }
 
+// Read-only check before submit.
 export function reviewAnswersView(attempt) {
   if (!attempt) return errorPage("Attempt not found", "Nothing to review.");
   const scenario = attempt.scenarioSnapshot;
@@ -294,6 +295,7 @@ export function reviewAnswersView(attempt) {
   `;
 }
 
+// Render a written answer, or the text of selected options on an old attempt.
 function formatAnswer(question, answer) {
   if (!hasAnswer(answer)) return "<span class='muted'>Not answered</span>";
   if (question.type === "written") return nl(answer);
@@ -304,12 +306,13 @@ function formatAnswer(question, answer) {
   }).join("")}</ul>`;
 }
 
+// Confirmation that the attempt is waiting for an assessor.
 export function submittedView(attempt) {
   if (!attempt) return errorPage("Attempt not found", "Submission not found.");
   return `
     <div class="page-header">
       <h1>Submitted</h1>
-      <p class="lede">Thank you. Your assessment for <strong>${escapeHtml(attempt.scenarioSnapshot.title)}</strong> is with an assessor. Objective answers have been scored from the configured mappings. Written explanations remain pending until review. Model guidance and scores will appear when feedback is released.</p>
+      <p class="lede">Thank you. Your assessment for <strong>${escapeHtml(attempt.scenarioSnapshot.title)}</strong> is with an assessor. Your words stay as you wrote them. Scores and commentary appear when feedback is released.</p>
     </div>
     <div class="card">
       <p>Submitted ${formatDateTime(attempt.submittedAt)} · Scenario version ${escapeHtml(attempt.scenarioVersion)}</p>
@@ -321,6 +324,7 @@ export function submittedView(attempt) {
   `;
 }
 
+// Released feedback: commentary, bars, then the engineer's own words beside the notes.
 export function feedbackView(state, attempt) {
   if (!attempt) return errorPage("Attempt not found", "Feedback is not available.");
   if (attempt.status !== "released") {
@@ -357,16 +361,35 @@ export function feedbackView(state, attempt) {
       ${criterionTable(results, { domains: state.config.capabilityDomains })}
     </div>
     <div class="card" style="margin-top:1rem">
-      <h2>Your answers and question-level notes</h2>
+      <h2>Your words and how they were read</h2>
       ${scenario.questions.map((question, index) => {
-        const auto = scoreObjectiveQuestion(question, attempt.answers?.[question.id]);
+        const linked = results.filter((item) => item.questionIds.includes(question.id));
         return `
-          <div class="review-block">
-            <h3>Question ${index + 1}</h3>
-            <p>${escapeHtml(question.prompt)}</p>
-            <p><strong>Your answer</strong><br>${formatAnswer(question, attempt.answers?.[question.id])}</p>
-            <p class="subtle">${escapeHtml(auto.detail)}</p>
-          </div>
+          <article class="reflection">
+            <div>
+              <h3>Question ${index + 1}</h3>
+              <p>${escapeHtml(question.prompt)}</p>
+              <p class="subtle">What you wrote</p>
+              <blockquote>${formatAnswer(question, attempt.answers?.[question.id])}</blockquote>
+            </div>
+            <div>
+              <p class="subtle">How it was read</p>
+              ${linked.length ? linked.map((item) => {
+                const note = usefulNote(attempt.review?.criterionScores?.[item.id]?.evidence);
+                const weak = item.score != null && item.score < 2;
+                return `
+                  <div class="read-note">
+                    <p>
+                      <span class="pill ${weak ? "not-ready" : item.score == null ? "progress" : "ready"}">${item.score == null ? "Not scored" : `${item.score} / ${item.maxScore}`}</span>
+                      ${escapeHtml(item.label)}
+                    </p>
+                    ${weak ? `<p class="subtle">Area to improve</p>` : ""}
+                    ${note ? `<p>${nl(note)}</p>` : `<p class="subtle">No note was added for this score.</p>`}
+                  </div>
+                `;
+              }).join("") : `<p class="muted">This answer was not linked to a scored criterion.</p>`}
+            </div>
+          </article>
         `;
       }).join("")}
     </div>
@@ -374,6 +397,7 @@ export function feedbackView(state, attempt) {
   `;
 }
 
+// Personal summary. It is not a certificate and it does not compare colleagues.
 export function readinessView(state) {
   const mine = attemptsFor(state.attempts, state.person.id);
   const published = publishedScenarios(state.scenarios);
@@ -421,12 +445,19 @@ export function readinessView(state) {
       </section>
     </div>
     <div class="card" style="margin-top:1rem">
+      <h2>Areas to improve</h2>
+      ${areasToImprove(domains).length
+        ? domainBars(areasToImprove(domains))
+        : `<p class="muted">Nothing released is below Demonstrated yet. A blank chart is incomplete evidence, not a strong score.</p>`}
+    </div>
+    <div class="card" style="margin-top:1rem">
       <h2>Capability coverage</h2>
       ${domainBars(domains)}
     </div>
   `;
 }
 
+// Form for suggesting a new practice scenario.
 export function proposeView() {
   return `
     <div class="page-header">
@@ -457,6 +488,7 @@ export function proposeView() {
   `;
 }
 
+// Submitted and released attempts stored in this browser.
 export function assessorQueueView(state) {
   const queue = state.attempts.filter((item) => item.status === "submitted" || item.status === "released");
   return `
@@ -484,6 +516,7 @@ export function assessorQueueView(state) {
   `;
 }
 
+// Score each criterion beside the question it first belongs to.
 export function assessorReviewView(state, attempt) {
   if (!attempt) return errorPage("Attempt not found", "Nothing to review.");
   const scenario = attempt.scenarioSnapshot;
@@ -504,53 +537,32 @@ export function assessorReviewView(state, attempt) {
     </div>
     <form data-form="review" data-attempt-id="${attempt.id}">
       ${scenario.questions.map((question, index) => {
-        const auto = scoreObjectiveQuestion(question, attempt.answers?.[question.id]);
+        const owned = results.filter((item) => primaryQuestion(item, scenario.questions)?.id === question.id);
+        const shared = results.filter((item) => item.questionIds.includes(question.id) && primaryQuestion(item, scenario.questions)?.id !== question.id);
         return `
-          <section class="card review-block">
-            <h2>Question ${index + 1}${question.type === "written" ? "" : ` · ${escapeHtml(question.type)}`}</h2>
-            <p>${escapeHtml(question.prompt)}</p>
-            <p><strong>Engineer answer</strong><br>${formatAnswer(question, attempt.answers?.[question.id])}</p>
-            ${question.type === "written" ? "" : `<p class="subtle">Automated result: ${escapeHtml(auto.status)}${auto.credit != null ? ` · credit ${auto.credit}` : ""} — ${escapeHtml(auto.detail)}</p>`}
-            ${question.assessorGuidance ? `<div class="callout"><p><strong>Assessor guidance (not shown to engineers until release context).</strong> ${escapeHtml(question.assessorGuidance)}</p></div>` : ""}
-            ${question.acceptableApproaches ? `<p class="subtle">Acceptable approaches: ${escapeHtml((question.acceptableApproaches || []).join(" · "))}</p>` : ""}
+          <section class="card question-review">
+            <div>
+              <h2>Question ${index + 1}${question.type === "written" ? "" : ` · ${escapeHtml(question.type)}`}</h2>
+              <p>${escapeHtml(question.prompt)}</p>
+              <p class="subtle">What they wrote</p>
+              <blockquote>${formatAnswer(question, attempt.answers?.[question.id])}</blockquote>
+              ${question.assessorGuidance ? `<details class="guidance"><summary>Assessor guidance</summary><p>${escapeHtml(question.assessorGuidance)}</p></details>` : ""}
+              ${question.acceptableApproaches ? `<p class="subtle">Acceptable approaches: ${escapeHtml((question.acceptableApproaches || []).join(" · "))}</p>` : ""}
+              ${shared.map((item) => {
+                const home = primaryQuestion(item, scenario.questions);
+                const homeIndex = scenario.questions.findIndex((entry) => entry.id === home?.id);
+                return `<p class="subtle">Also read for “${escapeHtml(item.label)}”, scored beside question ${homeIndex + 1}.</p>`;
+              }).join("")}
+            </div>
+            <div class="question-scores">
+              ${owned.length ? owned.map((item) => scoreControl(item, review, state)).join("") : `<p class="muted">No criterion is scored from this question alone. It still informs the scores named on the left.</p>`}
+            </div>
           </section>
         `;
       }).join("")}
-      <section class="card">
-        <h2>Criterion scores</h2>
-        ${results.map((item) => {
-          const saved = review.criterionScores?.[item.id] || {};
-          const autoVal = item.source === "objective" || item.source === "assessor" ? item.score : "";
-          return `
-            <fieldset class="review-block">
-              <legend><strong>${escapeHtml(item.label)}</strong>
-                ${item.mandatory ? `<span class="pill required">Mandatory</span>` : ""}
-                ${item.safetyCritical ? `<span class="pill critical">Safety-critical</span>` : ""}
-              </legend>
-              <p class="subtle">${escapeHtml((state.config.capabilityDomains.find((d) => d.id === item.domainId) || {}).name || item.domainId)} · current status: ${escapeHtml(item.status)} ${item.score != null ? `(${item.score}/${item.maxScore})` : ""}</p>
-              <div class="score-scale">
-                <label><input type="radio" name="crit-${item.id}" value="" ${saved.score == null || saved.score === "" ? "checked" : ""}> Leave unreviewed (not zero)</label>
-                ${SCORE_SCALE.map((scale) => `
-                  <label>
-                    <input type="radio" name="crit-${item.id}" value="${scale.value}" ${String(saved.score) === String(scale.value) ? "checked" : ""}>
-                    <span><strong>${scale.value} — ${escapeHtml(scale.label)}</strong><br>${escapeHtml(scale.description)}</span>
-                  </label>
-                `).join("")}
-              </div>
-              <div class="field">
-                <label for="ev-${item.id}">What in the answer supports this score</label>
-                <textarea id="ev-${item.id}" name="ev-${item.id}">${escapeHtml(saved.evidence || item.evidence.join("\n"))}</textarea>
-              </div>
-              ${item.source === "objective" ? `
-              <div class="field">
-                <label for="adj-${item.id}">Explanation if you adjust an automated score</label>
-                <textarea id="adj-${item.id}" name="adj-${item.id}">${escapeHtml(saved.adjustmentExplanation || "")}</textarea>
-                <span class="hint">Required when changing a mapped objective result. Auto reference: ${autoVal === "" ? "none" : autoVal}</span>
-              </div>` : ""}
-            </fieldset>
-          `;
-        }).join("")}
-      </section>
+      ${results.filter((item) => !primaryQuestion(item, scenario.questions)).map((item) => `
+        <section class="card">${scoreControl(item, review, state)}</section>
+      `).join("")}
       <section class="card">
         <div class="field">
           <label for="strengths">Strengths demonstrated</label>
@@ -587,6 +599,7 @@ export function assessorReviewView(state, attempt) {
   `;
 }
 
+// Pick a name from the directory. There is no password field.
 export function signInView(state) {
   const people = state.directory || [];
   return `
@@ -607,6 +620,7 @@ export function signInView(state) {
   `;
 }
 
+// Administrator page for adding colleagues and changing the one role each person has.
 export function accessView(state) {
   const people = state.directory || [];
   const adminCount = people.filter((person) => person.role === "administrator").length;
@@ -663,6 +677,7 @@ export function accessView(state) {
   `;
 }
 
+// Publish, unpublish, and reset local demo data.
 export function adminScenariosView(state) {
   return `
     <div class="page-header">
@@ -695,6 +710,7 @@ export function adminScenariosView(state) {
   `;
 }
 
+// Paste or upload scenario JSON. It is validated before it is stored.
 export function adminImportView(scenario) {
   const json = scenario ? JSON.stringify(scenario, null, 2) : sampleTemplate();
   return `
@@ -720,6 +736,7 @@ export function adminImportView(scenario) {
   `;
 }
 
+// Ideas sent from Propose a scenario.
 export function adminProposalsView(state) {
   return `
     <div class="page-header">
@@ -741,6 +758,7 @@ export function adminProposalsView(state) {
   `;
 }
 
+// Edit the gates that sit behind a Ready recommendation.
 export function adminCriteriaView(state) {
   const cfg = state.readinessConfig;
   return `
@@ -775,6 +793,7 @@ export function adminCriteriaView(state) {
   `;
 }
 
+// Starter JSON for a new written scenario.
 function sampleTemplate() {
   return JSON.stringify({
     id: "vds-custom-001",
@@ -862,6 +881,62 @@ function sampleTemplate() {
   }, null, 2);
 }
 
+// The first question a criterion is linked to. That is where the score controls are drawn.
+function primaryQuestion(criterion, questions) {
+  return (questions || []).find((question) => criterion.questionIds?.includes(question.id)) || null;
+}
+
+// Hide stock phrases so released feedback only quotes a note the assessor actually wrote.
+function usefulNote(text) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+  if (/awaiting assessor review/i.test(value)) return "";
+  if (value === "Assessor score applied.") return "";
+  if (value === "No linked question has been answered.") return "";
+  return value;
+}
+
+// Capability areas below Demonstrated (under 67%) or with an unmet mandatory criterion.
+function areasToImprove(domains) {
+  return (domains || []).filter((domain) => domain.mandatoryUnmet?.length || (domain.percentage != null && domain.percentage < 67));
+}
+
+// The 0–3 radios and the note box for one criterion.
+function scoreControl(item, review, state) {
+  const saved = review.criterionScores?.[item.id] || {};
+  const domain = state.config.capabilityDomains.find((entry) => entry.id === item.domainId);
+  const autoVal = item.source === "objective" ? item.score : "";
+  return `
+    <fieldset class="review-block">
+      <legend><strong>${escapeHtml(item.label)}</strong>
+        ${item.mandatory ? `<span class="pill required">Mandatory</span>` : ""}
+        ${item.safetyCritical ? `<span class="pill critical">Safety-critical</span>` : ""}
+      </legend>
+      <p class="subtle">${escapeHtml(domain?.name || item.domainId)}</p>
+      <div class="score-scale">
+        <label><input type="radio" name="crit-${item.id}" value="" ${saved.score == null || saved.score === "" ? "checked" : ""}> Leave unreviewed</label>
+        ${SCORE_SCALE.map((scale) => `
+          <label>
+            <input type="radio" name="crit-${item.id}" value="${scale.value}" ${String(saved.score) === String(scale.value) ? "checked" : ""}>
+            <span><strong>${scale.value} — ${escapeHtml(scale.label)}</strong></span>
+          </label>
+        `).join("")}
+      </div>
+      <div class="field">
+        <label for="ev-${item.id}">What in their words supports this score</label>
+        <textarea id="ev-${item.id}" name="ev-${item.id}">${escapeHtml(saved.evidence || "")}</textarea>
+      </div>
+      ${item.source === "objective" ? `
+      <div class="field">
+        <label for="adj-${item.id}">Explanation if you adjust an automated score</label>
+        <textarea id="adj-${item.id}" name="adj-${item.id}">${escapeHtml(saved.adjustmentExplanation || "")}</textarea>
+        <span class="hint">Required when changing a mapped result. Auto reference: ${autoVal === "" || autoVal == null ? "none" : autoVal}</span>
+      </div>` : ""}
+    </fieldset>
+  `;
+}
+
+// Domain bars from this colleague's released attempts only.
 function aggregateReleasedDomains(state) {
   const mine = attemptsFor(state.attempts, state.person.id).filter((item) => item.status === "released");
   const results = mine.flatMap((item) => buildCriterionResults(item.scenarioSnapshot, item.answers, item.review));

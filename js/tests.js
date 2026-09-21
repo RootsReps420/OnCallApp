@@ -1,7 +1,11 @@
+// In-browser checks opened from Administrator → Verification.
+// These fixtures are not the real scenarios. They prove the scoring rules.
+
 import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints } from "./scoring.js";
 import { validateScenario } from "./validation.js";
 import * as storage from "./storage.js";
 
+// A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {
   return {
     id: "q-single",
@@ -16,6 +20,7 @@ function fixtureQuestionSingle() {
   };
 }
 
+// A tiny multiple-choice question with a required option and a negative credit.
 function fixtureQuestionMulti() {
   return {
     id: "q-multi",
@@ -37,6 +42,7 @@ function fixtureQuestionMulti() {
   };
 }
 
+// A written question, which must stay pending.
 function fixtureQuestionWritten() {
   return {
     id: "q-write",
@@ -46,6 +52,7 @@ function fixtureQuestionWritten() {
   };
 }
 
+// A valid mini scenario that links those questions to criteria.
 function fixtureScenario() {
   return {
     id: "fixture-001",
@@ -111,6 +118,7 @@ function fixtureScenario() {
   };
 }
 
+// Run the checks and return { name, ok, detail } rows for the Verification page.
 export function runVerification() {
   const results = [];
   const check = (name, condition, detail = "") => {
