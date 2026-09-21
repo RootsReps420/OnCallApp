@@ -1,5 +1,7 @@
 /* Incident Lab dashboard theme.
-   Same overview layout in both modes. Palette is Lloyds black and Grove green. */
+   Sidebar + main column in both modes. Palette is Lloyds black (horse, carbon body)
+   and Grove green (#006a4d) for active nav, buttons, and charts.
+   html[data-theme] switches the token block; the layout classes stay the same. */
 
 :root,
 html[data-theme="dark"] {

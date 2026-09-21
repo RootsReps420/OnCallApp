@@ -11,6 +11,7 @@ export function roleLabel(role) {
   return "User";
 }
 
+// Two letters for the sidebar avatar, from the signed-in name.
 function initialsOf(name) {
   return String(name || "?")
     .split(/\s+/)
@@ -20,6 +21,7 @@ function initialsOf(name) {
     .join("");
 }
 
+// Small stroke icons for the sidebar and search field.
 function icon(name) {
   const common = `class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`;
   const shapes = {
@@ -90,6 +92,7 @@ export function layout({ config, role, path, body, theme = "dark", person = null
   `;
 }
 
+// One labelled group of sidebar links, such as Practice or Manage.
 function navSection(title, items, path) {
   return `
     <p class="nav-label">${title}</p>
@@ -224,6 +227,7 @@ export function domainBars(summaries, { compact = false } = {}) {
   `;
 }
 
+// Overview metric tile. hint may include a coloured delta span; label and value are escaped.
 export function kpiCard({ label, value, hint = "", href = "" }) {
   const tag = href ? "a" : "article";
   const extra = href ? ` href="${href}"` : "";
@@ -236,6 +240,7 @@ export function kpiCard({ label, value, hint = "", href = "" }) {
   `;
 }
 
+// Line chart of released domain scores. Unscored domains plot at zero so the axis still reads.
 export function capabilityLineChart(domains = []) {
   const width = 720;
   const height = 280;
@@ -280,6 +285,7 @@ export function capabilityLineChart(domains = []) {
   `;
 }
 
+// Donut of covered / gap / unscored domains. The hole shows percent covered.
 export function coverageDonut(domains = []) {
   const parts = [
     { label: "Covered", color: "#006a4d", value: domains.filter((item) => domainState(item) === "strong").length },
@@ -361,6 +367,7 @@ export function criterionTable(results, { showAssessorHints = false, domains = [
   `;
 }
 
+// Short labels for the dashboard line-chart axis. The readiness map uses the full domain name.
 const DOMAIN_SHORT = {
   "avd-infrastructure": "AVD",
   "networking": "Network",
@@ -371,6 +378,7 @@ const DOMAIN_SHORT = {
   "m365-stack": "M365"
 };
 
+// Split a long spoke title onto two SVG lines so it fits around the ring.
 function wrapSpokeLabel(text) {
   const value = String(text || "").trim();
   if (value.length <= 14) return [value];
@@ -384,6 +392,7 @@ function wrapSpokeLabel(text) {
   return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 }
 
+// Strong / gap / empty for a capability node. Below Demonstrated (67%) counts as a gap.
 function domainState(domain) {
   if (domain.mandatoryUnmet?.length) return "gap";
   if (domain.percentage == null) return "empty";
@@ -391,12 +400,13 @@ function domainState(domain) {
   return "strong";
 }
 
+// Point on the readiness ring. Index 0 starts at the top and the rest go clockwise.
 function polarPoint(cx, cy, radius, index, total) {
   const angle = -Math.PI / 2 + (index / total) * Math.PI * 2;
   return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
 }
 
-// Interactive map of capability areas. Gaps glow so weak spots stand out against the rest of the graph.
+// Interactive map of capability areas. Each area is one spoke into the hub. Gaps glow.
 export function readinessNetwork(domains, { personName = "You" } = {}) {
   const width = 920;
   const height = 680;
@@ -463,6 +473,7 @@ export function readinessNetwork(domains, { personName = "You" } = {}) {
   `;
 }
 
+// Copy in the readiness aside for the selected capability node.
 function neuralDetailHtml(item) {
   if (!item) {
     return `<p class="muted">Hover or select a capability node to see where evidence is thin.</p>`;

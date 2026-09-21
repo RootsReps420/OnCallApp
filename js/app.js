@@ -668,6 +668,7 @@ document.addEventListener("click", (event) => {
 
 boot();
 
+// Wire the sidebar search box after each page draw. The old node is gone with the redraw.
 function bindPageFilters() {
   const input = document.querySelector("[data-global-search]");
   if (input) {
@@ -675,6 +676,7 @@ function bindPageFilters() {
   }
 }
 
+// Hide rows and cards that do not match the sidebar search or the dashboard date pills.
 function applyPageFilters() {
   const query = (document.querySelector("[data-global-search]")?.value || "").trim().toLowerCase();
   const pressed = document.querySelector("[data-action='dash-range'][aria-pressed='true']");

@@ -35,7 +35,7 @@ function attemptsFor(attempts, engineerId) {
   return attempts.filter((item) => item.engineerId === engineerId);
 }
 
-// User home: continue, required scenarios, development actions, and weak areas.
+// User home: KPI cards, capability charts, recent activity, and required scenarios.
 export function dashboardView(state) {
   const { config, scenarios, attempts, person } = state;
   const mine = attemptsFor(attempts, person.id);
@@ -557,7 +557,7 @@ export function proposeView() {
   `;
 }
 
-// Submitted and released attempts stored in this browser.
+// Assessor home: queue KPIs and the submitted / released table.
 export function assessorQueueView(state) {
   const queue = state.attempts.filter((item) => item.status === "submitted" || item.status === "released");
   const submitted = queue.filter((item) => item.status === "submitted");
@@ -790,7 +790,7 @@ export function accessView(state) {
   `;
 }
 
-// Publish, unpublish, and reset local demo data.
+// Administrator home: library KPIs, publish, unpublish, and reset local demo data.
 export function adminScenariosView(state) {
   const published = state.scenarios.filter((item) => item.status === "published").length;
   const drafts = state.scenarios.filter((item) => item.status !== "published").length;
