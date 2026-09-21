@@ -1,7 +1,13 @@
 {
   "appName": "Incident Lab",
   "serviceName": "Virtual Desktop Service (VDS)",
-  "prototypeNotice": "Virtual Team · Incident Lab. Sign-in on this browser stands in for Microsoft Entra ID. An administrator assigns User, Assessor, or Administrator access. Assessment records stay in this browser until a shared service exists.",
+  "prototypeNotice": "Virtual Team · Incident Lab. Sign in with an ignitemyfire.co.uk account. An administrator assigns User, Assessor, or Administrator in Entra ID. Assessment records still stay in this browser until a shared service exists.",
+  "entra": {
+    "enabled": true,
+    "clientId": "2e825270-7929-4f12-afab-80aa5aa8382f",
+    "tenantId": "a22ff489-2ea9-48de-8d58-fa130b532d5d",
+    "tenantDomain": "ignitemyfire.co.uk"
+  },
   "capabilityDomains": [
     {
       "id": "incident-assessment",

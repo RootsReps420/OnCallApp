@@ -6,8 +6,9 @@ import { createId, nowIso, parseHash, navigate, downloadJson } from "./util.js";
 import * as storage from "./storage.js";
 import { loadConfig, loadLibrary } from "./content.js";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel } from "./render.js?v=11";
-import * as views from "./views.js";
+import { layout, errorPage, roleLabel } from "./render.js?v=12";
+import * as views from "./views.js?v=12";
+import * as auth from "./auth.js?v=12";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
 import { runVerification } from "./tests.js";
 
@@ -22,7 +23,9 @@ const state = {
   role: "",                 // engineer, assessor, or administrator
   person: null,             // the signed-in colleague, or null
   readinessConfig: null,    // gates behind a Ready recommendation
-  flash: ""                 // one-line message for the next Access page draw
+  flash: "",                // one-line message for the next Access page draw
+  entraEnabled: false,      // Microsoft sign-in is configured in config.json
+  authError: ""             // last Entra error shown on the sign-in page
 };
 
 // Match the saved session id to a colleague. A stale id is cleared.
@@ -54,6 +57,13 @@ async function refreshLibrary() {
 async function boot() {
   try {
     state.config = await loadConfig();
+    const authResult = await auth.initAuth(state.config);
+    state.entraEnabled = Boolean(authResult.enabled);
+    state.authError = authResult.error || "";
+    if (authResult.person) {
+      storage.upsertPerson(authResult.person);
+      storage.setSessionId(authResult.person.id);
+    }
     await refreshLibrary();
     if (!location.hash) location.hash = "#/dashboard";
     window.addEventListener("hashchange", render);
@@ -62,6 +72,9 @@ async function boot() {
     document.addEventListener("input", onInput);
     document.addEventListener("submit", onSubmit);
     render();
+    if (authResult.fromRedirect && authResult.person) {
+      navigate(homeFor(authResult.person.role));
+    }
   } catch (error) {
     appRoot.innerHTML = `
       <div class="app-main">
@@ -179,7 +192,17 @@ function onClick(event) {
 
   if (action === "sign-out") {
     storage.setSessionId("");
-    navigate("#/dashboard");
+    auth.signOutEntra().then((leftForMicrosoft) => {
+      if (!leftForMicrosoft) navigate("#/dashboard");
+    }).catch(() => navigate("#/dashboard"));
+    return;
+  }
+  if (action === "entra-sign-in") {
+    state.authError = "";
+    auth.signInWithEntra().catch((error) => {
+      state.authError = error.message || String(error);
+      render();
+    });
     return;
   }
   if (action === "sign-in") {
@@ -196,6 +219,11 @@ function onClick(event) {
     const target = people.find((item) => item.id === personId);
     if (!target) return;
     const admins = people.filter((item) => item.role === "administrator");
+    if (target.source === "entra") {
+      state.flash = "Remove ignitemyfire.co.uk colleagues on the Incident Lab enterprise application in Entra ID.";
+      render();
+      return;
+    }
     if (target.role === "administrator" && admins.length < 2) {
       state.flash = "Keep at least one administrator.";
       render();
@@ -360,6 +388,11 @@ function updatePersonRole(personId, role) {
   const people = storage.getDirectory();
   const target = people.find((item) => item.id === personId);
   if (!target || target.role === role) return;
+  if (target.source === "entra") {
+    state.flash = "Entra ID assigns this role. Change it on the Incident Lab enterprise application.";
+    render();
+    return;
+  }
   const admins = people.filter((item) => item.role === "administrator");
   if (target.role === "administrator" && role !== "administrator" && admins.length < 2) {
     state.flash = "Keep at least one administrator.";

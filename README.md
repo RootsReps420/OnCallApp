@@ -16,17 +16,17 @@ Then open http://localhost:8080
 
 ## Sign in
 
-Pick a name. There is no password. **Sign out** is in the header.
+**Sign in with Microsoft** uses the ignitemyfire.co.uk tenant. Roles come from the Incident Lab app registration (`User`, `Assessor`, `Administrator`). **Sign out** is in the header.
+
+Attempts still live in this browser. A shared Incident Lab would store them in a database and check the token on a server.
+
+For practice without Entra, open **Practice on this browser** and pick a name:
 
 | Person | Access | What they do |
 | --- | --- | --- |
 | Alex Chen | User | Takes scenarios and reads their own released feedback |
 | Jordan Blake | Assessor | Scores answers and releases feedback |
 | Sam Rivera | Administrator | Publishes scenarios and adds or removes colleagues |
-
-An administrator assigns one role per person on **Access**. The last administrator cannot be removed.
-
-This list lives in the browser only. A shared version should sign people in with Microsoft Entra ID and store attempts in a database. The browser must not keep a password.
 
 ## A practice attempt
 
@@ -57,6 +57,7 @@ Each script starts with a short note, and each function has a comment above it.
 | `index.html` | The page shell. The theme is applied before the CSS loads. |
 | `css/styles.css` | Colours, the green header and footer, and the hover on clickable items. |
 | `js/app.js` | Starts the app, reads the address after `#/`, and saves work. |
+| `js/auth.js` | Microsoft Entra sign-in for ignitemyfire.co.uk. |
 | `js/views.js` | The HTML for each screen. |
 | `js/render.js` | The header, footer, pills, evidence, and charts. |
 | `js/storage.js` | Reads and writes this browser's saved data. |

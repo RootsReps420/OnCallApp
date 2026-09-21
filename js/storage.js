@@ -56,6 +56,15 @@ export function saveDirectory(people) {
   return people;
 }
 
+// Insert or update one colleague by id. Entra sign-in uses this after a successful token.
+export function upsertPerson(person) {
+  const people = getDirectory();
+  const index = people.findIndex((item) => item.id === person.id);
+  if (index >= 0) people[index] = { ...people[index], ...person };
+  else people.push(person);
+  return saveDirectory(people);
+}
+
 // Id of the signed-in colleague, or an empty string.
 export function getSessionId() {
   return localStorage.getItem(KEYS.session) || "";

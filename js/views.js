@@ -599,24 +599,47 @@ export function assessorReviewView(state, attempt) {
   `;
 }
 
-// Pick a name from the directory. There is no password field.
+// Microsoft sign-in for ignitemyfire.co.uk, plus a local name list for practice on this browser.
 export function signInView(state) {
-  const people = state.directory || [];
+  const people = (state.directory || []).filter((person) => person.source !== "entra");
+  const entra = state.entraEnabled;
   return `
     <div class="page-header">
       <h1>Sign in</h1>
-      <p class="lede">Choose your name. This browser keeps a local session in place of Microsoft Entra ID, which is how colleagues would sign in for a shared Incident Lab. There is no password here, because a password stored in the browser would not be a real control.</p>
-      <p class="lede">An administrator assigns User, Assessor, or Administrator before you arrive. Signing in does not let you pick a different role.</p>
+      ${entra ? `
+        <p class="lede">Use your ignitemyfire.co.uk account. User, Assessor, or Administrator is assigned in Entra ID, not on this screen.</p>
+      ` : `
+        <p class="lede">Choose your name. This browser keeps a local session in place of Microsoft Entra ID. There is no password here, because a password stored in the browser would not be a real control.</p>
+        <p class="lede">An administrator assigns User, Assessor, or Administrator before you arrive. Signing in does not let you pick a different role.</p>
+      `}
     </div>
-    <div class="people-grid">
-      ${people.map((person) => `
-        <button type="button" class="person-card" data-action="sign-in" data-person-id="${escapeHtml(person.id)}">
-          <strong>${escapeHtml(person.name)}</strong>
-          <span>${escapeHtml(person.roleTitle || roleLabel(person.role))}</span>
-          <span>${roleLabel(person.role)}</span>
-        </button>
-      `).join("")}
-    </div>
+    ${entra ? `
+      <div class="entra-panel">
+        <button type="button" class="btn" data-action="entra-sign-in">Sign in with Microsoft</button>
+        ${state.authError ? `<p class="error-msg">${escapeHtml(state.authError)}</p>` : ""}
+      </div>
+      <details class="local-practice">
+        <summary>Practice on this browser</summary>
+        <p class="lede">These names stay on this machine only. They do not prove an ignitemyfire.co.uk identity.</p>
+        <div class="people-grid">
+          ${people.map((person) => personCard(person)).join("")}
+        </div>
+      </details>
+    ` : `
+      <div class="people-grid">
+        ${people.map((person) => personCard(person)).join("")}
+      </div>
+    `}
+  `;
+}
+
+function personCard(person) {
+  return `
+    <button type="button" class="person-card" data-action="sign-in" data-person-id="${escapeHtml(person.id)}">
+      <strong>${escapeHtml(person.name)}</strong>
+      <span>${escapeHtml(person.roleTitle || roleLabel(person.role))}</span>
+      <span>${roleLabel(person.role)}</span>
+    </button>
   `;
 }
 
@@ -627,29 +650,33 @@ export function accessView(state) {
   return `
     <div class="page-header">
       <h1>Access</h1>
-      <p class="lede">Administrators add colleagues and assign one role each. Users practise scenarios and see their own released feedback. Assessors review submissions. Administrators manage scenarios, criteria, and this directory. In production those assignments would be Entra ID groups, checked on the server.</p>
+      <p class="lede">ignitemyfire.co.uk colleagues receive User, Assessor, or Administrator from the Incident Lab enterprise application in Entra ID. The names below that are only for this browser can still be added and changed here. Attempts stay in this browser until a shared service exists.</p>
       ${state.flash ? `<p class="status-msg">${escapeHtml(state.flash)}</p>` : ""}
     </div>
     <div class="card table-wrap access-table">
       <table>
-        <thead><tr><th>Colleague</th><th>Job title</th><th>Access</th><th></th></tr></thead>
+        <thead><tr><th>Colleague</th><th>Account</th><th>Access</th><th></th></tr></thead>
         <tbody>
-          ${people.map((person) => `
+          ${people.map((person) => {
+            const entra = person.source === "entra";
+            return `
             <tr>
-              <td>${escapeHtml(person.name)}</td>
-              <td>${escapeHtml(person.roleTitle || "—")}</td>
+              <td>${escapeHtml(person.name)}${entra ? `<span class="subtle"> · Entra</span>` : ""}</td>
+              <td>${escapeHtml(person.email || person.roleTitle || "—")}</td>
               <td>
+                ${entra ? `<span>${roleLabel(person.role)}</span>` : `
                 <select data-person-role="${escapeHtml(person.id)}" aria-label="Access for ${escapeHtml(person.name)}">
                   ${["engineer", "assessor", "administrator"].map((role) => `
                     <option value="${role}" ${person.role === role ? "selected" : ""}>${roleLabel(role)}</option>
                   `).join("")}
-                </select>
+                </select>`}
               </td>
               <td>
-                <button type="button" class="btn ghost" data-action="remove-person" data-person-id="${escapeHtml(person.id)}" ${person.role === "administrator" && adminCount < 2 ? "disabled" : ""}>Remove</button>
+                <button type="button" class="btn ghost" data-action="remove-person" data-person-id="${escapeHtml(person.id)}" ${entra || (person.role === "administrator" && adminCount < 2) ? "disabled" : ""}>Remove</button>
               </td>
             </tr>
-          `).join("")}
+          `;
+          }).join("")}
         </tbody>
       </table>
     </div>

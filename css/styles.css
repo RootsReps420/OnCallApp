@@ -1076,6 +1076,30 @@ th {
   color: var(--ink-muted);
 }
 
+.entra-panel {
+  margin: 0.4rem 0 1.6rem;
+}
+
+.entra-panel .error-msg {
+  margin-top: 0.85rem;
+}
+
+.local-practice {
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.local-practice summary {
+  cursor: pointer;
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+}
+
+.local-practice .lede {
+  margin-top: 0.75rem;
+}
+
 .people-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
