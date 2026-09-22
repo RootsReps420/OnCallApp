@@ -1,0 +1,129 @@
+{
+  "id": "vdi-m365-onedrive-010",
+  "version": "1.2.0",
+  "status": "published",
+  "title": "M365 Stack 2",
+  "spokeId": "m365-stack",
+  "spokeNumber": 2,
+  "description": "Ops includes VDI in an out-of-hours callout that started in another part of the bank. Users on AVD are reporting sporadic OneDrive issues: unable to sync, plus generic authentication problems.",
+  "scope": "Out-of-hours: another-area callout. Sporadic OneDrive sync and generic M365 auth, reported on AVD.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward treating this as a rule-out of AVD / Virtual Team, not an AVD ownership claim. M365 and Azure portals first, then which devices are hit (AVD only vs corp physical as well). Ops and TRM if they are not already on. Microsoft as soon as the behaviour looks like one of their products. Recovery: active users on the call no longer see the issue after a fix. Safety-critical: do not say it is AVD until that is proven.",
+  "acceptableAlternativeApproaches": [
+    "M365 and Azure portals first, then AVD vs physical device check, then Microsoft if the product path is theirs.",
+    "Confirm Ops and TRM are on the call, then portals and device split in parallel.",
+    "Microsoft engaged early because OneDrive / auth is a Microsoft product, while VDI still only rules the platform in or out."
+  ],
+  "documentationReferences": [
+    {
+      "title": "VDI OOH Microsoft 365 access (illustrative runbook)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "Ops includes VDI in an out-of-hours callout that started in another part of the bank. Sporadic issues on AVD for the M365 stack, particularly OneDrive: users cannot sync, plus generic authentication issues.",
+    "serviceNow": {
+      "incidentNumber": "INC0002407",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-28 22:14 UTC",
+      "caller": "Ops Bridge (another part of the bank already on the call)",
+      "affectedCI": "Microsoft 365 / OneDrive via AVD (illustrative)",
+      "shortDescription": "Sporadic AVD OneDrive sync and M365 authentication issues",
+      "description": "Callout from another part of the bank via Ops. Sporadic OneDrive sync and generic authentication issues, reported on AVD."
+    },
+    "impact": {
+      "customers": "Users reporting sporadic OneDrive sync failure and generic M365 authentication issues, described as occurring on AVD. Whether corp physical devices are also hit is not yet known.",
+      "colleagues": "Ops on the call. Another part of the bank already involved. VDI included.",
+      "business": "Affected colleagues cannot sync OneDrive or authenticate to M365. Scale and owning platform still being proven. Illustrative impact."
+    },
+    "facts": [
+      {
+        "label": "Who called",
+        "value": "Ops. VDI was included from another part of the bank’s OOH callout."
+      },
+      {
+        "label": "Symptom",
+        "value": "Sporadic OneDrive sync failure and generic M365 authentication issues, described as occurring on AVD."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "m365-stack",
+        "platform-troubleshooting",
+        "vendor-management",
+        "trm-escalation-ops"
+      ],
+      "helpText": "You were included from another area. Think about what you would prove on AVD before you own this.",
+      "assessorGuidance": "Score the whole write-up. Reward: VDI’s job is to rule out AVD / Virtual Team; M365 and Azure portals first; then AVD vs corp physical; Ops and TRM if not already on; Microsoft as soon as the behaviour looks like their product; recovery when active users on the call no longer see the issue after a fix. Do not score as demonstrated: stating it is AVD before that is proven; skipping Microsoft when the product path is theirs."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-role",
+      "label": "Treats VDI’s job as ruling the AVD / Virtual Team platform in or out, not owning the incident by default",
+      "domainId": "m365-stack",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-first",
+      "label": "Checks M365 and Azure portals first, then whether AVD-only or corp physical devices are also hit",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-engage",
+      "label": "Engages Ops and TRM if they are not already on, and Microsoft as soon as the behaviour stems from a Microsoft product",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-trm",
+      "label": "Brings TRM in if they are not already engaged",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-recover",
+      "label": "Proves recovery when active users on the call no longer see the issue after a fix",
+      "domainId": "m365-stack",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not say it is AVD until that is proven",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "id": "vdi-avd-corebank-004",
+  "version": "1.2.0",
+  "status": "published",
+  "title": "AVD Infrastructure 2",
+  "spokeId": "avd-infrastructure",
+  "spokeNumber": 2,
+  "description": "Weekend early hours. Ops pages VDI on-call. Users on AVD Personal say the core banking application will not load. They cannot do their day-to-day job. Other applications on the same personal desktop still work.",
+  "scope": "Out-of-hours: core banking will not load from AVD Personal. The desktop session itself is up.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward splitting a working AVD Personal session from a failed core-banking path. Expect Azure Firewall checks for ExpressRoute back to the bank versus proxy, and Core Networks if the flow is on ExpressRoute. Recovery is collaborative with MIM, TRM, and the teams called out. Safety-critical: do not close as 'not an AVD platform issue' before that troubleshooting. Do not change Azure Firewall or proxy yourself to 'test'.",
+  "acceptableAlternativeApproaches": [
+    "Confirm the personal desktop and other apps first, then Azure Firewall for ExpressRoute versus proxy, then Core Networks.",
+    "Open MIM/TRM in parallel with the firewall path check once impact is clear.",
+    "Stay on the bridge and own the AVD-side evidence pack for Core Networks rather than handing off with no checks."
+  ],
+  "documentationReferences": [
+    {
+      "title": "VDI OOH application access (illustrative runbook)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "Early hours, weekend. Ops pages VDI on-call. Users on AVD Personal say the core banking application they were using is not loading. They cannot do their day-to-day job. Other applications on the same personal desktop still work.",
+    "serviceNow": {
+      "incidentNumber": "INC0002401",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-27 04:18 UTC",
+      "caller": "Ops Bridge",
+      "affectedCI": "AVD Personal / core banking application path (illustrative)",
+      "shortDescription": "Core banking application not loading from AVD Personal",
+      "description": "Full AVD Personal desktop session works. Other apps on that session work. Core banking will not load. Weekend OOH. Ops callout."
+    },
+    "impact": {
+      "customers": "AVD Personal users who need core banking for their day-to-day job (illustrative overnight / weekend cohort).",
+      "colleagues": "Ops bridge; VDI on-call.",
+      "business": "Core banking work cannot continue from AVD Personal. Illustrative impact."
+    },
+    "facts": [
+      {
+        "label": "Called by",
+        "value": "Ops. Official OOH callout."
+      },
+      {
+        "label": "Session",
+        "value": "AVD Personal. Full desktop, not RemoteApp."
+      },
+      {
+        "label": "Still working",
+        "value": "The personal desktop session. Other applications on that same session."
+      },
+      {
+        "label": "Failing",
+        "value": "Core banking application will not load. Users cannot do their day-to-day job."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "avd-infrastructure",
+        "networking",
+        "platform-troubleshooting",
+        "trm-escalation-ops"
+      ],
+      "helpText": "The desktop session is up. Think about the application path, and who you would involve, before you close this as not AVD.",
+      "assessorGuidance": "Score the whole write-up. Reward: confirming AVD Personal is up and other apps work, so this is not a 'cannot connect to AVD' incident; checking Azure Firewall for ExpressRoute back to the bank versus proxy; engaging Core Networks when the flow is on ExpressRoute; staying on the incident with MIM and TRM for collaborative recovery. Do not score as demonstrated: 'It's not an AVD platform issue' with no firewall/path checks; changing Azure Firewall or proxy rules yourself to test; walking off the bridge once the session looks healthy."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-impact",
+      "label": "Splits a working AVD Personal session from a failed core-banking path before changing anything",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-avd",
+      "label": "Does not close as 'not AVD' until the personal session and application path have been checked",
+      "domainId": "avd-infrastructure",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-net",
+      "label": "Uses Azure Firewall to confirm ExpressRoute versus proxy, and engages Core Networks on the bank path",
+      "domainId": "networking",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-process",
+      "label": "Manages recovery with MIM, TRM, and the teams called out, not as a solo VDI close",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not change Azure Firewall or proxy to test, and does not walk away before troubleshooting",
+      "domainId": "avd-infrastructure",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

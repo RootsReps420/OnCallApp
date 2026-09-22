@@ -1,0 +1,139 @@
+{
+  "id": "vdi-m365-email-011",
+  "version": "1.0.0",
+  "status": "published",
+  "title": "M365 Stack 3",
+  "spokeId": "m365-stack",
+  "spokeNumber": 3,
+  "description": "Ops pages VDI: users on AVD cannot send or receive email. Tickets are landing with Service Desk.",
+  "scope": "Out-of-hours Ops callout. Email not working for users reported on AVD.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward treating this as a rule-out of AVD / Virtual Team, not VDI owning mail. M365 and Azure portals first, then AVD versus corp physical (Modern Workplace can help with a physical check). Ops to bring Collaboration Messaging. TRM if not already on. Microsoft if the behaviour sits in Exchange / Outlook. PAA is on the path for a lot of M365 traffic — look at it, do not rebuild the host pool. Recovery: active users on the call can use mail after Collaboration Messaging’s fix. Safety-critical: do not say it is AVD until that is proven.",
+  "acceptableAlternativeApproaches": [
+    "M365 status first, then AVD versus physical, then Ops to call Collaboration Messaging.",
+    "Confirm Ops and TRM are on, then portals and device split in parallel with Collaboration Messaging joining.",
+    "PAA/path glance so proxy is not ignored, then still hand mail to Collaboration Messaging."
+  ],
+  "documentationReferences": [
+    {
+      "title": "VDI OOH Microsoft 365 access (illustrative runbook)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "Ops pages VDI on-call. Users are reporting that email is not working on AVD. Tickets are landing with Service Desk.",
+    "serviceNow": {
+      "incidentNumber": "INC0002408",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-29 18:42 UTC",
+      "caller": "Ops Bridge",
+      "affectedCI": "Microsoft 365 email / Outlook via AVD (illustrative)",
+      "shortDescription": "Email not working for users reported on AVD",
+      "description": "Ops callout. Mail reported broken on AVD."
+    },
+    "impact": {
+      "customers": "Users reported as unable to send or receive email from AVD. Whether corp physical devices are also hit is not yet known.",
+      "colleagues": "Ops on the call. VDI included.",
+      "business": "Affected colleagues cannot use email. Owning service still being proven. Illustrative impact."
+    },
+    "facts": [
+      {
+        "label": "Who called",
+        "value": "Ops. Official OOH callout."
+      },
+      {
+        "label": "Symptom",
+        "value": "Email not working for users on AVD. Tickets landing with Service Desk."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "m365-stack",
+        "platform-troubleshooting",
+        "proxy-solution",
+        "vendor-management",
+        "trm-escalation-ops"
+      ],
+      "helpText": "Ops rang VDI for mail. Think about what you would prove on AVD before you own it.",
+      "assessorGuidance": "Score the whole write-up. Reward: VDI rules out AVD / Virtual Team; M365 and Azure portals; AVD versus corp physical (MW can help); Ops bring Collaboration Messaging; TRM if not on; Microsoft if Exchange / Outlook; PAA noted without becoming the whole story; recovery when users on the call have mail working. Do not score as demonstrated: stating it is AVD before proven; draining hosts or uninstalling PAA to fix Outlook; skipping Collaboration Messaging because ‘we were the ones Ops rang’."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-role",
+      "label": "Treats VDI’s job as ruling AVD / Virtual Team in or out, and Collaboration Messaging as owning mail",
+      "domainId": "m365-stack",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-first",
+      "label": "Checks M365 and Azure portals first, then whether AVD-only or corp physical devices are also hit",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-proxy",
+      "label": "Notes PAA is on the M365 path without making proxy the whole incident",
+      "domainId": "proxy-solution",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-engage",
+      "label": "Gets Ops to bring Collaboration Messaging, TRM if not already on, and Microsoft if the behaviour sits in Exchange / Outlook",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-trm",
+      "label": "Brings TRM in if they are not already engaged",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-recover",
+      "label": "Proves recovery when active users on the call can use mail after the owning team’s fix",
+      "domainId": "m365-stack",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not say it is AVD until that is proven, and does not change the VDI platform to ‘fix email’",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

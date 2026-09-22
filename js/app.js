@@ -6,9 +6,9 @@ import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from 
 import * as storage from "./storage.js";
 import { loadConfig, loadLibrary } from "./content.js";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=28";
-import * as views from "./views.js?v=28";
-import * as auth from "./auth.js?v=28";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=38";
+import * as views from "./views.js?v=38";
+import * as auth from "./auth.js?v=38";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
 import { runVerification } from "./tests.js";
 
@@ -647,7 +647,7 @@ function importScenario(form) {
 function saveCriteria(form) {
   const data = new FormData(form);
   storage.saveReadinessConfig({
-    requiredMandatoryScenarios: data.get("requiredMandatoryScenarios") === "on",
+    oneScenarioPerSpoke: data.get("oneScenarioPerSpoke") === "on",
     allRequiredReviewed: data.get("allRequiredReviewed") === "on",
     mandatoryCriterionMinimum: Number(data.get("mandatoryCriterionMinimum") || 2),
     notes: String(data.get("notes") || "")
@@ -948,16 +948,21 @@ function authorScenario(form) {
       questionIds
     };
   });
+  const spokeId = String(data.get("spokeId") || "").trim();
+  const spokeNumber = Number(data.get("spokeNumber") || 0);
+  const spokeName = (state.config.capabilityDomains || []).find((item) => item.id === spokeId)?.name || spokeId;
   const parsed = {
     id: String(data.get("id") || "").trim(),
     version: "1.0.0",
     status: form.dataset.activeMode === "published" ? "published" : "draft",
-    title: String(data.get("title") || "").trim(),
+    title: `${spokeName} ${spokeNumber}`.trim(),
+    spokeId,
+    spokeNumber,
     description: String(data.get("description") || "").trim(),
     scope: String(data.get("scope") || "").trim(),
     difficulty: String(data.get("difficulty") || "foundation"),
     estimatedMinutes: Number(data.get("estimatedMinutes") || 0),
-    mandatory: data.get("mandatory") === "on",
+    mandatory: false,
     illustrativeDisclaimer: String(data.get("illustrativeDisclaimer") || "").trim(),
     assessorGuidance: "Reward sound investigation order and appropriate escalation.",
     acceptableAlternativeApproaches: ["Document-led investigation before platform changes."],

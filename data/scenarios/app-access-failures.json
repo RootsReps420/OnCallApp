@@ -1,13 +1,15 @@
 {
   "id": "vds-app-access-002",
-  "version": "1.4.0",
+  "version": "1.6.1",
   "status": "published",
-  "title": "Business applications unreachable from virtual desktops",
-  "description": "Users can connect to AVD but cannot open several internal web applications. Possible causes include DNS, routing, Secure Access / Prisma, or firewall change. The engineer must separate desktop platform health from path-to-application dependencies.",
-  "scope": "Out-of-hours Sev1: AVD sessions succeed; line-of-business HTTPS applications fail from inside those sessions.",
+  "title": "Platform Troubleshooting 1",
+  "spokeId": "platform-troubleshooting",
+  "spokeNumber": 1,
+  "description": "Users can launch Windows on AVD, but several internal web applications will not load. Service Desk has a high volume of calls.",
+  "scope": "Out-of-hours Sev1: AVD sessions succeed; internal web applications fail from inside those sessions.",
   "difficulty": "intermediate",
   "estimatedMinutes": 45,
-  "mandatory": true,
+  "mandatory": false,
   "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
   "assessorGuidance": "The desktop broker is probably not the fault. Reward splitting AVD health from name resolution and egress path (DNS, Prisma/Secure Access, firewall). Do not penalise engaging network or security teams. Safety-critical: do not disable security inspection or open Any/Any rules to 'test'.",
   "acceptableAlternativeApproaches": [
@@ -17,16 +19,12 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI application access from AVD (illustrative runbook)",
-      "note": "Would normally cover DNS suffixes, proxy/Secure Access, and known application VIPs. Confirm the current approved document."
+      "title": "VDI OOH application access (illustrative runbook)",
+      "note": "Confirm the current approved document."
     },
     {
-      "title": "Network incident handover from VDI (illustrative)",
-      "note": "Would normally cover what evidence network teams expect. Confirm locally."
-    },
-    {
-      "title": "Change calendar and firewall review (illustrative)",
-      "note": "Would normally describe how OOH engineers query recent network changes. Confirm locally."
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
     }
   ],
   "initialIncident": {
@@ -43,37 +41,21 @@
     },
     "impact": {
       "customers": "AVD users needing internal web apps; payments operations overnight team blocked.",
-      "colleagues": "Service Desk, application support on standby, network on-call not yet paged.",
+      "colleagues": "Service Desk. Application support on standby.",
       "business": "Overnight payments exception handling cannot proceed. Illustrative impact only."
     },
     "facts": [
       {
-        "label": "Failing apps",
-        "value": "Payments Portal, HR Self-Service, overnight batch console — timeout or “can’t reach this page”."
+        "label": "Failing",
+        "value": "Internal web apps will not load in Edge. Service Desk has 40+ calls. Payments Portal, HR Self-Service, overnight batch console among those named."
       },
       {
         "label": "Still working",
-        "value": "Outlook on the web and Microsoft 365 from the same AVD session."
+        "value": "Users can launch Windows on HP01 and HP02. Some say Outlook on the web still works from the same session."
       },
       {
-        "label": "Hosts",
-        "value": "HP01 and HP02 Available. No AVD Service Health incident."
-      },
-      {
-        "label": "DNS",
-        "value": "Internal app names resolve from a session host."
-      },
-      {
-        "label": "Path",
-        "value": "HTTPS to those VIPs times out. TCP 443 to Microsoft 365 succeeds."
-      },
-      {
-        "label": "Proxy",
-        "value": "Secure Access connector vds-sa-03 last seen 00:34 UTC, then disconnected."
-      },
-      {
-        "label": "Change",
-        "value": "CHG004412 at 00:30 UTC attached inspection profile OOH-Tightened-Inspection. Implementer notes unexpected deny; rollback in progress."
+        "label": "When",
+        "value": "Saturday 01:07 UTC. First user report 00:51 UTC."
       }
     ]
   },
@@ -90,7 +72,7 @@
         "trm-escalation-ops",
         "vendor-management"
       ],
-      "helpText": "There is no single correct order. Cover the whole incident so an assessor can see your reasoning.",
+      "helpText": "The desktop launches. The apps do not. Think about what you would split, and who you would involve, before you change the platform.",
       "assessorGuidance": "Score the whole write-up. Reward splitting working desktops from a failed application path; DNS then timeout/path/Secure Access rather than rebuilding hosts or resetting profiles; handing the change and connector to network/security with MIM on a Sev1; not disabling inspection or opening Any/Any to test; Microsoft AVD support only if evidence later points at Azure; a factual update; and recovery confirmed with a probe from a session host plus a real user opening the app. Do not score as demonstrated: redeploying the pool, detaching inspection yourself, or closing on a closed change ticket without a user test."
     }
   ],

@@ -2,7 +2,9 @@
   "id": "vdi-replace-this-id",
   "version": "1.0.0",
   "status": "published",
-  "title": "Replace with a short incident title",
+  "title": "Replace with spoke name and number, for example Vendor Management 2",
+  "spokeId": "vendor-management",
+  "spokeNumber": 2,
   "description": "Replace with two or three sentences: who is affected, what they see, and what this practice scenario is testing.",
   "scope": "Out-of-hours VDI practice scenario. Replace this sentence with the real scope.",
   "difficulty": "intermediate",
@@ -23,9 +25,9 @@
   "initialIncident": {
     "callSummary": "Replace with the call: time, who rang, and the main symptom.",
     "facts": [
-      { "label": "Affected", "value": "Who cannot work, and what they see." },
-      { "label": "Still working", "value": "What still works, so the blast radius is clear." },
-      { "label": "Change", "value": "Any change, vendor, or Service Health note already in the story." }
+      { "label": "Called by", "value": "Who rang, and whether it was an official callout." },
+      { "label": "Symptom", "value": "What users see. What still works, if they said so." },
+      { "label": "When", "value": "Time, and anything already on the ticket. Do not list who to engage or the smoking gun." }
     ],
     "serviceNow": {
       "incidentNumber": "INC0000000",

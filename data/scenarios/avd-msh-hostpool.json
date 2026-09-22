@@ -1,0 +1,129 @@
+{
+  "id": "vdi-avd-msh-pool-012",
+  "version": "1.0.0",
+  "status": "published",
+  "title": "AVD Infrastructure 3",
+  "spokeId": "avd-infrastructure",
+  "spokeNumber": 3,
+  "description": "Ops pages VDI: nobody can connect to one specific Multi-Session host pool. Reports name that pool.",
+  "scope": "Out-of-hours Ops callout. Connect failures reported against one AVD Multi-Session host pool.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward scoping to one Multi-Session host pool before touching the estate. Azure status first. INC before any work. Compare this pool with other Multi-Session pools and Personal. If manual provisioning or spin-up of a host in that pool fails, Microsoft SevA. TRM if the user base on that pool is severe; Ops can call TRM too. Recovery: live users of that pool on the bridge, plus Azure workbooks for active connections on that pool. Safety-critical: do not go in as Contributor and mass-turn on / drain / rebuild that pool, or make unofficial changes, with no INC or CR.",
+  "acceptableAlternativeApproaches": [
+    "Azure status and INC first, then confirm other host pools still connect, then a single test spin-up on the affected pool.",
+    "TRM on because that pool’s business unit cannot work, while VDI proves the blast radius.",
+    "Ops call TRM while VDI compares pools and decides whether Microsoft is needed."
+  ],
+  "documentationReferences": [
+    {
+      "title": "AVD Multi-Session connect OOH (illustrative runbook)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "Ops pages VDI on-call. Nobody can connect to a specific Multi-Session host pool. Reports are for that pool, not described as the whole AVD estate.",
+    "serviceNow": {
+      "incidentNumber": "INC0002409",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-29 19:15 UTC",
+      "caller": "Ops Bridge",
+      "affectedCI": "One AVD Multi-Session host pool (illustrative)",
+      "shortDescription": "Unable to connect to a specific Multi-Session host pool",
+      "description": "Ops callout. One Multi-Session host pool. Users cannot connect."
+    },
+    "impact": {
+      "customers": "Users of one Multi-Session host pool who cannot connect. Other pools and Personal not yet proven.",
+      "colleagues": "Ops; VDI on-call.",
+      "business": "The business unit on that Multi-Session pool cannot start sessions. Illustrative impact until blast radius is confirmed."
+    },
+    "facts": [
+      {
+        "label": "Who",
+        "value": "Ops callout. No one can connect to one specific Multi-Session host pool."
+      },
+      {
+        "label": "Reports",
+        "value": "Named against that pool, not described as the whole AVD estate."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "avd-infrastructure",
+        "platform-troubleshooting",
+        "vendor-management",
+        "trm-escalation-ops"
+      ],
+      "helpText": "One pool is being reported. Think about blast radius, and what you would not do without cover.",
+      "assessorGuidance": "Score the whole write-up. Reward: Azure status first; INC before work; this pool versus other Multi-Session and Personal; Microsoft SevA if provision/spin-up fails; TRM when that pool’s impact is severe; recovery via users of that pool on the bridge and workbooks. Do not score as demonstrated: Contributor mass power-on or drain of that pool with no INC/CR; treating every host pool as down because one is; skipping Microsoft when Azure status or spin-up has already failed."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-first",
+      "label": "Checks Azure status first, keeps an INC on the record, and proves this Multi-Session pool versus other pools before changing anything",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-avd",
+      "label": "Treats a single Multi-Session host pool as the blast radius until other pools and Personal are checked",
+      "domainId": "avd-infrastructure",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-msft",
+      "label": "Raises Microsoft SevA when provision or spin-up on that pool fails, and treats an MS outage as a smoking gun",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-trm",
+      "label": "Uses TRM when that pool’s user impact is severe; Ops may call TRM too",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-recover",
+      "label": "Confirms recovery with live users of that pool on the bridge and Azure workbooks for active connections",
+      "domainId": "avd-infrastructure",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not mass-start, drain, or rebuild that pool as Contributor without INC and CR",
+      "domainId": "avd-infrastructure",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

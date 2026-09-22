@@ -28,7 +28,6 @@ export async function loadBundledScenarios(config) {
   return results;
 }
 
-// Custom scenarios with the same id replace the bundled file in this browser only.
 // Custom scenarios with the same id replace the bundled file in this browser only,
 // unless the bundled file is a newer version.
 export function isNewerVersion(a, b) {
@@ -49,13 +48,42 @@ export function mergeScenarios(bundled, custom) {
     if (existing && isNewerVersion(existing.version, scenario.version)) return;
     map.set(scenario.id, { ...scenario, origin: scenario.origin || "custom" });
   });
-  return [...map.values()].sort((a, b) => a.title.localeCompare(b.title));
+  return [...map.values()];
+}
+
+// Library order follows the readiness map, then the number within that spoke.
+export function sortScenarios(scenarios, domains = []) {
+  const order = new Map(domains.map((domain, index) => [domain.id, index]));
+  return [...scenarios].sort((a, b) => {
+    const leftSpoke = order.has(a.spokeId) ? order.get(a.spokeId) : 1000;
+    const rightSpoke = order.has(b.spokeId) ? order.get(b.spokeId) : 1000;
+    if (leftSpoke !== rightSpoke) return leftSpoke - rightSpoke;
+    const leftNumber = Number(a.spokeNumber) || 0;
+    const rightNumber = Number(b.spokeNumber) || 0;
+    if (leftNumber !== rightNumber) return leftNumber - rightNumber;
+    return String(a.title || "").localeCompare(String(b.title || ""));
+  });
+}
+
+// One group per spoke so the library can grow without a flat pile of incident titles.
+export function groupScenariosBySpoke(scenarios, domains = []) {
+  const known = new Set(domains.map((domain) => domain.id));
+  const groups = domains
+    .map((domain) => ({
+      id: domain.id,
+      name: domain.name,
+      items: scenarios.filter((item) => item.spokeId === domain.id)
+    }))
+    .filter((group) => group.items.length);
+  const other = scenarios.filter((item) => !known.has(item.spokeId));
+  if (other.length) groups.push({ id: "other", name: "Ungrouped", items: other });
+  return groups;
 }
 
 // Bundled files first, then anything saved locally.
 export async function loadLibrary(config) {
   const bundled = await loadBundledScenarios(config);
-  return mergeScenarios(bundled, getCustomScenarios());
+  return sortScenarios(mergeScenarios(bundled, getCustomScenarios()), config.capabilityDomains);
 }
 
 // Drafts stay out of the engineer library.

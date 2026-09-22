@@ -1,0 +1,139 @@
+{
+  "id": "vdi-net-dns-paa-013",
+  "version": "1.0.0",
+  "status": "published",
+  "title": "Networking 2",
+  "spokeId": "networking",
+  "spokeNumber": 2,
+  "description": "Ops pages VDI: websites will not load. Public and internal nslookup is failing. Applications that need to reach back on-prem are disrupted.",
+  "scope": "Out-of-hours: sites failing to load, public and internal DNS lookups failing, on-prem applications disrupted.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 45,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward two DNS planes, not ‘the desktop is down’. nslookup public and internal. PAA handles DNS for basically all of its traffic. Infoblox on-prem serves DNS for native-NIC traffic that PAA does not manage. Compare AVD with corp physical (Modern Workplace can help). Ops, TRM if not on. If the failing lookups sit on PAA, engage proxy / Palo via the official path. If they sit on native NIC, Infoblox / DNS owners. Safety-critical: do not say it is AVD until proven, and do not change PAA DNS or Infoblox yourself with no INC and no CR.",
+  "acceptableAlternativeApproaches": [
+    "nslookup public and internal first, then split PAA DNS versus Infoblox native NIC, then the owning team.",
+    "Physical device with MW first to show it is not AVD-only, then the two DNS planes.",
+    "Ops and TRM on while VDI packs which plane failed and who owns it."
+  ],
+  "documentationReferences": [
+    {
+      "title": "VDI OOH name resolution (illustrative runbook)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "Ops pages VDI on-call. Websites are failing to load. Public and internal DNS checks are failing on nslookup. Applications that need to reach back on-prem are disrupted.",
+    "serviceNow": {
+      "incidentNumber": "INC0002410",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-29 20:03 UTC",
+      "caller": "Ops Bridge",
+      "affectedCI": "Name resolution / application reach-back (illustrative)",
+      "shortDescription": "Websites failing to load — public and internal nslookup failing",
+      "description": "Ops callout. Sites will not load. Public and internal nslookup failing. On-prem application reach-back disrupted."
+    },
+    "impact": {
+      "customers": "Users unable to load websites and unable to resolve names so on-prem applications cannot be reached. AVD versus corp physical not yet proven.",
+      "colleagues": "Ops on the call. VDI included.",
+      "business": "Name resolution failure blocking web and on-prem application work. Illustrative wide impact until the DNS plane is identified."
+    },
+    "facts": [
+      {
+        "label": "Who called",
+        "value": "Ops."
+      },
+      {
+        "label": "Symptom",
+        "value": "Websites failing to load. Public and internal nslookup failing. Applications cannot reach back on-prem."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "networking",
+        "proxy-solution",
+        "platform-troubleshooting",
+        "vendor-management",
+        "trm-escalation-ops"
+      ],
+      "helpText": "Name resolution is failing. Think about how DNS is handled on this platform — not all traffic uses the same resolvers.",
+      "assessorGuidance": "Score the whole write-up. Reward: public and internal nslookup; PAA DNS versus Infoblox native NIC; AVD versus physical (MW can help); Ops and TRM; proxy/Palo if PAA path, Infoblox owners if native NIC; recovery when lookups and users on the call work. Do not score as demonstrated: ‘AVD is down’ because sites fail from the desktop; changing PAA DNS or Infoblox with no INC/CR; checking only one DNS plane."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-impact",
+      "label": "Treats this as name resolution (sites and on-prem reach-back), not as ‘AVD will not connect’",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-dns",
+      "label": "Runs public and internal nslookup and splits PAA DNS from Infoblox on the native NIC",
+      "domainId": "networking",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-proxy",
+      "label": "Uses the fact that PAA handles DNS for basically all of its traffic, and engages proxy / Palo when that plane is failing",
+      "domainId": "proxy-solution",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-engage",
+      "label": "Gets Ops (and TRM if needed) to bring Infoblox / DNS owners on the native-NIC plane, and vendors only for the plane that is actually failing",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-trm",
+      "label": "Brings TRM in if they are not already engaged on a wide DNS disruption",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-recover",
+      "label": "Proves recovery with working public and internal lookups and users on the call loading sites / reaching on-prem apps",
+      "domainId": "networking",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not call it AVD until proven, and does not change PAA DNS or Infoblox without INC and CR",
+      "domainId": "networking",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

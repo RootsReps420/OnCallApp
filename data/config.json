@@ -46,10 +46,10 @@
     }
   ],
   "readinessCriteria": {
-    "requiredMandatoryScenarios": true,
+    "oneScenarioPerSpoke": true,
     "allRequiredReviewed": true,
     "mandatoryCriterionMinimum": 2,
-    "notes": "A high domain average must not hide an unmet mandatory criterion. Completion of attempts is not readiness."
+    "notes": "Ready needs one scenario per spoke, released, with mandatory and safety-critical criteria at Demonstrated (2) or above. A high domain average must not hide an unmet criterion. Workplace tickets cannot replace a spoke. Completion of attempts is not readiness."
   },
   "demoPeople": {
     "engineer": { "id": "demo-engineer", "name": "Alex Chen", "roleTitle": "VDI Platform Engineer" },
@@ -59,6 +59,16 @@
   "bundledScenarioFiles": [
     "data/scenarios/avd-connection-failures.json",
     "data/scenarios/app-access-failures.json",
-    "data/scenarios/auth-failures.json"
+    "data/scenarios/auth-failures.json",
+    "data/scenarios/avd-core-banking.json",
+    "data/scenarios/net-pega.json",
+    "data/scenarios/trm-unofficial-callout.json",
+    "data/scenarios/proxy-m365-auth.json",
+    "data/scenarios/vendor-ms-palo.json",
+    "data/scenarios/plat-offshore-personal.json",
+    "data/scenarios/m365-avd-onedrive.json",
+    "data/scenarios/m365-avd-email.json",
+    "data/scenarios/avd-msh-hostpool.json",
+    "data/scenarios/net-dns-paa-infoblox.json"
   ]
 }

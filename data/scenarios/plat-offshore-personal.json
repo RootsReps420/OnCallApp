@@ -1,0 +1,120 @@
+{
+  "id": "vdi-plat-offshore-vm-009",
+  "version": "1.2.0",
+  "status": "published",
+  "title": "Platform Troubleshooting 2",
+  "spokeId": "platform-troubleshooting",
+  "spokeNumber": 2,
+  "description": "04:00 Monday. Ops pages VDI on-call. Offshore users are logging multiple tickets: they cannot connect to their VM. This is AVD Personal.",
+  "scope": "Out-of-hours Monday: AVD Personal. Offshore users cannot connect to their VM.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward Azure status first, then an INC before any work. If manual provision or VM spin-up fails, Microsoft SevA. Smoking gun is Microsoft stating an outage. TRM for severe estate impact; Ops can also call TRM. Recovery: live users on the bridge plus Azure workbooks for active connections. Safety-critical: do not go in as Contributor and mass-turn on VMs, or make unofficial changes, with no INC or CR.",
+  "acceptableAlternativeApproaches": [
+    "Azure Service Health first, INC, then a single test provision/spin-up before Microsoft SevA.",
+    "TRM on immediately because the Personal estate looks off, then Microsoft if status or spin-up says platform.",
+    "Ops call TRM while VDI confirms Azure status and that an INC is on the record."
+  ],
+  "documentationReferences": [
+    {
+      "title": "AVD Personal connect OOH (illustrative runbook)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "04:00 Monday. Ops pages VDI on-call. Offshore users are logging multiple tickets: they cannot connect to their VM. This is AVD Personal only.",
+    "serviceNow": {
+      "incidentNumber": "INC0002406",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-28 04:06 UTC",
+      "caller": "Ops Bridge",
+      "affectedCI": "AVD Personal (illustrative)",
+      "shortDescription": "Offshore users unable to connect to AVD Personal VMs",
+      "description": "Monday 04:00. Personal. Multiple offshore tickets: unable to connect to VM."
+    },
+    "impact": {
+      "customers": "Offshore AVD Personal users unable to connect to their VMs. Risk of whole Personal estate off if this is a platform outage.",
+      "colleagues": "Ops; VDI on-call.",
+      "business": "Offshore start-of-week work cannot begin on Personal desktops. Illustrative severe impact if the estate is off."
+    },
+    "facts": [
+      {
+        "label": "Who",
+        "value": "AVD Personal. Offshore users, multiple tickets, cannot connect to their VM."
+      },
+      {
+        "label": "When",
+        "value": "04:00 Monday. Ops callout."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "platform-troubleshooting",
+        "avd-infrastructure",
+        "vendor-management",
+        "trm-escalation-ops"
+      ],
+      "helpText": "Personal VMs will not connect. Think about what you would check, and what you would not change, this early on a Monday.",
+      "assessorGuidance": "Score the whole write-up. Reward: Azure status first; INC before any work; Microsoft SevA if provision/spin-up fails; TRM for estate-wide impact (Ops may call them too); recovery via live users on the bridge and Azure workbooks. Do not score as demonstrated: Contributor mass power-on of Personal VMs; unofficial change with no INC or CR; skipping Microsoft when Azure status or spin-up has already failed."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-first",
+      "label": "Checks Azure status first and keeps an INC on the record before any work",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-msft",
+      "label": "Raises Microsoft SevA when manual provisioning or VM spin-up fails, and treats an MS outage as the smoking gun",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-trm",
+      "label": "Uses TRM for severe Personal-estate impact; Ops may call TRM too",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-recover",
+      "label": "Confirms recovery with live users on the bridge and Azure workbooks for active connections",
+      "domainId": "avd-infrastructure",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not mass-start Personal VMs as Contributor or make unofficial changes without INC and CR",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

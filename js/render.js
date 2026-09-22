@@ -160,7 +160,6 @@ function isCurrentNav(hrefPath, path) {
 // Small labels above a scenario. The library hides the difficulty pill.
 export function pillsForScenario(scenario, attempt, { difficulty = true } = {}) {
   const bits = [
-    `<span class="pill ${scenario.mandatory ? "required" : "optional"}">${scenario.mandatory ? "Required" : "Optional"}</span>`,
     difficulty ? `<span class="pill">${escapeHtml(scenario.difficulty)}</span>` : "",
     `<span class="pill">${scenario.estimatedMinutes} min</span>`
   ].filter(Boolean);

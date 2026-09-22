@@ -167,7 +167,8 @@ export function saveProposal(proposal) {
 
 // Assessor gates. Falls back to the copy in config.json until someone saves a change.
 export function getReadinessConfig(fallback) {
-  return read(KEYS.readinessConfig, fallback);
+  const saved = read(KEYS.readinessConfig, null);
+  return { ...(fallback || {}), ...(saved || {}) };
 }
 
 // Store the readiness gates edited on the administrator page.

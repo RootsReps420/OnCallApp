@@ -1,9 +1,9 @@
 // In-browser checks opened from Administrator → Verification.
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
-import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions } from "./scoring.js";
+import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js";
 import { validateScenario } from "./validation.js";
-import { isNewerVersion, mergeScenarios } from "./content.js";
+import { isNewerVersion, mergeScenarios, sortScenarios } from "./content.js";
 import * as storage from "./storage.js";
 
 // A tiny single-choice question with full, partial, and zero credit.
@@ -199,6 +199,19 @@ export function runVerification() {
   );
   check("Newer bundled scenario wins over a stale local copy", merged[0].version === "1.3.0" && merged[0].questions.length === 1);
 
+  const sorted = sortScenarios(
+    [
+      { title: "M365 Stack 1", spokeId: "m365-stack", spokeNumber: 1 },
+      { title: "AVD Infrastructure 2", spokeId: "avd-infrastructure", spokeNumber: 2 },
+      { title: "AVD Infrastructure 1", spokeId: "avd-infrastructure", spokeNumber: 1 }
+    ],
+    [{ id: "avd-infrastructure" }, { id: "m365-stack" }]
+  );
+  check(
+    "Library order is spoke then number",
+    sorted.map((item) => item.title).join("|") === "AVD Infrastructure 1|AVD Infrastructure 2|M365 Stack 1"
+  );
+
   const emptySpoke = applyEvidenceWeight(
     [{ id: "proxy-solution", name: "Proxy", percentage: null, coverageLabel: "None", mandatoryUnmet: [] }],
     [{ status: "released", domainId: "proxy-solution", review: { score: 3 } }]
@@ -216,6 +229,43 @@ export function runVerification() {
     [{ status: "released", domainId: "m365-stack", review: { score: 3 } }]
   )[0];
   check("Workplace tickets cannot cancel a mandatory gap", blocked.percentage === 90 && /mandatory/i.test(blocked.evidenceNote));
+
+  const gateScenario = (id, spokeId, title) => ({ ...fixtureScenario(), id, spokeId, title, mandatory: false, status: "published" });
+  const avdOne = gateScenario("avd-1", "avd-infrastructure", "AVD Infrastructure 1");
+  const avdTwo = gateScenario("avd-2", "avd-infrastructure", "AVD Infrastructure 2");
+  const netOne = gateScenario("net-1", "networking", "Networking 1");
+  const gateDomains = [
+    { id: "avd-infrastructure", name: "AVD Infrastructure" },
+    { id: "networking", name: "Networking" }
+  ];
+  const goodAttempt = (scenario) => ({
+    id: `good-${scenario.id}`,
+    scenarioId: scenario.id,
+    status: "released",
+    scenarioSnapshot: scenario,
+    answers: { "q-single": "good", "q-write": "A complete write-up of the first call." },
+    review: { criterionScores: { "c-write": { score: 2, evidence: "Demonstrated." } } }
+  });
+  const weakAttempt = (scenario) => ({
+    id: `weak-${scenario.id}`,
+    scenarioId: scenario.id,
+    status: "released",
+    scenarioSnapshot: scenario,
+    answers: { "q-single": "bad", "q-write": "Not enough." },
+    review: { criterionScores: { "c-write": { score: 1, evidence: "Below Demonstrated." } } }
+  });
+  check("Released below Demonstrated is not satisfactory", isAttemptSatisfactory(weakAttempt(avdOne)) === false);
+  check("Released at Demonstrated is satisfactory", isAttemptSatisfactory(goodAttempt(avdTwo)) === true);
+  check("Submitted work does not satisfy a spoke", isAttemptSatisfactory({ ...goodAttempt(avdTwo), status: "submitted" }) === false);
+
+  const oneSpokeMet = spokeGateStatus(gateDomains, [avdOne, avdTwo, netOne], [weakAttempt(avdOne), goodAttempt(avdTwo)]);
+  check("A second scenario in the same spoke can satisfy that spoke", oneSpokeMet.find((item) => item.id === "avd-infrastructure")?.met === true);
+  check("A weak first attempt does not block a later satisfactory one", oneSpokeMet.find((item) => item.id === "avd-infrastructure")?.countedTitle === "AVD Infrastructure 2");
+  check("An untouched spoke stays unmet", oneSpokeMet.find((item) => item.id === "networking")?.met === false);
+  check("Ready is withheld until every spoke is satisfactory", allSpokesSatisfied(oneSpokeMet) === false);
+
+  const bothMet = spokeGateStatus(gateDomains, [avdOne, avdTwo, netOne], [goodAttempt(avdTwo), goodAttempt(netOne)]);
+  check("One satisfactory scenario per spoke meets the Ready gate", allSpokesSatisfied(bothMet) === true);
 
   check("Development actions split on new lines", splitActions("Read the runbook\nShadow a SevA").length === 2);
 

@@ -1,0 +1,134 @@
+{
+  "id": "vdi-net-pega-005",
+  "version": "1.2.0",
+  "status": "published",
+  "title": "Networking 1",
+  "spokeId": "networking",
+  "spokeNumber": 1,
+  "description": "Ops has VDI on an ongoing incident. Modern Workplace are on the bridge. Colleagues cannot access PEGA. PEGA is reached as a web URL. VDI has been asked whether this is AVD as a platform.",
+  "scope": "Out-of-hours bridge: colleagues cannot access PEGA. Ops has asked VDI onto the call.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward proving the path, not arguing from the chair. Expect DNS for the PEGA URL, proxy versus Azure Firewall, Nexthink / a physical device to see if only AVD is hit, and traffic seen reaching and leaving the platform with other AVDs fine. Hand on with TRM and MIM for incident management and business comms. Safety-critical: do not declare AVD the owning service until you are sure it is AVD as a platform.",
+  "acceptableAlternativeApproaches": [
+    "Resolve the PEGA URL, then proxy versus AzFW, then Nexthink or a physical check.",
+    "Physical device first to split AVD from corp, then confirm egress on AzFW.",
+    "Stay on the bridge, pack the evidence, and let TRM/MIM run comms while PEGA owners are brought in."
+  ],
+  "documentationReferences": [
+    {
+      "title": "VDI OOH application access (illustrative runbook)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "Ops rings VDI on-call onto an ongoing incident. MW are on the bridge. Colleagues cannot access PEGA. PEGA application owners are not really on the call yet, though some people who have worked with PEGA are present. VDI has been asked to disprove that this is AVD as a platform.",
+    "serviceNow": {
+      "incidentNumber": "INC0002402",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-27 19:22 UTC",
+      "caller": "Ops Bridge",
+      "affectedCI": "PEGA web URL / AVD platform (illustrative)",
+      "shortDescription": "PEGA access issues — VDI on the bridge",
+      "description": "PEGA is a web URL. MW on the bridge with Ops. PEGA team not yet a notable voice. Ops asked VDI whether this is AVD as a platform."
+    },
+    "impact": {
+      "customers": "Colleagues who need PEGA via the web URL (AVD and possibly physical — not yet proven).",
+      "colleagues": "Ops, Modern Workplace on the bridge. PEGA owners not yet a notable voice.",
+      "business": "PEGA work blocked for affected colleagues. Illustrative impact."
+    },
+    "facts": [
+      {
+        "label": "Bridge",
+        "value": "Ops and some Modern Workplace (MW). No notable PEGA-owner input yet; people who have worked with PEGA are present."
+      },
+      {
+        "label": "How they access it",
+        "value": "PEGA via a web URL. It is not hosted in the bank."
+      },
+      {
+        "label": "Ask from Ops",
+        "value": "VDI has been asked whether this is AVD as a platform."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "networking",
+        "avd-infrastructure",
+        "proxy-solution",
+        "platform-troubleshooting",
+        "trm-escalation-ops"
+      ],
+      "helpText": "Ops asked whether this is the platform. Think about how you would prove that, not only how you would argue it.",
+      "assessorGuidance": "Score the whole write-up. Reward: where the PEGA URL resolves; whether the flow is on the proxy or on Azure Firewall; Nexthink and/or a physical device so AVD is not assumed; using 'traffic in and out of the platform, other AVDs fine' as the disprove; handing on with TRM and MIM for management and business comms. Do not score as demonstrated: AVD owns it because we were invited; draining or changing hosts to 'prove' the platform; walking off without an evidence pack."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-impact",
+      "label": "Treats PEGA as a web URL path, not as 'VDI is down'",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-net",
+      "label": "Checks DNS, proxy versus Azure Firewall, and compares AVD with physicals (Nexthink or a device)",
+      "domainId": "networking",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-avd",
+      "label": "Uses platform egress and other healthy AVDs to disprove AVD as the owner until proven otherwise",
+      "domainId": "avd-infrastructure",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-proxy",
+      "label": "Asks whether PEGA traffic is on the proxy, and uses AzFW when it is not",
+      "domainId": "proxy-solution",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-process",
+      "label": "Hands on with TRM and MIM for incident management and business comms",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not name AVD as the owning service until the platform is actually proven",
+      "domainId": "networking",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

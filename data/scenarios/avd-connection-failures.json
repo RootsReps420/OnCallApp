@@ -1,13 +1,15 @@
 {
   "id": "vds-avd-conn-001",
-  "version": "1.4.0",
+  "version": "1.6.1",
   "status": "published",
-  "title": "Widespread AVD connection failures overnight",
-  "description": "A Friday night Sev1: many users cannot connect to one Azure Virtual Desktop host pool. Azure Service Health shows an AVD investigation in UK South. The task is to assess impact, choose a safe investigation order, and decide when Microsoft and Major Incident Management should be involved.",
-  "scope": "Out-of-hours Sev1 affecting AVD connectivity for a production host pool, with a possible Microsoft control-plane dependency.",
+  "title": "AVD Infrastructure 1",
+  "spokeId": "avd-infrastructure",
+  "spokeNumber": 1,
+  "description": "Friday night Sev1. Overnight users cannot launch desktops from one host pool. The client shows they cannot connect.",
+  "scope": "Out-of-hours Sev1: users cannot connect to a production AVD host pool.",
   "difficulty": "intermediate",
   "estimatedMinutes": 40,
-  "mandatory": true,
+  "mandatory": false,
   "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
   "assessorGuidance": "Reward a calm first response: confirm blast radius, consult the connectivity runbook, check Azure Service Health and session host status, and engage Microsoft when control-plane evidence appears — without requiring the engineer to personally restore Microsoft services. Accept more than one valid investigation order if reasoning and evidence are sound. Safety-critical: do not restart all session hosts or make platform-wide changes without a plan and appropriate authority.",
   "acceptableAlternativeApproaches": [
@@ -17,16 +19,12 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI AVD connectivity investigation (illustrative runbook)",
-      "note": "Would normally cover feed, gateway, host health, and known Microsoft advisories. Confirm the current approved document."
+      "title": "VDI AVD connectivity OOH (illustrative runbook)",
+      "note": "Confirm the current approved document."
     },
     {
       "title": "Sev1 out-of-hours incident management (illustrative)",
-      "note": "Would normally cover MIM notification, bridge etiquette, and stakeholder cadence. Confirm locally."
-    },
-    {
-      "title": "Microsoft support engagement for AVD (illustrative)",
-      "note": "Would normally cover severity, required logs, and when to use Azure support vs waiting on Service Health. Confirm locally."
+      "note": "Confirm locally."
     }
   ],
   "initialIncident": {
@@ -49,31 +47,15 @@
     "facts": [
       {
         "label": "Affected",
-        "value": "HP01, about 180 users. Overnight finance batch monitoring sits on this pool."
-      },
-      {
-        "label": "Still working",
-        "value": "HP02 connections. A few existing HP01 sessions remain connected."
+        "value": "Host pool VDI-UK-PROD-HP01. Overnight operations, including finance batch monitoring. Reports still arriving."
       },
       {
         "label": "Symptom",
-        "value": "New connections fail. Gateway timeout 0x3000047."
+        "value": "Cannot launch desktops. Client shows “We couldn’t connect. Try connecting again.”"
       },
       {
-        "label": "Hosts",
-        "value": "Most HP01 session hosts show Unavailable for new sessions."
-      },
-      {
-        "label": "Service Health",
-        "value": "AVD in UK South investigating (7A-AVD-UKSOUTH-218)."
-      },
-      {
-        "label": "Path check",
-        "value": "From a working host to the AVD gateway: succeeds."
-      },
-      {
-        "label": "Change",
-        "value": "None recorded against this pool."
+        "label": "When",
+        "value": "Friday 22:14 UTC. First report 22:09 UTC. No recent approved change called out against this pool."
       }
     ]
   },
@@ -89,7 +71,7 @@
         "trm-escalation-ops",
         "networking"
       ],
-      "helpText": "There is no single correct order. Cover the whole incident so an assessor can see your reasoning.",
+      "helpText": "Users cannot connect to one pool. Think about what you would check first, and what you would not change on the estate.",
       "assessorGuidance": "Score the whole write-up. Reward confirming blast radius and protecting existing sessions before host changes; using the connectivity runbook and Azure Service Health; treating AVD control plane / gateway in UK South as the leading domain while still checking this pool’s agent health; engaging MIM and Microsoft with case facts (pool, region, error codes, impact) rather than trying to restore a Microsoft fault personally; a factual stakeholder update; and recovery confirmed with a new user connection plus host status, not Service Health wording alone. Do not score as demonstrated: reboot or rebuild every host as a first action; a company-wide DNS story as the primary cause; waiting to fix it personally before raising Microsoft/MIM."
     }
   ],

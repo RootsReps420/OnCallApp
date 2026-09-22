@@ -44,7 +44,7 @@ Users see Overview, Library, Evidence, Readiness, and Propose. Assessors see the
 
 ## A practice attempt
 
-1. Sign in as Alex and open a required scenario from the library.
+1. Sign in as Alex and open any scenario in a spoke from the library. Ready needs one satisfactory attempt per spoke, not a named required file.
 2. Each scenario is one write-up. A suggested timer counts down from the scenario’s minutes; overtime does not block submit. Cover what you would check, who you would involve, what you would not change, and how you would confirm recovery.
 3. Submit. Sign out, then sign in as Jordan and score each criterion from 0 to 3 beside the answer.
 4. Release the feedback. Sign in as Alex again. The feedback quotes what was written next to how it was read.
@@ -80,7 +80,7 @@ The seven capability areas are listed in `data/config.json`:
 | Platform Troubleshooting | Impact, runbooks, evidence before platform changes |
 | M365 Stack | Entra ID, Conditional Access, other M365 dependencies |
 
-A spoke with no released score is incomplete evidence, not a pass. Released workplace tickets can thicken a spoke (capped). They cannot replace required scenarios or cancel a mandatory gap.
+A spoke with no released score is incomplete evidence, not a pass. Ready needs one scenario per spoke, released at Demonstrated (score 2) or above. Any numbered scenario in that spoke can count. Workplace tickets can thicken a spoke (capped). They cannot replace a spoke on the Ready gate or cancel a mandatory gap.
 
 ## Evidence log
 
@@ -88,7 +88,7 @@ Users add a redacted prior ticket: sanitised reference, date, role on the call, 
 
 ## Assessor person view
 
-People → open a colleague for the capability map, required scenarios, tickets, last recommendation, and agreed development actions as a list.
+People → open a colleague for the capability map, Ready gate (one satisfactory scenario per spoke), tickets, last recommendation, and agreed development actions as a list.
 
 ## Authoring
 
@@ -103,8 +103,8 @@ Attempts, workplace tickets, the colleague list, the signed-in person, and the l
 Everyone sees files listed in `data/config.json` under `bundledScenarioFiles`. The Author form only saves in this browser until you add a file.
 
 1. Copy `data/scenarios/_template.json` to a new name, for example `data/scenarios/pega-bridge.json`. Do not add `_template.json` itself to the library.
-2. Change `id` to something unique (`vdi-pega-bridge-004`). Leave `mandatory` as `false` unless it should be required for Ready.
-3. Rewrite `title`, `description`, `scope`, `assessorGuidance`, and `initialIncident` (short `callSummary`, labelled `facts`, mock ServiceNow ticket, impact). Put every fact the engineer needs in that report.
+2. Change `id` to something unique (`vdi-pega-bridge-004`). Leave `mandatory` as `false`. Ready is one satisfactory scenario per spoke, not a flag on a file.
+3. Set `spokeId` to one spoke and `spokeNumber` to the next free number for that spoke. `title` is the spoke name plus that number (`AVD Infrastructure 2`). Then rewrite `description`, `scope`, `assessorGuidance`, and `initialIncident` (short `callSummary`, labelled `facts`, mock ServiceNow ticket, impact). Facts are what they would hear on the first call, not who to engage or the smoking gun. Keep the playbook in `assessorGuidance`.
 4. Rewrite `questions` to a single written prompt (`q1`). `assessorGuidance` on that question is for the reviewer only. `capabilityDomainIds` must use the spoke ids below.
 5. Rewrite `scoringCriteria`. Each criterion needs `domainId` (one spoke), `questionIds` such as `["q1"]`, `maxScore` 3, and `mandatory` / `safetyCritical` true or false.
 6. Add `"data/scenarios/pega-bridge.json"` to `bundledScenarioFiles` in `data/config.json`.

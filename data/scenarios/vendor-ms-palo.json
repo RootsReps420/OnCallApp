@@ -1,0 +1,134 @@
+{
+  "id": "vdi-vendor-ms-palo-008",
+  "version": "1.2.0",
+  "status": "published",
+  "title": "Vendor Management 1",
+  "spokeId": "vendor-management",
+  "spokeNumber": 1,
+  "description": "You are pulled into an ongoing, multi-day incident that has now gone out of hours. Colleagues cannot authenticate to more than one product. Authentication is Entra ID, and that traffic is tunneled via PAA.",
+  "scope": "Out-of-hours continuation of a multi-day incident: Entra authentication through the PAA tunnel.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward parallel vendor engagement. Palo Alto via the official Confluence engagement. Microsoft via a SevA in the Azure portal — OOH always SevA, CritSit for 15-minute response. Ticket needs enough detail and where we think the flow is; a capture showing inside versus outside the tunnel and basic routing checks help. Technical chairs vendor calls. TRM/MIM manage comms and the incident. Safety-critical: do not raise below SevA out of hours, and do not treat this as a single-vendor problem.",
+  "acceptableAlternativeApproaches": [
+    "Open Microsoft SevA and the Palo Confluence path in parallel, then tidy the capture.",
+    "Get TRM/MIM on comms first, then technical chairs both vendor bridges with the same flow diagram.",
+    "Routing checks and a tunnel inside/outside capture before the first vendor update, without delaying the SevA raise."
+  ],
+  "documentationReferences": [
+    {
+      "title": "Vendor engagement OOH (illustrative)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "You are pulled into an ongoing, multi-day incident that has now gone out of hours. Colleagues cannot authenticate to different products. Authentication is Entra ID and that traffic is tunneled via PAA.",
+    "serviceNow": {
+      "incidentNumber": "INC0002405",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-24 08:40 UTC (ongoing; now OOH)",
+      "caller": "Ops Bridge / ongoing incident",
+      "affectedCI": "Entra ID authentication via PAA tunnel (illustrative)",
+      "shortDescription": "Entra auth failures via PAA — multi-day, now OOH",
+      "description": "Multi-day, now OOH. Multiple products. Entra authentication. Traffic tunneled via PAA."
+    },
+    "impact": {
+      "customers": "Colleagues unable to authenticate to more than one product using Entra via PAA.",
+      "colleagues": "Ongoing bridge. Ops. VDI now on the OOH shift.",
+      "business": "Authentication to multiple products blocked or unreliable. Illustrative multi-day impact now in OOH."
+    },
+    "facts": [
+      {
+        "label": "What is failing",
+        "value": "Colleagues cannot authenticate to different products."
+      },
+      {
+        "label": "On the path",
+        "value": "Authentication is Entra ID. That traffic is tunneled via PAA."
+      },
+      {
+        "label": "When",
+        "value": "Multi-day incident, now out of hours."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "vendor-management",
+        "proxy-solution",
+        "m365-stack",
+        "trm-escalation-ops",
+        "networking"
+      ],
+      "helpText": "More than one product is in the path. Think about who you would work with on this call, and how.",
+      "assessorGuidance": "Score the whole write-up. Reward: both vendors because Entra is tunneled via PAA; Palo via Confluence; Microsoft SevA in Azure Portal; OOH always SevA and CritSit 15 minutes; enough ticket detail and suspected flow; capture inside vs outside the tunnel; basic routing; technical chairs vendor calls; TRM/MIM on comms and incident flow. Do not score as demonstrated: Sev B/C OOH; Microsoft only or Palo only; waiting for a perfect pack before raising; TRM expected to chair the technical vendor call."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-vendor",
+      "label": "Engages Microsoft and Palo Alto in parallel because Entra auth is tunneled via PAA",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-sev",
+      "label": "Raises Microsoft as SevA in the Azure Portal OOH and uses CritSit for a 15-minute response",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-palo",
+      "label": "Uses the official Palo Alto engagement on Confluence",
+      "domainId": "proxy-solution",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-pack",
+      "label": "Puts enough flow detail on the ticket, with tunnel inside/outside capture and basic routing where useful",
+      "domainId": "networking",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-process",
+      "label": "Technical chairs vendor calls; TRM and MIM manage comms and incident flow",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not under-severity OOH or wait on a perfect pack before engaging vendors",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "id": "vdi-proxy-m365-007",
+  "version": "1.2.0",
+  "status": "published",
+  "title": "Proxy Solution 1",
+  "spokeId": "proxy-solution",
+  "spokeNumber": 1,
+  "description": "Ops pages VDI. Service Desk has an influx of tickets: users cannot access or authenticate to Microsoft 365 apps, including OneDrive. It looks sporadic — not every user. Reports are from different locations, on AVD Personal and Multi-Session.",
+  "scope": "Out-of-hours: sporadic M365 / OneDrive access from AVD Personal and Multi-Session.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 40,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward refusing an AVD-only story. Personal and Multi-Session, random locations. Check M365 status portals, get TRM in, Ops to call the OneDrive team, and Microsoft via CritSit for a SevA response within 15 minutes. Smoking gun: this is larger than AVD — OneDrive / M365 auth. Recovery is vendor support, logs, OneDrive team reporting, and multiple users confirming. Safety-critical: do not assume it is only AVD and start changing the VDI platform.",
+  "acceptableAlternativeApproaches": [
+    "M365 status first, then TRM and OneDrive team, with CritSit in parallel if the portal or pattern says tenant-side.",
+    "Confirm Personal and Multi-Session and mixed locations first, then CritSit plus OneDrive callout.",
+    "PAA/path glance so proxy is not ignored, then still prove it is larger than AVD."
+  ],
+  "documentationReferences": [
+    {
+      "title": "VDI OOH Microsoft 365 access (illustrative runbook)",
+      "note": "Confirm locally against the approved document."
+    },
+    {
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "Ops pages VDI on-call. Service Desk has an influx of tickets: users cannot access or authenticate to Microsoft 365 apps, including OneDrive. It is sporadic and does not hit every user. Reports are coming from different locations, on both AVD Personal and Multi-Session.",
+    "serviceNow": {
+      "incidentNumber": "INC0002404",
+      "priority": "1 — Critical",
+      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "opened": "2026-09-28 21:08 UTC",
+      "caller": "Ops Bridge",
+      "affectedCI": "AVD Personal and Multi-Session / Microsoft 365 apps (illustrative)",
+      "shortDescription": "Sporadic M365 / OneDrive auth from AVD — Personal and Multi-Session",
+      "description": "Not every user. Mixed locations. Both Personal and Multi-Session."
+    },
+    "impact": {
+      "customers": "Random AVD users (Personal and Multi-Session, mixed locations) unable to authenticate to M365 / OneDrive. Not the whole estate.",
+      "colleagues": "Ops, Service Desk, VDI on-call.",
+      "business": "Affected colleagues cannot use M365 / OneDrive from AVD. Scale still being proven. Illustrative impact."
+    },
+    "facts": [
+      {
+        "label": "Pattern",
+        "value": "Sporadic. Random users, different locations, both AVD Personal and Multi-Session (MSH)."
+      },
+      {
+        "label": "Symptom",
+        "value": "Cannot access or authenticate to Microsoft 365 apps, including OneDrive."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "proxy-solution",
+        "m365-stack",
+        "vendor-management",
+        "trm-escalation-ops",
+        "platform-troubleshooting"
+      ],
+      "helpText": "Personal and Multi-Session are both reporting. Think about how wide this is before you change anything on AVD.",
+      "assessorGuidance": "Score the whole write-up. Reward: M365 status portals; TRM; Ops to bring the OneDrive team; Microsoft CritSit for SevA within 15 minutes; concluding it is larger than AVD (OneDrive / M365 auth); PAA noted but not used as the whole story; recovery with vendor, logs, OneDrive reporting, and more than one user. Do not score as demonstrated: AVD-only rebuild, drain, or PAA uninstall as the first move; skipping Microsoft because 'we can fix AVD ourselves'."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-scope",
+      "label": "Does not assume AVD-only when Personal, Multi-Session, and mixed locations are all reporting",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-m365",
+      "label": "Uses M365 status portals and gets Ops to engage the OneDrive team",
+      "domainId": "m365-stack",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-vendor",
+      "label": "Engages Microsoft via CritSit for a SevA response within 15 minutes",
+      "domainId": "vendor-management",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-process",
+      "label": "Brings TRM in and keeps the incident as a cross-team issue, not a VDI-only ticket",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-proxy",
+      "label": "Notes PAA is on the platform without making proxy the whole story",
+      "domainId": "proxy-solution",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-recover",
+      "label": "Confirms recovery with vendor support, OneDrive reporting, and multiple users",
+      "domainId": "m365-stack",
+      "maxScore": 3,
+      "mandatory": false,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not change the AVD platform on an unproven AVD-only assumption",
+      "domainId": "proxy-solution",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}

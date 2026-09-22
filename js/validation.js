@@ -4,6 +4,15 @@
 const QUESTION_TYPES = new Set(["single", "multiple", "written"]);
 const DIFFICULTIES = new Set(["foundation", "intermediate", "advanced"]);
 const STATUSES = new Set(["draft", "published"]);
+export const SPOKE_IDS = new Set([
+  "avd-infrastructure",
+  "networking",
+  "trm-escalation-ops",
+  "proxy-solution",
+  "vendor-management",
+  "platform-troubleshooting",
+  "m365-stack"
+]);
 
 // Record one validation problem. The caller keeps going so the user sees every issue.
 function fail(errors, path, message) {
@@ -37,6 +46,16 @@ export function validateScenario(scenario) {
   requireString(errors, "version", scenario.version);
   if (!STATUSES.has(scenario.status)) fail(errors, "status", "Status must be draft or published.");
   requireString(errors, "title", scenario.title, 8);
+  if (scenario.spokeId != null) {
+    if (!SPOKE_IDS.has(scenario.spokeId)) {
+      fail(errors, "spokeId", "spokeId must be one of the seven readiness spokes.");
+    }
+  }
+  if (scenario.spokeNumber != null) {
+    if (!Number.isInteger(scenario.spokeNumber) || scenario.spokeNumber < 1) {
+      fail(errors, "spokeNumber", "spokeNumber must be a whole number of at least 1.");
+    }
+  }
   requireString(errors, "description", scenario.description, 20);
   requireString(errors, "scope", scenario.scope);
   if (!DIFFICULTIES.has(scenario.difficulty)) {

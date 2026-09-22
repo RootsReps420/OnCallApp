@@ -20,8 +20,8 @@ import {
   formatAttemptMeta,
   roleLabel
 } from "./render.js";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions } from "./scoring.js";
-import { publishedScenarios } from "./content.js";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete } from "./scoring.js";
+import { publishedScenarios, groupScenariosBySpoke } from "./content.js";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -35,12 +35,48 @@ function attemptsFor(attempts, engineerId) {
   return attempts.filter((item) => item.engineerId === engineerId);
 }
 
-// User home: KPI cards, capability charts, recent activity, and required scenarios.
+function readinessMinScore(state) {
+  return gateMinScore(state.readinessConfig);
+}
+
+function spokeRowsFor(state, attempts) {
+  const min = readinessMinScore(state);
+  const requireSatisfactory = state.readinessConfig?.allRequiredReviewed !== false;
+  return spokeGateStatus(state.config.capabilityDomains, publishedScenarios(state.scenarios), attempts, min, requireSatisfactory);
+}
+
+function spokeHref(row, attempts, { assessor = false } = {}) {
+  const scenarioId = row.countedId || row.startId;
+  if (!scenarioId) return "#/library";
+  if (assessor) {
+    const attemptId = row.countedAttemptId;
+    if (attemptId) return `#/assessor/review/${attemptId}`;
+    const latest = latestAttempt(attempts, scenarioId);
+    if (latest && (latest.status === "submitted" || latest.status === "released")) {
+      return `#/assessor/review/${latest.id}`;
+    }
+  }
+  return `#/scenario/${encodeURIComponent(scenarioId)}`;
+}
+
+function spokeGateListHtml(rows, attempts, { assessor = false } = {}) {
+  return rows.map((row) => {
+    const extra = row.met && row.countedTitle ? ` · ${escapeHtml(row.countedTitle)}` : "";
+    return `<li><a href="${spokeHref(row, attempts, { assessor })}"><span>${escapeHtml(row.name)}${extra}</span><span class="pill ${row.progressStatus || ""}">${escapeHtml(row.progressLabel)}</span></a></li>`;
+  }).join("");
+}
+
+function spokeGateNote(complete) {
+  return complete
+    ? "One scenario in each spoke has been released at Demonstrated or above."
+    : "Ready needs one scenario per spoke, released at Demonstrated or above. Any numbered scenario in that spoke can count.";
+}
+
+// User home: KPI cards, capability charts, recent activity, and the Ready gate.
 export function dashboardView(state) {
-  const { config, scenarios, attempts, person } = state;
+  const { config, attempts, person } = state;
   const mine = attemptsFor(attempts, person.id);
-  const published = publishedScenarios(scenarios);
-  const required = published.filter((item) => item.mandatory);
+  const spokeRows = spokeRowsFor(state, mine);
   const awaiting = mine.filter((item) => item.status === "submitted");
   const released = mine.filter((item) => item.status === "released");
   const inProgress = mine.filter((item) => item.status === "in-progress");
@@ -157,16 +193,13 @@ export function dashboardView(state) {
     <div class="grid grid-2 dash-lower">
       <section class="card">
         <div class="card-head">
-          <h2>Required scenarios</h2>
+          <h2>Ready gate</h2>
           <a href="#/library">All scenarios</a>
         </div>
         <ul class="work-list">
-          ${required.map((scenario) => {
-            const attempt = latestAttempt(mine, scenario.id);
-            const label = attempt ? statusLabel(attempt.status) : "Not started";
-            return `<li data-search="${escapeHtml(scenario.title)}"><a href="#/scenario/${encodeURIComponent(scenario.id)}"><span>${escapeHtml(scenario.title)}</span><span class="pill ${attempt ? statusClass(attempt.status) : ""}">${escapeHtml(label)}</span></a></li>`;
-          }).join("") || `<li class="muted">No required scenarios.</li>`}
+          ${spokeGateListHtml(spokeRows, mine)}
         </ul>
+        <p class="subtle">${spokeGateNote(spokeGateComplete(state.readinessConfig, spokeRows))}</p>
       </section>
       <section class="card">
         <h2>Development actions</h2>
@@ -180,27 +213,36 @@ export function dashboardView(state) {
 export function libraryView(state) {
   const published = state.role === "administrator" ? state.scenarios : publishedScenarios(state.scenarios);
   const mine = attemptsFor(state.attempts, state.person.id);
+  const groups = groupScenariosBySpoke(published, state.config.capabilityDomains);
   return `
     <div class="page-header">
       <h1>Scenario library</h1>
-      <p class="lede">Collection of prior SevA incidents to practice and test your experience against. Each test has a timer and one write-up covering the whole incident. Tests can be resat once reviewed by an assessor.</p>
+      <p class="lede">Collection of prior SevA incidents to practice and test your experience against. Grouped by readiness spoke. Ready needs one scenario per spoke at Demonstrated; any numbered scenario in that spoke can count.</p>
     </div>
     <div class="stack">
-      ${published.map((scenario) => {
-        const attempt = latestAttempt(mine, scenario.id);
-        return `
-          <article class="card" data-search="${escapeHtml(scenario.title)} ${escapeHtml(scenario.description)}">
-            ${pillsForScenario(scenario, attempt, { difficulty: false })}
-            <h2>${escapeHtml(scenario.title)}</h2>
-            <p class="summary">${escapeHtml(scenario.description)}</p>
-            <p class="subtle">${escapeHtml(scenario.scope)} · Version ${escapeHtml(scenario.version)}</p>
-            <div class="btn-row">
-              <a class="btn" href="#/scenario/${encodeURIComponent(scenario.id)}">View scenario</a>
-              ${attempt?.status === "in-progress" ? `<a class="btn secondary" href="#/assess/${attempt.id}">Resume</a>` : ""}
-            </div>
-          </article>
-        `;
-      }).join("") || `<div class="empty-state">No scenarios available.</div>`}
+      ${groups.map((group) => `
+        <section class="spoke-block" data-search="${escapeHtml(`${group.name} ${group.items.map((item) => `${item.title} ${item.description}`).join(" ")}`)}">
+          <h2>${escapeHtml(group.name)}</h2>
+          <p class="subtle">Any of these can satisfy this spoke on the Ready gate.</p>
+          <div class="stack">
+            ${group.items.map((scenario) => {
+              const attempt = latestAttempt(mine, scenario.id);
+              return `
+                <article class="card" data-search="${escapeHtml(scenario.title)} ${escapeHtml(scenario.description)} ${escapeHtml(scenario.scope || "")}">
+                  ${pillsForScenario(scenario, attempt, { difficulty: false })}
+                  <h2>${escapeHtml(scenario.title)}</h2>
+                  <p class="summary">${escapeHtml(scenario.description)}</p>
+                  <p class="subtle">${escapeHtml(scenario.scope)} · Version ${escapeHtml(scenario.version)}</p>
+                  <div class="btn-row">
+                    <a class="btn" href="#/scenario/${encodeURIComponent(scenario.id)}">View scenario</a>
+                    ${attempt?.status === "in-progress" ? `<a class="btn secondary" href="#/assess/${attempt.id}">Resume</a>` : ""}
+                  </div>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `).join("") || `<div class="empty-state">No scenarios available.</div>`}
     </div>
   `;
 }
@@ -410,7 +452,7 @@ export function feedbackView(state, attempt) {
   }
   const scenario = attempt.scenarioSnapshot;
   const results = buildCriterionResults(scenario, attempt.answers, attempt.review);
-  const domains = summariseDomains(state.config.capabilityDomains, results);
+  const domains = summariseDomains(state.config.capabilityDomains, results, readinessMinScore(state));
   return `
     <div class="page-header">
       <h1>Feedback · ${escapeHtml(scenario.title)}</h1>
@@ -472,18 +514,22 @@ export function feedbackView(state, attempt) {
 // Personal summary. It is not a certificate and it does not compare colleagues.
 export function readinessView(state) {
   const mine = attemptsFor(state.attempts, state.person.id);
-  const published = publishedScenarios(state.scenarios);
-  const required = published.filter((item) => item.mandatory);
-  const requiredComplete = required.every((scenario) =>
-    mine.some((item) => item.scenarioId === scenario.id && item.status === "released")
-  );
+  const min = readinessMinScore(state);
+  const spokeRows = spokeRowsFor(state, mine);
+  const requiredComplete = spokeGateComplete(state.readinessConfig, spokeRows);
   const released = mine.filter((item) => item.status === "released");
   const allResults = released.flatMap((item) => buildCriterionResults(item.scenarioSnapshot, item.answers, item.review));
   const domains = applyEvidenceWeight(
-    summariseDomains(state.config.capabilityDomains, allResults),
+    summariseDomains(state.config.capabilityDomains, allResults, min),
     (state.evidence || []).filter((item) => item.engineerId === state.person.id)
   );
-  const hints = attemptOutcomeHints(allResults, domains, requiredComplete);
+  const countingResults = spokeRows.flatMap((row) => {
+    if (!row.met || !row.countedAttemptId) return [];
+    const attempt = mine.find((item) => item.id === row.countedAttemptId);
+    if (!attempt) return [];
+    return buildCriterionResults(attempt.scenarioSnapshot, attempt.answers, attempt.review);
+  });
+  const hints = attemptOutcomeHints(requiredComplete ? countingResults : allResults, domains, requiredComplete, min);
   const latestRec = released
     .slice()
     .sort((a, b) => (a.review?.releasedAt || "").localeCompare(b.review?.releasedAt || ""))
@@ -499,22 +545,17 @@ export function readinessView(state) {
     ${latestRec ? readinessBanner(latestRec) : `<div class="callout warn"><p>No assessor recommendation has been released yet. Incomplete evidence is not the same as a score of zero, and completing scenarios does not by itself mean ready.</p></div>`}
     ${readinessNetwork(domains, { personName: state.person?.name || "You" })}
     <div class="card" style="margin-top:1rem">
-      <h2>Required scenarios</h2>
+      <h2>Ready gate</h2>
       <ul class="work-list">
-        ${required.map((scenario) => {
-          const releasedAttempt = mine.find((item) => item.scenarioId === scenario.id && item.status === "released");
-          const other = latestAttempt(mine, scenario.id);
-          const label = releasedAttempt ? "Reviewed and released" : other ? statusLabel(other.status) : "Not started";
-          return `<li><a href="#/scenario/${encodeURIComponent(scenario.id)}"><span>${escapeHtml(scenario.title)}</span><span class="pill ${releasedAttempt ? "released" : other ? statusClass(other.status) : ""}">${escapeHtml(label)}</span></a></li>`;
-        }).join("")}
+        ${spokeGateListHtml(spokeRows, mine)}
       </ul>
-      <p class="subtle">${requiredComplete ? "Required scenarios have released reviews." : "Required scenarios are not all reviewed yet — treat readiness evidence as incomplete."}</p>
+      <p class="subtle">${spokeGateNote(requiredComplete)}</p>
       ${(state.evidence || []).filter((item) => item.engineerId === state.person.id).length
-        ? `<p class="subtle"><a href="#/evidence">Workplace tickets</a> can thicken a spoke. They cannot replace required scenarios or cancel a mandatory gap.</p>`
+        ? `<p class="subtle"><a href="#/evidence">Workplace tickets</a> can thicken a spoke. They cannot replace a spoke on the Ready gate or cancel a mandatory gap.</p>`
         : `<p class="subtle">Add prior tickets on <a href="#/evidence">Evidence</a> if you have workplace examples for a thin spoke.</p>`}
       ${hints.mandatoryUnmet.length
         ? `<p class="error-msg">Unmet mandatory criteria stay visible even if some nodes look strong:</p><ul>${hints.mandatoryUnmet.map((item) => `<li>${escapeHtml(item.label)} (${item.score}/${item.maxScore})</li>`).join("")}</ul>`
-        : `<p class="subtle">No scored mandatory criterion is currently below Demonstrated (2) in released attempts.${hints.hasIncompleteEvidence ? " Incomplete evidence is still present." : ""}</p>`}
+        : `<p class="subtle">No scored mandatory criterion is currently below Demonstrated (${min}) on the counting attempts.${hints.hasIncompleteEvidence ? " Incomplete evidence is still present." : ""}</p>`}
     </div>
   `;
 }
@@ -627,8 +668,8 @@ export function assessorReviewView(state, attempt) {
   const scenario = attempt.scenarioSnapshot;
   const review = attempt.review || {};
   const results = buildCriterionResults(scenario, attempt.answers, review);
-  const domains = summariseDomains(state.config.capabilityDomains, results);
-  const hints = attemptOutcomeHints(results, domains, true);
+  const domains = summariseDomains(state.config.capabilityDomains, results, readinessMinScore(state));
+  const hints = attemptOutcomeHints(results, domains, true, readinessMinScore(state));
   return `
     <div class="page-header">
       <h1>Review · ${escapeHtml(scenario.title)}</h1>
@@ -818,8 +859,9 @@ function howToAddScenarioHtml() {
       <p class="subtle">The Author form and Import page only save in this browser. The live library is the JSON files listed in <code>data/config.json</code>.</p>
       <ol>
         <li>Copy <code>data/scenarios/_template.json</code> to a new file, for example <code>data/scenarios/pega-bridge.json</code>.</li>
-        <li>Give it a unique <code>id</code> (lowercase, hyphens). Leave <code>mandatory</code> as <code>false</code> unless it should be required for Ready.</li>
-        <li>Rewrite the title, description, short call summary, labelled facts, mock ServiceNow ticket, the one response prompt, and scoring criteria.</li>
+        <li>Give it a unique <code>id</code> (lowercase, hyphens). Leave <code>mandatory</code> as <code>false</code> — Ready is one satisfactory scenario per spoke, not a flag on a file.</li>
+        <li>Set <code>spokeId</code> to that spoke and <code>spokeNumber</code> to the next free number (1, then 2, and so on). The <code>title</code> is the spoke name plus that number, for example <code>Networking 2</code>.</li>
+        <li>Rewrite the description, short call summary, labelled facts, mock ServiceNow ticket, the one response prompt, and scoring criteria. Facts are what they would hear on the first call — not who to engage or the smoking gun. A short hint on the question is enough.</li>
         <li>Spoke ids for <code>capabilityDomainIds</code> and <code>domainId</code> must be one of: <code>avd-infrastructure</code>, <code>networking</code>, <code>trm-escalation-ops</code>, <code>proxy-solution</code>, <code>vendor-management</code>, <code>platform-troubleshooting</code>, <code>m365-stack</code>.</li>
         <li>Add the new path to <code>bundledScenarioFiles</code> in <code>data/config.json</code>.</li>
         <li>Check it locally, then ask for the live site to be published. Saving here is not enough.</li>
@@ -856,14 +898,14 @@ export function adminScenariosView(state) {
     </div>
     <div class="card table-wrap" style="margin-top:1rem">
       <table class="data-table">
-        <thead><tr><th>Title</th><th>Id / version</th><th>Status</th><th>Mandatory</th><th></th></tr></thead>
+        <thead><tr><th>Title</th><th>Id / version</th><th>Status</th><th>Spoke</th><th></th></tr></thead>
         <tbody>
           ${state.scenarios.map((item) => `
             <tr data-search="${escapeHtml(item.title)} ${escapeHtml(item.id)}">
               <td>${escapeHtml(item.title)}</td>
               <td>${escapeHtml(item.id)} · ${escapeHtml(item.version)}</td>
               <td><span class="pill ${statusClass(item.status)}">${statusLabel(item.status)}</span></td>
-              <td>${item.mandatory ? "Yes" : "No"}</td>
+              <td>${escapeHtml(item.spokeId || "—")}</td>
               <td>
                 <a href="#/admin/scenario/${encodeURIComponent(item.id)}">Edit</a>
                 · <button class="btn ghost" data-action="download-scenario" data-scenario-id="${escapeHtml(item.id)}">Download JSON</button>
@@ -936,18 +978,18 @@ export function adminCriteriaView(state) {
     <form class="card" data-form="criteria">
       <div class="field">
         <label>
-          <input type="checkbox" name="requiredMandatoryScenarios" ${cfg.requiredMandatoryScenarios ? "checked" : ""}>
-          Required scenarios must have released reviews
+          <input type="checkbox" name="oneScenarioPerSpoke" ${cfg.oneScenarioPerSpoke !== false ? "checked" : ""}>
+          One scenario per spoke must be released at Demonstrated (or the minimum below)
         </label>
       </div>
       <div class="field">
         <label>
-          <input type="checkbox" name="allRequiredReviewed" ${cfg.allRequiredReviewed ? "checked" : ""}>
-          Capability criteria on those attempts should be reviewed before a Ready outcome
+          <input type="checkbox" name="allRequiredReviewed" ${cfg.allRequiredReviewed !== false ? "checked" : ""}>
+          Mandatory and safety-critical criteria on that attempt must meet the minimum before the spoke counts
         </label>
       </div>
       <div class="field">
-        <label for="mandatoryCriterionMinimum">Minimum score for mandatory criteria (0–3)</label>
+        <label for="mandatoryCriterionMinimum">Minimum score for mandatory and safety-critical criteria (0–3)</label>
         <input id="mandatoryCriterionMinimum" name="mandatoryCriterionMinimum" type="number" min="0" max="3" step="1" value="${escapeHtml(cfg.mandatoryCriterionMinimum)}">
       </div>
       <div class="field">
@@ -966,7 +1008,9 @@ function sampleTemplate() {
     id: "vdi-custom-001",
     version: "1.0.0",
     status: "draft",
-    title: "Custom illustrative scenario title",
+    title: "Networking 2",
+    spokeId: "networking",
+    spokeNumber: 2,
     description: "Describe the Sev1 OOH situation in at least twenty characters.",
     scope: "Out-of-hours VDI practice scenario.",
     difficulty: "foundation",
@@ -1086,7 +1130,7 @@ function aggregateReleasedDomains(state, engineerId = state.person.id) {
   const mine = attemptsFor(state.attempts, engineerId).filter((item) => item.status === "released");
   const results = mine.flatMap((item) => buildCriterionResults(item.scenarioSnapshot, item.answers, item.review));
   const tickets = (state.evidence || []).filter((item) => item.engineerId === engineerId);
-  return applyEvidenceWeight(summariseDomains(state.config.capabilityDomains, results), tickets);
+  return applyEvidenceWeight(summariseDomains(state.config.capabilityDomains, results, readinessMinScore(state)), tickets);
 }
 
 export { formatAnswer, hasAnswer };
@@ -1173,7 +1217,7 @@ export function evidenceLogView(state) {
   return `
     <div class="page-header">
       <h1>Evidence log</h1>
-      <p class="lede">Write up a prior SevA you worked, then an assessor maps it to a spoke. Tickets cannot replace required scenarios or cancel a mandatory gap. Redact names, ticket bodies, and anything that could identify a customer.</p>
+      <p class="lede">Write up a prior SevA you worked, then an assessor maps it to a spoke. Tickets cannot replace a spoke on the Ready gate or cancel a mandatory gap. Redact names, ticket bodies, and anything that could identify a customer.</p>
       <div class="btn-row">
         <a class="btn" href="#/evidence/new">Add a ticket</a>
       </div>
@@ -1305,7 +1349,7 @@ export function evidenceReviewView(state, entry) {
       <p class="subtle"><a href="#/assessor/person/${encodeURIComponent(entry.engineerId)}">${escapeHtml(entry.engineerName)}</a> · ${escapeHtml(domainName(state, entry.domainId))} · ${formatDate(entry.occurredOn)}</p>
     </div>
     <div class="callout warn">
-      <p>Score the write-up, not the live incident. A high ticket score cannot replace required scenarios or clear a mandatory gap.</p>
+      <p>Score the write-up, not the live incident. A high ticket score cannot replace a spoke on the Ready gate or clear a mandatory gap.</p>
     </div>
     <div class="card">
       <p class="subtle">Role on the call: ${escapeHtml(ROLE_ON_CALL.find((item) => item[0] === entry.roleOnCall)?.[1] || entry.roleOnCall)}</p>
@@ -1353,7 +1397,7 @@ export function assessorPeopleView(state) {
   return `
     <div class="page-header">
       <h1>People</h1>
-      <p class="lede">Open one colleague for the map, required scenarios, tickets, and the last recommendation.</p>
+      <p class="lede">Open one colleague for the map, Ready gate, tickets, and the last recommendation.</p>
     </div>
     <div class="card table-wrap">
       <table class="data-table">
@@ -1383,7 +1427,7 @@ export function assessorPeopleView(state) {
   `;
 }
 
-// One engineer: map, required scenarios, tickets, recommendation, actions.
+// One engineer: map, Ready gate, tickets, recommendation, actions.
 export function assessorPersonView(state, personId) {
   const people = peopleForAssessor(state);
   const found = people.find((item) => item.id === personId);
@@ -1392,15 +1436,19 @@ export function assessorPersonView(state, personId) {
   const tickets = (state.evidence || []).filter((item) => item.engineerId === personId)
     .slice()
     .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
-  const published = publishedScenarios(state.scenarios);
-  const required = published.filter((item) => item.mandatory);
-  const requiredComplete = required.every((scenario) =>
-    mine.some((item) => item.scenarioId === scenario.id && item.status === "released")
-  );
+  const min = readinessMinScore(state);
+  const spokeRows = spokeRowsFor(state, mine);
+  const requiredComplete = spokeGateComplete(state.readinessConfig, spokeRows);
   const released = mine.filter((item) => item.status === "released");
   const domains = aggregateReleasedDomains(state, personId);
   const allResults = released.flatMap((item) => buildCriterionResults(item.scenarioSnapshot, item.answers, item.review));
-  const hints = attemptOutcomeHints(allResults, domains, requiredComplete);
+  const countingResults = spokeRows.flatMap((row) => {
+    if (!row.met || !row.countedAttemptId) return [];
+    const attempt = mine.find((item) => item.id === row.countedAttemptId);
+    if (!attempt) return [];
+    return buildCriterionResults(attempt.scenarioSnapshot, attempt.answers, attempt.review);
+  });
+  const hints = attemptOutcomeHints(requiredComplete ? countingResults : allResults, domains, requiredComplete, min);
   const latestRec = released
     .slice()
     .sort((a, b) => String(a.review?.releasedAt || "").localeCompare(String(b.review?.releasedAt || "")))
@@ -1412,26 +1460,18 @@ export function assessorPersonView(state, personId) {
     <div class="page-header">
       <p class="subtle">Assessor · person view</p>
       <h1>${escapeHtml(found.name)}</h1>
-      <p class="lede">Map, required scenarios, workplace tickets, and the last released recommendation. This is not a certificate.</p>
+      <p class="lede">Map, Ready gate, workplace tickets, and the last released recommendation. This is not a certificate.</p>
     </div>
     ${latestRec ? readinessBanner(latestRec) : `<div class="callout warn"><p>No assessor recommendation has been released yet.</p></div>`}
     ${hints.mandatoryUnmet.length ? `<div class="callout danger"><p>Mandatory gaps still stand, including any workplace tickets that scored well.</p><ul>${hints.mandatoryUnmet.map((item) => `<li>${escapeHtml(item.label)}</li>`).join("")}</ul></div>` : ""}
     ${readinessNetwork(domains, { personName: found.name })}
     <div class="grid grid-2" style="margin-top:1rem">
       <section class="card">
-        <h2>Required scenarios</h2>
+        <h2>Ready gate</h2>
         <ul class="work-list">
-          ${required.map((scenario) => {
-            const done = mine.find((item) => item.scenarioId === scenario.id && item.status === "released");
-            const other = latestAttempt(mine, scenario.id);
-            const label = done ? "Reviewed and released" : other ? statusLabel(other.status) : "Not started";
-            const href = other?.status === "submitted" || other?.status === "released"
-              ? `#/assessor/review/${other.id}`
-              : `#/scenario/${encodeURIComponent(scenario.id)}`;
-            return `<li><a href="${href}"><span>${escapeHtml(scenario.title)}</span><span class="pill ${done ? "released" : other ? statusClass(other.status) : ""}">${escapeHtml(label)}</span></a></li>`;
-          }).join("")}
+          ${spokeGateListHtml(spokeRows, mine, { assessor: true })}
         </ul>
-        <p class="subtle">${requiredComplete ? "Required scenarios have released reviews." : "Required scenarios are not all reviewed yet."}</p>
+        <p class="subtle">${spokeGateNote(requiredComplete)}</p>
       </section>
       <section class="card">
         <h2>Development actions</h2>
@@ -1482,9 +1522,19 @@ export function adminAuthorView(state) {
         <input id="a-id" name="id" type="text" required minlength="4" placeholder="vdi-proxy-inspection-001">
         <span class="hint">Lowercase letters, numbers, and hyphens. Must be unique.</span>
       </div>
-      <div class="field">
-        <label for="a-title">Title</label>
-        <input id="a-title" name="title" type="text" required minlength="8">
+      <div class="grid grid-2">
+        <div class="field">
+          <label for="a-spoke">Readiness spoke</label>
+          <select id="a-spoke" name="spokeId" required>
+            ${domains.map((domain) => `<option value="${escapeHtml(domain.id)}">${escapeHtml(domain.name)}</option>`).join("")}
+          </select>
+          <span class="hint">The library groups scenarios under this spoke.</span>
+        </div>
+        <div class="field">
+          <label for="a-spoke-number">Number on that spoke</label>
+          <input id="a-spoke-number" name="spokeNumber" type="number" min="1" step="1" value="1" required>
+          <span class="hint">Title becomes the spoke name plus this number, for example Networking 2.</span>
+        </div>
       </div>
       <div class="field">
         <label for="a-description">Description</label>
@@ -1509,7 +1559,7 @@ export function adminAuthorView(state) {
         </div>
       </div>
       <div class="field">
-        <label><input type="checkbox" name="mandatory"> Required for readiness</label>
+        <p class="subtle">Ready is one satisfactory scenario per spoke. This file does not need a required flag.</p>
       </div>
       <div class="field">
         <label for="a-disclaimer">Illustrative disclaimer</label>

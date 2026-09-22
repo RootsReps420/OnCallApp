@@ -175,7 +175,7 @@ export function buildCriterionResults(scenario, answers, review = null) {
 }
 
 // Roll criteria up to the capability areas for the chart and readiness map.
-export function summariseDomains(domains, criterionResults) {
+export function summariseDomains(domains, criterionResults, minScore = 2) {
   return domains.map((domain) => {
     const items = criterionResults.filter((item) => item.domainId === domain.id);
     const reviewed = items.filter((item) => item.score != null && !item.unanswered);
@@ -183,7 +183,7 @@ export function summariseDomains(domains, criterionResults) {
     const available = reviewed.reduce((sum, item) => sum + item.maxScore, 0);
     const pending = items.filter((item) => item.pendingReview);
     const unanswered = items.filter((item) => item.unanswered);
-    const mandatoryUnmet = items.filter((item) => item.mandatory && item.score != null && item.score < 2);
+    const mandatoryUnmet = items.filter((item) => item.mandatory && item.score != null && item.score < minScore);
     const mandatoryPending = items.filter((item) => item.mandatory && (item.pendingReview || item.unanswered || item.score == null));
     return {
       ...domain,
@@ -210,11 +210,90 @@ function coverageLabel(total, reviewed, pending, unanswered) {
   return `${reviewed} of ${total} criteria scored`;
 }
 
+// Released attempt whose mandatory and safety-critical scores meet Demonstrated (or the configured minimum).
+export function isAttemptSatisfactory(attempt, minScore = 2) {
+  if (!attempt || attempt.status !== "released") return false;
+  const scenario = attempt.scenarioSnapshot;
+  if (!scenario?.scoringCriteria?.length) return false;
+  const results = buildCriterionResults(scenario, attempt.answers, attempt.review);
+  const gates = results.filter((item) => item.mandatory || item.safetyCritical);
+  if (!gates.length) return false;
+  return gates.every((item) => item.score != null && !item.pendingReview && Number(item.score) >= minScore);
+}
+
+// Minimum Demonstrated line from administrator criteria (default 2).
+export function gateMinScore(readinessConfig) {
+  const n = Number(readinessConfig?.mandatoryCriterionMinimum);
+  return Number.isFinite(n) ? n : 2;
+}
+
+// One row per readiness spoke: has this engineer done any scenario in that spoke to standard?
+export function spokeGateStatus(domains, scenarios, attempts, minScore = 2, requireSatisfactory = true) {
+  const published = (scenarios || []).filter((item) => item.status === "published");
+  const counts = (attempt) => requireSatisfactory
+    ? isAttemptSatisfactory(attempt, minScore)
+    : Boolean(attempt && attempt.status === "released");
+  return (domains || []).map((domain) => {
+    const inSpoke = published.filter((item) => item.spokeId === domain.id);
+    let countedAttempt = null;
+    const counted = inSpoke.find((scenario) => {
+      const match = (attempts || []).find((attempt) => attempt.scenarioId === scenario.id && counts(attempt));
+      if (match) {
+        countedAttempt = match;
+        return true;
+      }
+      return false;
+    });
+    const latest = (scenario) => (attempts || [])
+      .filter((item) => item.scenarioId === scenario.id)
+      .sort((a, b) => String(b.updatedAt || b.startedAt || "").localeCompare(String(a.updatedAt || a.startedAt || "")))[0];
+    let progressLabel = "Not started";
+    let progressStatus = "";
+    if (counted) {
+      progressLabel = requireSatisfactory ? "Demonstrated" : "Released";
+      progressStatus = "released";
+    } else {
+      const inFlight = inSpoke.map(latest).filter(Boolean);
+      if (inFlight.some((item) => item.status === "released")) {
+        progressLabel = "Released — below Demonstrated";
+        progressStatus = "not-ready";
+      } else if (inFlight.some((item) => item.status === "submitted")) {
+        progressLabel = "Awaiting review";
+        progressStatus = "review";
+      } else if (inFlight.some((item) => item.status === "in-progress")) {
+        progressLabel = "In progress";
+        progressStatus = "progress";
+      }
+    }
+    return {
+      id: domain.id,
+      name: domain.name,
+      met: Boolean(counted),
+      countedTitle: counted?.title || "",
+      countedId: counted?.id || "",
+      countedAttemptId: countedAttempt?.id || "",
+      startId: counted?.id || inSpoke[0]?.id || "",
+      progressLabel,
+      progressStatus,
+      scenarioCount: inSpoke.length
+    };
+  });
+}
+
+export function allSpokesSatisfied(spokeStatus) {
+  return Array.isArray(spokeStatus) && spokeStatus.length > 0 && spokeStatus.every((item) => item.met);
+}
+
+export function spokeGateComplete(readinessConfig, spokeStatus) {
+  if (readinessConfig?.oneScenarioPerSpoke === false) return true;
+  return allSpokesSatisfied(spokeStatus);
+}
+
 // Signals for the readiness page. A suggested band is withheld while evidence is incomplete.
-export function attemptOutcomeHints(criterionResults, domainSummaries, requiredScenariosComplete) {
+export function attemptOutcomeHints(criterionResults, domainSummaries, requiredScenariosComplete, minScore = 2) {
   const pending = criterionResults.filter((item) => item.pendingReview || item.unanswered);
-  const mandatoryUnmet = criterionResults.filter((item) => item.mandatory && item.score != null && item.score < 2);
-  const safetyFlags = criterionResults.filter((item) => item.safetyCritical && (item.score == null || item.score < 2 || item.pendingReview));
+  const mandatoryUnmet = criterionResults.filter((item) => item.mandatory && item.score != null && item.score < minScore);
+  const safetyFlags = criterionResults.filter((item) => item.safetyCritical && (item.score == null || item.score < minScore || item.pendingReview));
   const average = (() => {
     const scored = domainSummaries.filter((item) => item.percentage != null);
     if (!scored.length) return null;
@@ -237,7 +316,7 @@ export function attemptOutcomeHints(criterionResults, domainSummaries, requiredS
   };
 }
 
-// Only used after every required scenario is released and nothing is still pending.
+// Only used after every spoke has a satisfactory attempt and nothing is still pending.
 function suggestedBand({ pending, mandatoryUnmet, requiredScenariosComplete, average }) {
   if (!requiredScenariosComplete || pending) return null;
   if (mandatoryUnmet) return "not-yet-ready";
@@ -252,11 +331,11 @@ export function readinessCopy(value) {
     ready: { label: "Ready", detail: "The assessor judges that the engineer can independently manage the initial Sev1 OOH response and use the established support model." },
     "ready-with-development": { label: "Ready with development areas", detail: "The engineer can take a supported place on the rota while completing agreed development actions." },
     "not-yet-ready": { label: "Not yet ready", detail: "Further practice or support is needed before independent OOH response. Completion of scenarios alone does not imply readiness." }
-  }[value] || { label: "No recommendation yet", detail: "A human assessor makes the final recommendation after required scenarios and capability criteria have been reviewed." };
+  }[value] || { label: "No recommendation yet", detail: "A human assessor makes the final recommendation after one scenario per spoke is at Demonstrated and capability criteria have been reviewed." };
 }
 
-// Workplace tickets can thicken a spoke. They cannot replace required scenarios
-// or cancel a mandatory gap. Empty spokes stay at most 67% from tickets alone.
+// Workplace tickets can thicken a spoke. They cannot replace a spoke on the Ready
+// gate or cancel a mandatory gap. Empty spokes stay at most 67% from tickets alone.
 export const EVIDENCE_WEIGHT = {
   emptySpokeCap: 67,
   scoredSpokeBoost: 15,
@@ -334,7 +413,7 @@ export function applyEvidenceWeight(domains, evidenceEntries = []) {
       next.percentage = Math.min(EVIDENCE_WEIGHT.emptySpokeCap, ticketPct);
       next.evidenceBoosted = true;
       next.coverageLabel = `${next.coverageLabel}; ${ticketBit} capped at ${EVIDENCE_WEIGHT.emptySpokeCap}%`;
-      next.evidenceNote = `Workplace evidence only. Capped at ${EVIDENCE_WEIGHT.emptySpokeCap}% so tickets cannot stand in for required scenarios.`;
+      next.evidenceNote = `Workplace evidence only. Capped at ${EVIDENCE_WEIGHT.emptySpokeCap}% so tickets cannot stand in for a spoke on the Ready gate.`;
       return next;
     }
 

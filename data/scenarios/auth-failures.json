@@ -1,13 +1,15 @@
 {
   "id": "vds-auth-group-003",
-  "version": "1.4.0",
+  "version": "1.6.1",
   "status": "published",
-  "title": "Authentication failures for a defined user group",
-  "description": "A named cohort cannot complete AVD sign-in after a late configuration change. Other users succeed. The engineer must investigate identity, Conditional Access, group assignment, and host-pool application group configuration without guessing at a directory-wide outage.",
-  "scope": "Out-of-hours Sev1 affecting AVD authentication for one business group, with possible identity or platform assignment causes.",
+  "title": "M365 Stack 1",
+  "spokeId": "m365-stack",
+  "spokeNumber": 1,
+  "description": "A named cohort cannot complete AVD sign-in. They fail at the Microsoft sign-in page, not inside Windows. Other users on the same host pool succeed. A configuration change completed earlier in the evening.",
+  "scope": "Out-of-hours Sev1: AVD authentication failing for one business group. Other users can still sign in.",
   "difficulty": "intermediate",
   "estimatedMinutes": 40,
-  "mandatory": true,
+  "mandatory": false,
   "illustrativeDisclaimer": "This scenario, its mock incident, identity procedures, runbook titles, and escalation routes are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
   "assessorGuidance": "Reward scoped investigation: one group fails, others work — not a Microsoft-wide Entra outage by default. Look for application group assignment, Conditional Access, MFA method, and recent identity change. Safety-critical: do not disable Conditional Access tenant-wide or reset unrelated users’ credentials in bulk.",
   "acceptableAlternativeApproaches": [
@@ -17,16 +19,12 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI AVD access and application groups (illustrative runbook)",
-      "note": "Would normally cover desktop vs RemoteApp assignment and group nesting. Confirm locally."
+      "title": "VDI AVD access OOH (illustrative runbook)",
+      "note": "Confirm locally."
     },
     {
-      "title": "Entra / Conditional Access triage with Identity (illustrative)",
-      "note": "Would normally describe how VDI and Identity share sign-in logs. Confirm locally."
-    },
-    {
-      "title": "Joiner-mover-leaver impact on VDI (illustrative)",
-      "note": "Would normally cover nested group risk. Confirm locally."
+      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "note": "Confirm locally."
     }
   ],
   "initialIncident": {
@@ -39,37 +37,25 @@
       "caller": "Payments Operations Duty Manager",
       "affectedCI": "VDI-UK-PROD-HP01 application group / Entra group sg-vds-payments-ops (illustrative)",
       "shortDescription": "Payments Operations unable to authenticate to AVD",
-      "description": "Failure at identity prompt. Other host-pool users succeed. Identity change CHG004398 completed at 22:10 UTC."
+      "description": "Failure at the Microsoft sign-in page, not inside Windows. Other host-pool users succeed. A configuration change completed earlier this evening."
     },
     "impact": {
       "customers": "Payments Operations cohort (~35). Other VDI users not reporting the same sign-in failure.",
-      "colleagues": "Identity on-call aware of a completed change; not yet on a MIM bridge.",
+      "colleagues": "Payments Operations Duty Manager; Service Desk. VDI on-call.",
       "business": "Overnight payments exception queue cannot be processed from VDI. Illustrative impact."
     },
     "facts": [
       {
         "label": "Affected",
-        "value": "Payments Ops, about 35 users. Errors: “Takeover attempt was detected”, AADSTS50076, Conditional Access prompts that never complete."
+        "value": "Payments Ops. They fail at the Microsoft sign-in page, not inside Windows."
       },
       {
         "label": "Still working",
-        "value": "Traders and a Service Desk test account on the same host pool."
+        "value": "Other users on the same host pool, including a Service Desk test, can still launch AVD."
       },
       {
-        "label": "Hosts",
-        "value": "HP01 Available. No Entra or AVD Service Health advisory."
-      },
-      {
-        "label": "Sign-in",
-        "value": "AADSTS50076 against policy VDI-Payments-MFA-StepUp — authentication strength not satisfied."
-      },
-      {
-        "label": "AVD assignment",
-        "value": "Desktop application group DAG-HP01 still includes sg-vds-payments-ops (35 members)."
-      },
-      {
-        "label": "Change",
-        "value": "CHG004398 nested-group cleanup at 22:10 UTC emptied sg-id-payments-mfa-methods."
+        "label": "When",
+        "value": "Thursday 23:41 UTC. A configuration change completed earlier this evening."
       }
     ]
   },
@@ -85,7 +71,7 @@
         "trm-escalation-ops",
         "vendor-management"
       ],
-      "helpText": "There is no single correct order. Cover the whole incident so an assessor can see your reasoning.",
+      "helpText": "One group fails at sign-in; others work. Think about how wide this is, and what you would not change tenant-wide.",
       "assessorGuidance": "Score the whole write-up. Reward scoping to Payments Ops at the Entra prompt rather than a platform-wide outage; checking application group assignment and Entra/CA logs with Identity; treating the emptied helper group and AADSTS50076 as an identity configuration fault, not a Microsoft-wide Entra outage or a network path issue; engaging Identity and MIM; not disabling Conditional Access tenant-wide or mass-resetting credentials; a scoped update; and recovery confirmed with affected users signing in plus CA success in logs. Do not score as demonstrated: restarting brokers/hosts as the first action, turning MFA off for the tenant, or declaring recovery because the change ticket closed."
     }
   ],

@@ -1,0 +1,114 @@
+{
+  "id": "vdi-trm-unofficial-006",
+  "version": "1.2.0",
+  "status": "published",
+  "title": "TRM, Escalation & Ops 1",
+  "spokeId": "trm-escalation-ops",
+  "spokeNumber": 1,
+  "description": "Someone in the business rings your personal mobile. They say Multi-Session for a business unit is down after a scheduled change, and they want you to fix it. There is no INC and no official Ops callout. TRM is not on the call.",
+  "scope": "Out-of-hours: unofficial contact. Multi-Session for a business unit reported down after a scheduled change.",
+  "difficulty": "intermediate",
+  "estimatedMinutes": 35,
+  "mandatory": false,
+  "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
+  "assessorGuidance": "Reward logging on, asking for an INC, and following callout. The live CR does not cover this break-fix. If TRM is needed for scale, get them on with the TRM number. Production config can change off an INC, but raise a break-fix change and get TRM to approve it before any manual intervention. Safety-critical: do not change production with no INC and no break-fix CR.",
+  "acceptableAlternativeApproaches": [
+    "Ask for the INC first, then log on and assess scale before any change talk.",
+    "If they have no INC, send them to Ops / raise one yourself, then decide if TRM is needed.",
+    "Once INC and TRM are on the bridge, raise the break-fix CR and wait for TRM sign-off before touching prod."
+  ],
+  "documentationReferences": [
+    {
+      "title": "Sev1 out-of-hours callout (illustrative)",
+      "note": "Confirm locally."
+    },
+    {
+      "title": "Change cover OOH (illustrative)",
+      "note": "Confirm locally."
+    }
+  ],
+  "initialIncident": {
+    "callSummary": "Someone in the business rings your direct mobile (you are not sure how they got the number). They say the platform is down after a scheduled change on Multi-Session for a business unit, and they want you to fix it. You have no INC, no official Ops callout, and TRM is not engaged.",
+    "serviceNow": {
+      "incidentNumber": "Not raised",
+      "priority": "Unknown — no official ticket",
+      "assignmentGroup": "None — no Ops assignment",
+      "opened": "Not opened",
+      "caller": "Business contact on personal mobile (illustrative)",
+      "affectedCI": "AVD Multi-Session / business unit (illustrative)",
+      "shortDescription": "Unofficial report: Multi-Session down after scheduled change",
+      "description": "No INC. No official Ops callout. TRM not on the call. Caller says Multi-Session is down after a scheduled change and wants it fixed now."
+    },
+    "impact": {
+      "customers": "Business unit using AVD Multi-Session after the scheduled change — reported down, scale not yet proven on an INC.",
+      "colleagues": "Unofficial business caller. Ops and TRM not on a bridge yet.",
+      "business": "Caller says the platform is down and work cannot continue. Not yet on the major-incident record."
+    },
+    "facts": [
+      {
+        "label": "How you were contacted",
+        "value": "Direct mobile from someone in the business. Not an official Ops page."
+      },
+      {
+        "label": "What they want",
+        "value": "Fix the platform. Multi-Session for a business unit is down after a scheduled change."
+      },
+      {
+        "label": "On the record",
+        "value": "No INC. No official Ops callout. TRM not on the call."
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "trm-escalation-ops",
+        "platform-troubleshooting",
+        "avd-infrastructure"
+      ],
+      "helpText": "This did not come through Ops. Think about what needs to be on the record before you do anything.",
+      "assessorGuidance": "Score the whole write-up. Reward: log on; ask for an INC (no INC means no break-fix); official callout; TRM if scale needs it, using the TRM number on the bridge; original CR does not cover this; raise a break-fix change and get TRM approval before any prod intervention; tell the bridge what the break-fix is. Do not score as demonstrated: changing Multi-Session or any prod config off a personal mobile with no INC; treating the scheduled CR as cover for this fix."
+    }
+  ],
+  "scoringCriteria": [
+    {
+      "id": "c-official",
+      "label": "Gets an INC and follows official callout instead of working off a personal mobile",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-change",
+      "label": "Treats the original CR as not covering this; raises a break-fix change and seeks TRM approval before prod",
+      "domainId": "platform-troubleshooting",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-trm",
+      "label": "Uses the TRM number when scale needs it, and keeps the bridge clear on the break-fix",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": false,
+      "questionIds": ["q1"]
+    },
+    {
+      "id": "c-safe",
+      "label": "Does not change production without an INC and an approved break-fix change",
+      "domainId": "trm-escalation-ops",
+      "maxScore": 3,
+      "mandatory": true,
+      "safetyCritical": true,
+      "questionIds": ["q1"]
+    }
+  ]
+}
