@@ -126,16 +126,6 @@ export function validateScenario(scenario) {
     }
   });
 
-  if (Array.isArray(scenario.evidence)) {
-    scenario.evidence.forEach((item, index) => {
-      requireString(errors, `evidence[${index}].id`, item?.id);
-      requireString(errors, `evidence[${index}].title`, item?.title);
-      requireString(errors, `evidence[${index}].content`, item?.content);
-    });
-  } else {
-    fail(errors, "evidence", "Evidence array is required.");
-  }
-
   return { ok: errors.length === 0, errors };
 }
 

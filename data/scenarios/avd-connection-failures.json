@@ -1,6 +1,6 @@
 {
   "id": "vds-avd-conn-001",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "status": "published",
   "title": "Widespread AVD connection failures overnight",
   "description": "A Friday night Sev1: many users cannot connect to one Azure Virtual Desktop host pool. Azure Service Health shows an AVD investigation in UK South. The task is to assess impact, choose a safe investigation order, and decide when Microsoft and Major Incident Management should be involved.",
@@ -30,7 +30,7 @@
     }
   ],
   "initialIncident": {
-    "callSummary": "22:14 UTC, Friday. Service Desk calls VDI on-call. Overnight operations and several remote users cannot launch desktops from host pool VDI-UK-PROD-HP01. The client shows “We couldn’t connect. Try connecting again.” A few users on VDI-UK-PROD-HP02 connected successfully. About 180 users are in the affected pool. Overnight finance batch monitoring sits on that pool.",
+    "callSummary": "22:14 UTC, Friday. Service Desk calls VDI on-call. Overnight operations and several remote users cannot launch desktops from host pool VDI-UK-PROD-HP01. The client shows “We couldn’t connect. Try connecting again.” A few users on VDI-UK-PROD-HP02 connected successfully. About 180 users are in the affected pool. Overnight finance batch monitoring sits on that pool. Azure Service Health is investigating Azure Virtual Desktop in UK South (tracking 7A-AVD-UKSOUTH-218). Existing sessions on a handful of HP01 hosts are still connected; new connections fail with gateway timeout 0x3000047. Most session hosts show Unavailable for new sessions. Path checks from a working host to the AVD gateway succeed.",
     "serviceNow": {
       "incidentNumber": "INC0001847",
       "priority": "1 — Critical",
@@ -39,7 +39,7 @@
       "caller": "Service Desk on behalf of Overnight Operations",
       "affectedCI": "VDI-UK-PROD-HP01 (host pool)",
       "shortDescription": "Multiple users unable to connect to AVD host pool VDI-UK-PROD-HP01",
-      "description": "Users report failure at connection time, not after login to Windows. Error text: We couldn’t connect to the remote PC. Try connecting again. First report 22:09 UTC. Impact growing. No recent approved change recorded against this host pool in the mock change calendar."
+      "description": "Users report failure at connection time, not after login to Windows. Error text: We couldn’t connect to the remote PC. Try connecting again. First report 22:09 UTC. Impact growing. Azure Service Health investigating AVD in UK South. Existing HP01 sessions may remain; new connections fail. No recent approved change recorded against this host pool in the mock change calendar."
     },
     "impact": {
       "customers": "Internal desktop users of VDI-UK-PROD-HP01, including overnight operations (~180 users in pool; reports still arriving).",
@@ -47,43 +47,6 @@
       "business": "Overnight monitoring of finance batch jobs cannot be performed from the affected desktops. Duration 20+ minutes at raise time."
     }
   },
-  "evidence": [
-    {
-      "id": "e-health",
-      "title": "Azure Service Health — UK South",
-      "type": "Service health",
-      "revealAfterQuestionIndex": 0,
-      "content": "Tracking ID: 7A-AVD-UKSOUTH-218\nService: Azure Virtual Desktop\nRegion: UK South\nStatus: Investigating\nImpact: Users may fail to connect to session hosts. Existing sessions may remain connected.\nLast update: 21:58 UTC — We are investigating connectivity issues for Azure Virtual Desktop in UK South.\nThis panel is illustrative sample data."
-    },
-    {
-      "id": "e-hosts",
-      "title": "Host pool session host status",
-      "type": "Portal snapshot (text)",
-      "revealAfterQuestionIndex": 1,
-      "content": "Host pool: VDI-UK-PROD-HP01\nLoad balancing: Breadth-first\nMax session limit: 16\n\nvdshp01-sh-01  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-02  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-03  Power: Running  Status: Available    Sessions: 2  (pre-existing)\nvdshp01-sh-04  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-05  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-06  Power: Running  Status: Available    Sessions: 1  (pre-existing)\nvdshp01-sh-07  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-08  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-09  Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-10 Power: Running  Status: Available    Sessions: 3  (pre-existing)\nvdshp01-sh-11 Power: Running  Status: Unavailable  Sessions: 0\nvdshp01-sh-12 Power: Running  Status: Unavailable  Sessions: 0\n\nNote: Available hosts are not accepting new connections from the client; existing sessions remain. Illustrative snapshot."
-    },
-    {
-      "id": "e-logs",
-      "title": "Connection diagnostics (Log Analytics excerpt)",
-      "type": "Logs",
-      "revealAfterQuestionIndex": 2,
-      "content": "WVDConnections | where TimeGenerated > ago(1h) | where State == 'Failed'\n\n22:11:04  User: ops.night.04  HostPool: VDI-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: GatewayTimeout  Code: 0x3000047\n22:12:19  User: ops.night.11  HostPool: VDI-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: ConnectionFailed  Code: 0x3000047\n22:14:02  User: trader.batch.2 HostPool: VDI-UK-PROD-HP01  Gateway: rdgateway-uks.wvd.microsoft.com  Error: GatewayTimeout  Code: 0x3000047\n\nWVDCheckpoints for successful pre-existing sessions on sh-03/06/10 show no recent disconnects.\nIllustrative log extract — not live data."
-    },
-    {
-      "id": "e-network",
-      "title": "Path check from a working session host",
-      "type": "Network",
-      "revealAfterQuestionIndex": 3,
-      "content": "From vdshp01-sh-03 (existing session still connected):\n  Resolve-DnsName rdgateway-uks.wvd.microsoft.com  -> answers received\n  Test-NetConnection rdgateway-uks.wvd.microsoft.com -Port 443 -> TcpTestSucceeded : True\n  Internal DNS suffix and domain controller ping: OK\nNo local Windows crash events in the last two hours.\nIllustrative command output."
-    },
-    {
-      "id": "e-ms-update",
-      "title": "Service Health follow-up",
-      "type": "Service health",
-      "revealAfterQuestionIndex": 5,
-      "content": "Tracking ID: 7A-AVD-UKSOUTH-218\nStatus: Mitigating\n22:51 UTC — We have identified a control plane issue affecting new connections in UK South. Mitigation is in progress. Existing sessions should remain connected. No customer action is required for the platform fault.\nIllustrative sample data."
-    }
-  ],
   "questions": [
     {
       "id": "q1",

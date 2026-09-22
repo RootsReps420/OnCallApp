@@ -11,7 +11,8 @@ const KEYS = {
   reviews: `${ROOT}:reviews`,
   theme: `${ROOT}:theme`,
   directory: `${ROOT}:directory`,
-  session: `${ROOT}:session`
+  session: `${ROOT}:session`,
+  evidence: `${ROOT}:evidence`
 };
 
 // Parse a JSON value from localStorage. A corrupt value falls back instead of breaking the page.
@@ -114,6 +115,26 @@ export function getAttempt(id) {
   return getAttempts().find((item) => item.id === id) || null;
 }
 
+// Workplace tickets written by engineers and scored by assessors.
+export function getEvidence() {
+  return read(KEYS.evidence, []);
+}
+
+// Insert or replace one ticket write-up.
+export function saveEvidence(entry) {
+  const list = getEvidence();
+  const index = list.findIndex((item) => item.id === entry.id);
+  if (index >= 0) list[index] = entry;
+  else list.push(entry);
+  write(KEYS.evidence, list);
+  return entry;
+}
+
+// One ticket write-up, or null.
+export function getEvidenceEntry(id) {
+  return getEvidence().find((item) => item.id === id) || null;
+}
+
 // Scenarios an administrator imported. They override bundled files with the same id.
 export function getCustomScenarios() {
   return read(KEYS.customScenarios, []);
@@ -155,9 +176,9 @@ export function saveReadinessConfig(config) {
   return config;
 }
 
-// Clear attempts, imports, proposals, and readiness edits. The colleague directory and the signed-in person stay.
+// Clear attempts, imports, proposals, ticket write-ups, and readiness edits. The colleague directory and the signed-in person stay.
 export function resetDemoData() {
-  [KEYS.attempts, KEYS.customScenarios, KEYS.proposals, KEYS.readinessConfig, KEYS.reviews].forEach((key) => {
+  [KEYS.attempts, KEYS.customScenarios, KEYS.proposals, KEYS.readinessConfig, KEYS.reviews, KEYS.evidence].forEach((key) => {
     localStorage.removeItem(key);
   });
 }
@@ -166,6 +187,7 @@ export function resetDemoData() {
 export function exportStore() {
   return {
     attempts: getAttempts(),
+    evidence: getEvidence(),
     customScenarios: getCustomScenarios(),
     proposals: getProposals(),
     readinessConfig: getReadinessConfig(null),

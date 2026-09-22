@@ -1,7 +1,7 @@
 // In-browser checks opened from Administrator → Verification.
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
-import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints } from "./scoring.js";
+import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions } from "./scoring.js";
 import { validateScenario } from "./validation.js";
 import * as storage from "./storage.js";
 
@@ -79,7 +79,6 @@ function fixtureScenario() {
       },
       impact: { customers: "c", colleagues: "c", business: "b" }
     },
-    evidence: [{ id: "e1", title: "E", content: "x" }],
     questions: [
       fixtureQuestionSingle(),
       fixtureQuestionMulti(),
@@ -184,8 +183,33 @@ export function runVerification() {
   const valid = validateScenario(scenario);
   check("Fixture scenario validates", valid.ok, valid.errors?.map((e) => `${e.path}: ${e.message}`).join("; "));
 
+  const withoutEvidence = { ...scenario };
+  delete withoutEvidence.evidence;
+  const validNoEvidence = validateScenario(withoutEvidence);
+  check("Scenario without evidence panels still validates", validNoEvidence.ok);
+
   const invalid = validateScenario({ id: "x" });
   check("Incomplete JSON is rejected", invalid.ok === false && invalid.errors.length > 0);
+
+  const emptySpoke = applyEvidenceWeight(
+    [{ id: "proxy-solution", name: "Proxy", percentage: null, coverageLabel: "None", mandatoryUnmet: [] }],
+    [{ status: "released", domainId: "proxy-solution", review: { score: 3 } }]
+  )[0];
+  check("Tickets alone cannot fill an empty spoke past the cap", emptySpoke.percentage === EVIDENCE_WEIGHT.emptySpokeCap);
+
+  const boosted = applyEvidenceWeight(
+    [{ id: "networking", name: "Networking", percentage: 50, coverageLabel: "Scored", mandatoryUnmet: [] }],
+    [{ status: "released", domainId: "networking", review: { score: 3 } }]
+  )[0];
+  check("Accepted tickets add a capped boost to a scored spoke", boosted.percentage === 50 + EVIDENCE_WEIGHT.scoredSpokeBoost);
+
+  const blocked = applyEvidenceWeight(
+    [{ id: "m365-stack", name: "M365", percentage: 90, coverageLabel: "Scored", mandatoryUnmet: [{ label: "Safety" }] }],
+    [{ status: "released", domainId: "m365-stack", review: { score: 3 } }]
+  )[0];
+  check("Workplace tickets cannot cancel a mandatory gap", blocked.percentage === 90 && /mandatory/i.test(blocked.evidenceNote));
+
+  check("Development actions split on new lines", splitActions("Read the runbook\nShadow a SevA").length === 2);
 
   const key = "incident-lab:attempts";
   const previous = localStorage.getItem(key);
@@ -203,6 +227,18 @@ export function runVerification() {
     check("Submitted attempt keeps scenario version", loaded?.scenarioVersion === "1.0.0");
     const remaining = storage.getAttempts().filter((item) => item.id !== "attempt-verify-temp");
     localStorage.setItem(key, JSON.stringify(remaining));
+    const ticket = {
+      id: "ticket-verify-temp",
+      engineerId: "demo-engineer",
+      ticketRef: "INC-redacted",
+      domainId: "proxy-solution",
+      status: "submitted",
+      updatedAt: "2026-01-01T00:00:00.000Z"
+    };
+    storage.saveEvidence(ticket);
+    check("Workplace ticket persists", storage.getEvidenceEntry("ticket-verify-temp")?.ticketRef === "INC-redacted");
+    const tickets = storage.getEvidence().filter((item) => item.id !== "ticket-verify-temp");
+    localStorage.setItem("incident-lab:evidence", JSON.stringify(tickets));
   } catch (error) {
     check("Persistence round-trip", false, String(error));
   } finally {

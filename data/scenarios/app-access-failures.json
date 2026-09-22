@@ -1,6 +1,6 @@
 {
   "id": "vds-app-access-002",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "status": "published",
   "title": "Business applications unreachable from virtual desktops",
   "description": "Users can connect to AVD but cannot open several internal web applications. Possible causes include DNS, routing, Secure Access / Prisma, or firewall change. The engineer must separate desktop platform health from path-to-application dependencies.",
@@ -30,7 +30,7 @@
     }
   ],
   "initialIncident": {
-    "callSummary": "01:07 UTC, Saturday. Users in host pools VDI-UK-PROD-HP01 and HP02 can launch Windows desktops, but Payments Portal, HR Self-Service, and the overnight batch console fail to load in Edge. Errors are 'Hmm… can’t reach this page' or spinning until timeout. Outlook web and Microsoft 365 appear to work. Service Desk has 40+ calls. A change window for an edge firewall policy was due at 00:30 UTC; completion status is unknown.",
+    "callSummary": "01:07 UTC, Saturday. Users in host pools VDI-UK-PROD-HP01 and HP02 can launch Windows desktops, but Payments Portal, HR Self-Service, and the overnight batch console fail to load in Edge. Errors are 'Hmm… can’t reach this page' or spinning until timeout. Outlook web and Microsoft 365 appear to work. Service Desk has 40+ calls. A change window for an edge firewall policy was due at 00:30 UTC; completion status is unknown. Host pools are Available and Azure Service Health has no AVD incident. From a session host, DNS for the internal apps resolves, but HTTPS to those VIPs times out while Microsoft 365 succeeds. Secure Access connector vds-sa-03 dropped around 00:34 UTC. CHG004412 attached inspection profile OOH-Tightened-Inspection to VDI-to-internal-app rules; implementer notes at 01:12 UTC say unexpected deny on unknown-app and rollback is in progress.",
     "serviceNow": {
       "incidentNumber": "INC0001902",
       "priority": "1 — Critical",
@@ -39,7 +39,7 @@
       "caller": "Service Desk on behalf of Payments Operations",
       "affectedCI": "VDI-UK-PROD (desktop service) / apps.internal.example (illustrative)",
       "shortDescription": "Multiple business web apps unreachable from AVD sessions",
-      "description": "Desktop connect OK. Internal HTTPS apps fail. External Microsoft 365 sites OK from the same desktop. First user report 00:51 UTC. Possible related change CHG004412 (illustrative) — edge firewall policy update, scheduled 00:30 UTC."
+      "description": "Desktop connect OK. Internal HTTPS apps fail. External Microsoft 365 sites OK from the same desktop. First user report 00:51 UTC. DNS for the apps resolves; TCP 443 to the internal VIPs times out. Possible related change CHG004412 (illustrative) — edge firewall / inspection profile update, scheduled 00:30 UTC, rollback in progress."
     },
     "impact": {
       "customers": "AVD users needing internal web apps; payments operations overnight team blocked.",
@@ -47,43 +47,6 @@
       "business": "Overnight payments exception handling cannot proceed. Illustrative impact only."
     }
   },
-  "evidence": [
-    {
-      "id": "e-avd-ok",
-      "title": "Host pool health",
-      "type": "Portal snapshot (text)",
-      "revealAfterQuestionIndex": 0,
-      "content": "VDI-UK-PROD-HP01: 12/12 session hosts Available. New connections succeeding.\nVDI-UK-PROD-HP02: 8/8 Available.\nAzure Service Health: No AVD incidents in UK South.\nIllustrative snapshot."
-    },
-    {
-      "id": "e-dns",
-      "title": "Name resolution from a session host",
-      "type": "Logs",
-      "revealAfterQuestionIndex": 1,
-      "content": "From vdshp01-sh-04 (user session):\nnslookup payments.internal.example\n  Server:  10.20.8.11  (illustrative VDI DNS forwarder)\n  payments.internal.example\n  canonical name = pay-vip.internal.example\n  Address: 10.45.12.20\n\nnslookup hr.internal.example -> 10.45.12.21\nnslookup batchconsole.internal.example -> 10.45.12.20\nResolve works. Illustrative output."
-    },
-    {
-      "id": "e-curl",
-      "title": "HTTPS probe from the session host",
-      "type": "Logs",
-      "revealAfterQuestionIndex": 2,
-      "content": "curl -I https://payments.internal.example --max-time 15\n  curl: (28) Connection timed out after 15002 ms\n\ncurl -I https://login.microsoftonline.com --max-time 15\n  HTTP/1.1 200 OK\n\nTest-NetConnection 10.45.12.20 -Port 443 -> TcpTestSucceeded : False\nTest-NetConnection outlook.office.com -Port 443 -> True\nIllustrative output."
-    },
-    {
-      "id": "e-prisma",
-      "title": "Secure Access / Prisma path note",
-      "type": "Service health / tool",
-      "revealAfterQuestionIndex": 3,
-      "content": "Illustrative VDI egress: session hosts send internal RFC1918 HTTPS via Secure Access connector group 'VDI-UK-OOH'.\nConnector group status: 2 of 3 connectors InSync; connector vds-sa-03 Last seen 00:34 UTC then disconnected.\nPolicy lookup for 10.45.12.20:443 — recently attached security profile 'OOH-Tightened-Inspection' (change CHG004412, illustrative).\nMicrosoft 365 destinations bypass this profile.\nThis is sample data, not a live Prisma/Panorama view."
-    },
-    {
-      "id": "e-fw",
-      "title": "Change record excerpt",
-      "type": "Change / ticket",
-      "revealAfterQuestionIndex": 4,
-      "content": "CHG004412 (illustrative)\nWindow: 00:30–02:00 UTC\nImplementer: Network Services (on-call)\nSummary: Attach inspection profile to VDI-to-internal-app rules; expected brief blips.\nImplementation notes (01:12 UTC): 'Policy pushed. Seeing unexpected deny on unknown-app for several internal VIPs. Rolling back.'\nStatus: Implementation problems — rollback in progress.\nNot an approved operational record."
-    }
-  ],
   "questions": [
     {
       "id": "q1",

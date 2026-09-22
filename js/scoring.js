@@ -254,3 +254,99 @@ export function readinessCopy(value) {
     "not-yet-ready": { label: "Not yet ready", detail: "Further practice or support is needed before independent OOH response. Completion of scenarios alone does not imply readiness." }
   }[value] || { label: "No recommendation yet", detail: "A human assessor makes the final recommendation after required scenarios and capability criteria have been reviewed." };
 }
+
+// Workplace tickets can thicken a spoke. They cannot replace required scenarios
+// or cancel a mandatory gap. Empty spokes stay at most 67% from tickets alone.
+export const EVIDENCE_WEIGHT = {
+  emptySpokeCap: 67,
+  scoredSpokeBoost: 15,
+  demonstratedMin: 2
+};
+
+// Split assessor next-steps text into list items (new lines, semicolons, or bullets).
+export function splitActions(text) {
+  return String(text || "")
+    .split(/\n+|;\s+/)
+    .map((line) => line.replace(/^[-*•]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+// Agreed development actions from released scenario feedback and ticket reviews.
+export function listDevelopmentActions(attempts = [], evidenceEntries = [], engineerId) {
+  const fromAttempts = (attempts || [])
+    .filter((item) => item.engineerId === engineerId && item.status === "released")
+    .flatMap((item) => splitActions(item.review?.developmentActions).map((text) => ({
+      id: `${item.id}:${text}`,
+      text,
+      source: "scenario",
+      attemptId: item.id,
+      evidenceId: "",
+      scenarioTitle: item.scenarioSnapshot?.title || "Scenario",
+      ticketRef: "",
+      at: item.review?.releasedAt || item.updatedAt || ""
+    })));
+  const fromTickets = (evidenceEntries || [])
+    .filter((item) => item.engineerId === engineerId && item.status === "released")
+    .flatMap((item) => splitActions(item.review?.developmentActions).map((text) => ({
+      id: `${item.id}:${text}`,
+      text,
+      source: "ticket",
+      attemptId: "",
+      evidenceId: item.id,
+      scenarioTitle: "",
+      ticketRef: item.ticketRef || "Ticket",
+      at: item.review?.releasedAt || item.updatedAt || ""
+    })));
+  return [...fromAttempts, ...fromTickets].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+}
+
+// Mix released workplace tickets into domain percentages, with a hard cap.
+export function applyEvidenceWeight(domains, evidenceEntries = []) {
+  const released = (evidenceEntries || []).filter((item) => item.status === "released" && item.review?.score != null && item.review.score !== "");
+  const pending = (evidenceEntries || []).filter((item) => item.status === "submitted" || (item.status === "released" && (item.review?.score == null || item.review.score === "")));
+  return (domains || []).map((domain) => {
+    const tickets = released.filter((item) => item.domainId === domain.id);
+    const accepted = tickets.filter((item) => Number(item.review.score) >= EVIDENCE_WEIGHT.demonstratedMin);
+    const waiting = pending.filter((item) => item.domainId === domain.id);
+    const next = {
+      ...domain,
+      evidenceCount: tickets.length,
+      evidenceAccepted: accepted.length,
+      evidencePending: waiting.length,
+      evidenceBoosted: false,
+      evidenceNote: ""
+    };
+    if (waiting.length) {
+      next.evidenceNote = `${waiting.length} workplace ticket${waiting.length === 1 ? "" : "s"} awaiting assessor review (pending, not zero).`;
+    }
+    if (!accepted.length) return next;
+
+    const avg = accepted.reduce((sum, item) => sum + Number(item.review.score), 0) / accepted.length;
+    const ticketPct = Math.round((avg / 3) * 100);
+    const ticketBit = `${accepted.length} accepted workplace ticket${accepted.length === 1 ? "" : "s"}`;
+
+    if (domain.mandatoryUnmet?.length) {
+      next.evidenceNote = `${ticketBit}; a mandatory scenario gap still stands.`;
+      return next;
+    }
+
+    if (domain.percentage == null) {
+      next.percentage = Math.min(EVIDENCE_WEIGHT.emptySpokeCap, ticketPct);
+      next.evidenceBoosted = true;
+      next.coverageLabel = `${next.coverageLabel}; ${ticketBit} capped at ${EVIDENCE_WEIGHT.emptySpokeCap}%`;
+      next.evidenceNote = `Workplace evidence only. Capped at ${EVIDENCE_WEIGHT.emptySpokeCap}% so tickets cannot stand in for required scenarios.`;
+      return next;
+    }
+
+    const extra = Math.min(EVIDENCE_WEIGHT.scoredSpokeBoost, Math.round((avg / 3) * EVIDENCE_WEIGHT.scoredSpokeBoost));
+    next.percentage = Math.min(100, domain.percentage + extra);
+    next.evidenceBoosted = extra > 0;
+    next.coverageLabel = extra
+      ? `${domain.coverageLabel}; ${ticketBit} added ${extra} points (capped at +${EVIDENCE_WEIGHT.scoredSpokeBoost})`
+      : domain.coverageLabel;
+    next.evidenceNote = extra
+      ? `${ticketBit} added ${extra} points to this spoke (capped).`
+      : `${ticketBit}; no extra points at this score.`;
+    return next;
+  });
+}

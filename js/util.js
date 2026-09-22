@@ -13,6 +13,15 @@ export function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+// Show a date-only value (YYYY-MM-DD or ISO) as a short UTC date.
+export function formatDate(iso) {
+  if (!iso) return "—";
+  const value = String(iso).length === 10 ? `${iso}T00:00:00.000Z` : iso;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "UTC" }).format(date);
+}
+
 // Show an ISO timestamp as a short UTC date, or a dash when it is missing.
 export function formatDateTime(iso) {
   if (!iso) return "—";

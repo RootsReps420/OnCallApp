@@ -22,8 +22,8 @@ function initialsOf(name) {
 }
 
 // Small stroke icons for the sidebar and search field.
-function icon(name) {
-  const common = `class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`;
+function icon(name, size = 18) {
+  const common = `class="nav-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`;
   const shapes = {
     overview: `<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>`,
     library: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>`,
@@ -34,6 +34,9 @@ function icon(name) {
     proposals: `<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>`,
     criteria: `<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>`,
     access: `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
+    evidence: `<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14H4V6a2 2 0 0 1 2-2h2"/><path d="M8 10h8M8 14h8M8 18h5"/>`,
+    people: `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
+    author: `<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>`,
     verify: `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`,
     search: `<circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/>`,
     bell: `<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>`,
@@ -75,7 +78,13 @@ export function layout({ config, role, path, body, theme = "dark", person = null
             </div>
           ` : ""}
           <div class="sidebar-user-actions">
-            <button type="button" class="theme-toggle" data-action="toggle-theme" aria-pressed="${light}">${light ? "Dark mode" : "Light mode"}</button>
+            <button type="button" class="theme-switch" data-action="toggle-theme" role="switch" aria-checked="${light}" aria-label="${light ? "Switch to dark mode" : "Switch to light mode"}">
+              <span class="theme-switch-track">
+                <span class="theme-switch-thumb"></span>
+                <span class="theme-switch-icon theme-switch-moon">${icon("moon", 13)}</span>
+                <span class="theme-switch-icon theme-switch-sun">${icon("sun", 13)}</span>
+              </span>
+            </button>
             ${showMicrosoft ? `<button type="button" class="theme-toggle header-entra" data-action="entra-sign-in">Sign in with Microsoft</button>` : ""}
             ${person ? `<button type="button" class="theme-toggle" data-action="sign-out">Sign out</button>` : ""}
           </div>
@@ -107,7 +116,10 @@ function navSection(title, items, path) {
 // Links for the signed-in role. Users, assessors, and administrators do not share one menu.
 function navFor(role, path) {
   if (role === "assessor") {
-    return navSection("Review", [["#/assessor", "Overview", "queue"]], path)
+    return navSection("Review", [
+      ["#/assessor", "Overview", "queue"],
+      ["#/assessor/people", "People", "people"]
+    ], path)
       + navSection("Practice", [
         ["#/library", "Library", "library"],
         ["#/readiness", "Readiness", "readiness"]
@@ -116,6 +128,7 @@ function navFor(role, path) {
   if (role === "administrator") {
     return navSection("Manage", [
       ["#/admin", "Overview", "manage"],
+      ["#/admin/author", "Author", "author"],
       ["#/admin/proposals", "Proposals", "proposals"],
       ["#/admin/criteria", "Criteria", "criteria"],
       ["#/admin/access", "Access", "access"]
@@ -126,6 +139,7 @@ function navFor(role, path) {
   return navSection("Practice", [
     ["#/dashboard", "Overview", "overview"],
     ["#/library", "Library", "library"],
+    ["#/evidence", "Evidence", "evidence"],
     ["#/readiness", "Readiness", "readiness"]
   ], path)
     + navSection("Contribute", [["#/propose", "Propose", "propose"]], path);
@@ -134,8 +148,11 @@ function navFor(role, path) {
 // Which link is the current page, including a few child routes such as a review.
 function isCurrentNav(hrefPath, path) {
   if (path === hrefPath) return true;
-  if (hrefPath === "/assessor" && path.startsWith("/assessor/")) return true;
+  if (hrefPath === "/assessor" && (path.startsWith("/assessor/review/") || path.startsWith("/assessor/evidence/"))) return true;
+  if (hrefPath === "/assessor/people" && path.startsWith("/assessor/person/")) return true;
+  if (hrefPath === "/evidence" && path.startsWith("/evidence")) return true;
   if (hrefPath === "/admin" && (path.startsWith("/admin/import") || path.startsWith("/admin/scenario/"))) return true;
+  if (hrefPath === "/admin/author" && path.startsWith("/admin/author")) return true;
   if (hrefPath === "/admin/access" && path.startsWith("/admin/access")) return true;
   return false;
 }
@@ -193,17 +210,6 @@ export function snowCard(snow) {
   `;
 }
 
-// One evidence panel. Content is escaped, so it stays plain text.
-export function evidenceBlock(item, selected = true) {
-  if (!item) return `<div class="empty-state">No evidence selected.</div>`;
-  return `
-    <div class="evidence-panel" ${selected ? "" : "hidden"}>
-      <div class="meta">${escapeHtml(item.type || "Evidence")} · ${escapeHtml(item.title)} · illustrative</div>
-      ${escapeHtml(item.content)}
-    </div>
-  `;
-}
-
 // Horizontal bars. A null percentage draws an empty bar, not zero.
 export function domainBars(summaries, { compact = false } = {}) {
   return `
@@ -219,7 +225,8 @@ export function domainBars(summaries, { compact = false } = {}) {
               <div class="progress-bar" aria-hidden="true"><span style="width:${value}%"></span></div>
               ${compact ? "" : `<span class="subtle">${escapeHtml(domain.coverageLabel)}</span>`}
             </div>
-            ${domain.mandatoryUnmet.length ? `<p class="error-msg">A mandatory criterion in this domain is not yet met.</p>` : ""}
+            ${domain.mandatoryUnmet?.length ? `<p class="error-msg">A mandatory criterion in this domain is not yet met.</p>` : ""}
+            ${domain.evidenceNote ? `<p class="subtle">${escapeHtml(domain.evidenceNote)}</p>` : ""}
       </div>
     `;
   }).join("")}
@@ -420,7 +427,8 @@ export function readinessNetwork(domains, { personName = "You" } = {}) {
     percentage: domain.percentage,
     coverageLabel: domain.coverageLabel,
     state: domainState(domain),
-    unmet: (domain.mandatoryUnmet || []).map((item) => item.label)
+    unmet: (domain.mandatoryUnmet || []).map((item) => item.label),
+    evidenceNote: domain.evidenceNote || ""
   }));
   const firstGap = payload.find((item) => item.state === "gap") || payload[0];
 
@@ -488,6 +496,7 @@ function neuralDetailHtml(item) {
     <p class="subtle">${escapeHtml(item.coverageLabel || "")}</p>
     <p>${escapeHtml(tone)}</p>
     ${item.unmet?.length ? `<ul class="neural-unmet">${item.unmet.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>` : ""}
+    ${item.evidenceNote ? `<p class="subtle">${escapeHtml(item.evidenceNote)}</p>` : ""}
     <p class="btn-row"><a class="btn secondary" href="#/library">Practise from the library</a></p>
   `;
 }

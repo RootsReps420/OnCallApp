@@ -2,13 +2,13 @@
 // and the onClick / onSubmit handlers are the only place that writes saved work.
 // The address after #/ decides which screen route() returns.
 
-import { createId, nowIso, parseHash, navigate, downloadJson } from "./util.js";
+import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js";
 import * as storage from "./storage.js";
 import { loadConfig, loadLibrary } from "./content.js";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=19";
-import * as views from "./views.js?v=19";
-import * as auth from "./auth.js?v=19";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=25";
+import * as views from "./views.js?v=25";
+import * as auth from "./auth.js?v=25";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
 import { runVerification } from "./tests.js";
 
@@ -18,6 +18,7 @@ const state = {
   config: null,             // data/config.json
   scenarios: [],            // bundled files plus any local imports
   attempts: [],             // every colleague's attempts in this browser
+  evidence: [],             // workplace ticket write-ups
   proposals: [],            // suggested scenarios
   directory: [],            // people who can sign in
   role: "",                 // engineer, assessor, or administrator
@@ -48,6 +49,7 @@ function homeFor(role) {
 async function refreshLibrary() {
   state.scenarios = await loadLibrary(state.config);
   state.attempts = storage.getAttempts();
+  state.evidence = storage.getEvidence();
   state.proposals = storage.getProposals();
   state.readinessConfig = storage.getReadinessConfig(state.config.readinessCriteria);
   syncSession();
@@ -71,6 +73,7 @@ async function boot() {
     document.addEventListener("change", onChange);
     document.addEventListener("input", onInput);
     document.addEventListener("submit", onSubmit);
+    window.addEventListener("beforeunload", pauseOpenTimer);
     render();
     if (authResult.fromRedirect && authResult.person) {
       navigate(homeFor(authResult.person.role));
@@ -87,9 +90,15 @@ async function boot() {
 }
 
 // Redraw the whole shell. Signed-out visitors always get the sign-in screen.
+let rendering = false;
 function render() {
+  if (rendering) return;
+  rendering = true;
+  try {
+  pauseOpenTimer();
   syncSession();
   state.attempts = storage.getAttempts();
+  state.evidence = storage.getEvidence();
   state.proposals = storage.getProposals();
   state.readinessConfig = storage.getReadinessConfig(state.config.readinessCriteria);
   const { parts, path } = parseHash();
@@ -106,9 +115,13 @@ function render() {
   });
   bindReadinessGraph();
   bindPageFilters();
+  bindAttemptTimer();
   const main = document.getElementById("main");
   if (main && document.activeElement === document.body) {
     main.focus({ preventScroll: true });
+  }
+  } finally {
+    rendering = false;
   }
 }
 
@@ -130,10 +143,17 @@ function route(parts) {
   if (area === "submitted") return views.submittedView(storage.getAttempt(id));
   if (area === "feedback") return views.feedbackView(state, storage.getAttempt(id));
   if (area === "readiness") return views.readinessView(state);
+  if (area === "evidence" && (!id || id === "")) return views.evidenceLogView(state);
+  if (area === "evidence" && id === "new") return views.evidenceFormView(state, null);
+  if (area === "evidence") return views.evidenceFormView(state, storage.getEvidenceEntry(id));
   if (area === "propose") return views.proposeView();
   if (area === "assessor" && !id) return views.assessorQueueView(state);
+  if (area === "assessor" && id === "people") return views.assessorPeopleView(state);
+  if (area === "assessor" && id === "person") return views.assessorPersonView(state, extra);
+  if (area === "assessor" && id === "evidence") return views.evidenceReviewView(state, storage.getEvidenceEntry(extra));
   if (area === "assessor" && id === "review") return views.assessorReviewView(state, storage.getAttempt(extra));
   if (area === "admin" && !id) return views.adminScenariosView(state);
+  if (area === "admin" && id === "author") return views.adminAuthorView(state);
   if (area === "admin" && id === "import") return views.adminImportView(null);
   if (area === "admin" && id === "scenario") return views.adminImportView(findScenario(extra));
   if (area === "admin" && id === "proposals") return views.adminProposalsView(state);
@@ -154,9 +174,18 @@ function deny(area, id) {
   if (area === "assessor" && role !== "assessor") {
     return errorPage("Assessor access required", "Reviewing another colleague's submission is an assessor task. Users see their own feedback after it is released.");
   }
-  // Taking a scenario is a user task.
-  if ((area === "assess" || area === "review" || area === "submitted" || area === "propose") && role !== "engineer") {
-    return errorPage("This page is for a user", "Users take scenarios and propose new ones. Assessors use the review queue. Administrators manage scenarios and access.");
+  // Taking a scenario or logging a ticket is a user task.
+  if ((area === "assess" || area === "review" || area === "submitted" || area === "propose" || (area === "evidence" && (id === "new" || !id))) && role !== "engineer") {
+    return errorPage("This page is for a user", "Users take scenarios, log workplace tickets, and propose new ones. Assessors use the review queue. Administrators manage scenarios and access.");
+  }
+  if (area === "evidence" && id && id !== "new") {
+    const entry = storage.getEvidenceEntry(id);
+    if (role === "administrator") {
+      return errorPage("Administrator access does not review tickets", "An assessor scores workplace evidence.");
+    }
+    if (entry && role === "engineer" && entry.engineerId !== state.person.id) {
+      return errorPage("That write-up belongs to another colleague", "Open Evidence from the sidebar and add your own ticket.");
+    }
   }
   // A user can open only their own attempt, including released feedback.
   if (area === "assess" || area === "review" || area === "submitted" || area === "feedback") {
@@ -182,10 +211,15 @@ function cloneScenario(scenario) {
 
 // Handle data-action buttons: theme, sign-in, sign-out, attempt flow, and admin actions.
 function onClick(event) {
-  const publishBtn = event.target.closest("[data-review-mode], [data-import-mode]");
+  const publishBtn = event.target.closest("[data-review-mode], [data-import-mode], [data-evidence-mode], [data-evidence-review-mode]");
   if (publishBtn) {
     const form = publishBtn.closest("form");
-    if (form) form.dataset.activeMode = publishBtn.getAttribute("data-review-mode") || publishBtn.getAttribute("data-import-mode");
+    if (form) {
+      form.dataset.activeMode = publishBtn.getAttribute("data-review-mode")
+        || publishBtn.getAttribute("data-import-mode")
+        || publishBtn.getAttribute("data-evidence-mode")
+        || publishBtn.getAttribute("data-evidence-review-mode");
+    }
   }
 
   const button = event.target.closest("[data-action]");
@@ -245,7 +279,10 @@ function onClick(event) {
   if (action === "toggle-theme") {
     const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
     storage.setTheme(next);
-    render();
+    const sw = button.closest(".theme-switch") || button;
+    const light = next === "light";
+    sw.setAttribute("aria-checked", light ? "true" : "false");
+    sw.setAttribute("aria-label", light ? "Switch to dark mode" : "Switch to light mode");
     return;
   }
   if (action === "toggle-sidebar") {
@@ -287,12 +324,14 @@ function onClick(event) {
     }
     return;
   }
-  if (action === "select-evidence") {
-    const attempt = storage.getAttempt(attemptId);
-    attempt.ui = { ...(attempt.ui || {}), evidenceId: button.getAttribute("data-evidence-id") };
-    readAnswersFromDom(attemptId);
-    storage.saveAttempt(attempt);
-    render();
+  if (action === "download-scenario") {
+    const scenario = findScenario(button.getAttribute("data-scenario-id"));
+    if (!scenario) return;
+    const file = { ...scenario };
+    delete file.origin;
+    delete file.validation;
+    delete file.evidence;
+    downloadJson(`${file.id || "scenario"}.json`, file);
     return;
   }
   if (action === "submit-attempt") {
@@ -300,7 +339,7 @@ function onClick(event) {
     return;
   }
   if (action === "reset-demo") {
-    if (confirm("Clear attempts, proposals, custom scenarios, and readiness edits stored in this browser?")) {
+    if (confirm("Clear attempts, workplace tickets, proposals, custom scenarios, and readiness edits stored in this browser?")) {
       storage.resetDemoData();
       refreshLibrary().then(() => navigate("#/admin"));
     }
@@ -325,6 +364,21 @@ function onClick(event) {
     proposal.status = "reviewed";
     storage.saveProposal(proposal);
     refreshLibrary().then(render);
+    return;
+  }
+  if (action === "export-store") {
+    downloadJson("incident-lab-store.json", storage.exportStore());
+    return;
+  }
+  if (action === "add-author-question") {
+    event.preventDefault();
+    appendAuthorBlock("[data-author-questions]", "author-question-template", "[data-author-question]", 12);
+    return;
+  }
+  if (action === "add-author-criterion") {
+    event.preventDefault();
+    appendAuthorBlock("[data-author-criteria]", "author-criterion-template", "[data-author-criterion]", 12);
+    return;
   }
 }
 
@@ -371,9 +425,12 @@ function onSubmit(event) {
   const type = form.getAttribute("data-form");
   if (type === "propose") return submitProposal(form);
   if (type === "import-scenario") return importScenario(form);
+  if (type === "author-scenario") return authorScenario(form);
   if (type === "criteria") return saveCriteria(form);
   if (type === "review") return saveReview(form);
   if (type === "add-person") return addPerson(form);
+  if (type === "evidence") return saveEvidenceForm(form);
+  if (type === "evidence-review") return saveEvidenceReview(form);
 }
 
 // Append a colleague. Only an administrator can do this.
@@ -453,6 +510,8 @@ function startAttempt(scenarioId) {
     attemptNumber: previous.length + 1,
     startedAt: nowIso(),
     updatedAt: nowIso(),
+    timerElapsedMs: 0,
+    timerRunningSince: null,
     ui: {}
   };
   storage.saveAttempt(attempt);
@@ -517,6 +576,7 @@ function readAnswersFromDom(attemptId) {
 
 // Lock the attempt as submitted and record objective credits where a question still has them.
 function submitAttempt(attemptId) {
+  pauseOpenTimer();
   const attempt = readAnswersFromDom(attemptId) || storage.getAttempt(attemptId);
   attempt.status = "submitted";
   attempt.submittedAt = nowIso();
@@ -639,32 +699,37 @@ function saveReview(form) {
   navigate(mode === "release" ? "#/assessor" : `#/assessor/review/${attempt.id}`);
 }
 
-// Run tests.js and show pass or fail.
+// Run tests.js and show pass or fail. A thrown check must not wipe the rest of the app.
 function verificationView() {
-  const results = runVerification();
+  let results = [];
+  let crashed = "";
+  try {
+    results = runVerification();
+  } catch (error) {
+    crashed = String(error?.message || error);
+  }
   const failed = results.filter((item) => !item.ok);
   return `
     <div class="page-header">
       <h1>Core verification</h1>
-      <p class="lede">Checks scoring, pending written answers, persistence, and scenario validation in this browser. ${failed.length ? failed.length + " failed." : "All checks passed."}</p>
+      <p class="lede">${crashed
+        ? "The checks stopped early. Scoring and persistence rules are still the ones used on attempts."
+        : `Checks scoring, pending written answers, persistence, and scenario validation in this browser. ${failed.length ? failed.length + " failed." : "All checks passed."}`}</p>
     </div>
+    ${crashed ? `<p class="error-msg">${escapeHtml(crashed)}</p>` : ""}
     <div class="card table-wrap">
       <table>
         <thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead>
         <tbody>
-          ${results.map((item) => `<tr><td>${item.name}</td><td>${item.ok ? "Pass" : "Fail"}</td><td>${item.detail || ""}</td></tr>`).join("")}
+          ${results.length
+            ? results.map((item) => `<tr><td>${item.name}</td><td>${item.ok ? "Pass" : "Fail"}</td><td>${item.detail || ""}</td></tr>`).join("")
+            : `<tr><td colspan="3">${crashed ? "No checks completed." : "No checks ran."}</td></tr>`}
         </tbody>
       </table>
     </div>
-    <p class="btn-row"><button class="btn secondary" data-action="export-store" id="export-store">Export local store</button></p>
+    <p class="btn-row"><button class="btn secondary" data-action="export-store">Export local store</button></p>
   `;
 }
-
-document.addEventListener("click", (event) => {
-  if (event.target.closest("#export-store")) {
-    downloadJson("incident-lab-store.json", storage.exportStore());
-  }
-});
 
 boot();
 
@@ -693,4 +758,224 @@ function applyPageFilters() {
     }
     el.hidden = !(matchesSearch && matchesRange);
   });
+}
+
+let timerHandle = null;
+
+// Fold the running workspace clock into timerElapsedMs so a refresh does not lose seconds.
+function elapsedMs(attempt) {
+  const base = Number(attempt.timerElapsedMs) || 0;
+  if (!attempt.timerRunningSince) return base;
+  const started = Date.parse(attempt.timerRunningSince);
+  if (!Number.isFinite(started)) return base;
+  return base + Math.max(0, Date.now() - started);
+}
+
+function pauseOpenTimer() {
+  if (timerHandle) {
+    clearInterval(timerHandle);
+    timerHandle = null;
+  }
+  const el = document.querySelector("[data-attempt-timer]");
+  if (!el) return;
+  const attempt = storage.getAttempt(el.getAttribute("data-attempt-id"));
+  if (!attempt || attempt.status !== "in-progress") return;
+  attempt.timerElapsedMs = elapsedMs(attempt);
+  attempt.timerRunningSince = null;
+  storage.saveAttempt(attempt);
+}
+
+// Tick the suggested-time remaining label. Overtime is allowed; submit stays available.
+function bindAttemptTimer() {
+  if (timerHandle) {
+    clearInterval(timerHandle);
+    timerHandle = null;
+  }
+  const el = document.querySelector("[data-attempt-timer]");
+  if (!el) return;
+  const label = el.querySelector("strong") || el;
+  const attemptId = el.getAttribute("data-attempt-id");
+  const limitMin = Number(el.getAttribute("data-limit-minutes")) || 30;
+  const limitMs = limitMin * 60 * 1000;
+  const attempt = storage.getAttempt(attemptId);
+  if (!attempt || attempt.status !== "in-progress") return;
+  attempt.timerRunningSince = nowIso();
+  storage.saveAttempt(attempt);
+  let lastPersist = Date.now();
+  const tick = () => {
+    const current = storage.getAttempt(attemptId);
+    if (!current || current.status !== "in-progress") return;
+    const elapsed = elapsedMs(current);
+    const remain = limitMs - elapsed;
+    const overtime = remain < 0;
+    const abs = Math.abs(remain);
+    const m = Math.floor(abs / 60000);
+    const s = Math.floor((abs % 60000) / 1000);
+    const text = overtime ? `Over by ${m}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")} remaining`;
+    label.textContent = text;
+    el.classList.toggle("overtime", overtime);
+    el.setAttribute("aria-label", `Suggested time ${limitMin} minutes. ${text}. You can still submit.`);
+    if (Date.now() - lastPersist > 15000) {
+      lastPersist = Date.now();
+      current.timerElapsedMs = elapsed;
+      current.timerRunningSince = nowIso();
+      storage.saveAttempt(current);
+    }
+  };
+  tick();
+  timerHandle = setInterval(tick, 1000);
+}
+
+function appendAuthorBlock(hostSel, templateId, itemSel, max) {
+  const host = document.querySelector(hostSel);
+  const tpl = document.getElementById(templateId);
+  if (!host || !tpl) return;
+  const index = host.querySelectorAll(itemSel).length;
+  if (index >= max) return;
+  const html = tpl.innerHTML.replaceAll("__INDEX__", String(index)).replaceAll("__N__", String(index + 1));
+  host.insertAdjacentHTML("beforeend", html);
+}
+
+function saveEvidenceForm(form) {
+  if (state.role !== "engineer") return;
+  const data = new FormData(form);
+  const status = form.querySelector("[data-form-status]");
+  const id = form.getAttribute("data-evidence-id") || createId("ticket");
+  const existing = storage.getEvidenceEntry(id);
+  const mode = form.dataset.activeMode || "draft";
+  const entry = {
+    id,
+    engineerId: state.person.id,
+    engineerName: state.person.name,
+    ticketRef: String(data.get("ticketRef") || "").trim(),
+    occurredOn: String(data.get("occurredOn") || "").trim(),
+    roleOnCall: String(data.get("roleOnCall") || "other"),
+    domainId: String(data.get("domainId") || ""),
+    checked: String(data.get("checked") || "").trim(),
+    involved: String(data.get("involved") || "").trim(),
+    didNotChange: String(data.get("didNotChange") || "").trim(),
+    notes: String(data.get("notes") || "").trim(),
+    status: mode === "submitted" ? "submitted" : "draft",
+    createdAt: existing?.createdAt || nowIso(),
+    updatedAt: nowIso(),
+    submittedAt: mode === "submitted" ? nowIso() : existing?.submittedAt || null,
+    review: existing?.review || null
+  };
+  if (entry.ticketRef.length < 3) {
+    if (status) status.textContent = "Enter a sanitised ticket reference.";
+    return;
+  }
+  if (mode === "submitted" && (entry.checked.length < 20 || entry.involved.length < 20 || entry.didNotChange.length < 20)) {
+    if (status) status.textContent = "Write at least a short paragraph for what you checked, who you involved, and what you did not change.";
+    return;
+  }
+  storage.saveEvidence(entry);
+  navigate(`#/evidence/${entry.id}`);
+}
+
+function saveEvidenceReview(form) {
+  if (state.role !== "assessor") return;
+  const entry = storage.getEvidenceEntry(form.getAttribute("data-evidence-id"));
+  if (!entry) return;
+  const data = new FormData(form);
+  const status = form.querySelector("[data-form-status]");
+  const mode = form.dataset.activeMode || "save";
+  const scoreRaw = data.get("score");
+  const score = scoreRaw === "" || scoreRaw == null ? null : Number(scoreRaw);
+  if (mode === "release" && (score == null || Number.isNaN(score))) {
+    if (status) status.textContent = "Choose a 0–3 score before releasing.";
+    return;
+  }
+  entry.review = {
+    assessorId: state.person.id,
+    assessorName: state.person.name,
+    score,
+    overallCommentary: String(data.get("overallCommentary") || ""),
+    developmentActions: String(data.get("developmentActions") || ""),
+    updatedAt: nowIso(),
+    releasedAt: mode === "release" ? nowIso() : entry.review?.releasedAt || null
+  };
+  if (mode === "release") entry.status = "released";
+  entry.updatedAt = nowIso();
+  storage.saveEvidence(entry);
+  navigate(mode === "release" ? "#/assessor" : `#/assessor/evidence/${entry.id}`);
+}
+
+function authorScenario(form) {
+  if (state.role !== "administrator") return;
+  const status = form.querySelector("[data-form-status]");
+  if (status) status.textContent = "";
+  const data = new FormData(form);
+  const questions = [...form.querySelectorAll("[data-author-question]")].map((block, i) => {
+    const index = block.getAttribute("data-index");
+    const help = String(data.get(`q-help-${index}`) || "").trim();
+    const question = {
+      id: `q${i + 1}`,
+      type: "written",
+      prompt: String(data.get(`q-prompt-${index}`) || "").trim(),
+      capabilityDomainIds: data.getAll(`q-domains-${index}`).map(String),
+      assessorGuidance: String(data.get(`q-guide-${index}`) || "").trim()
+    };
+    if (help) question.helpText = help;
+    return question;
+  });
+  const scoringCriteria = [...form.querySelectorAll("[data-author-criterion]")].map((block, i) => {
+    const index = block.getAttribute("data-index");
+    const questionIds = String(data.get(`c-questions-${index}`) || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    return {
+      id: `c${i + 1}`,
+      label: String(data.get(`c-label-${index}`) || "").trim(),
+      domainId: String(data.get(`c-domain-${index}`) || ""),
+      maxScore: 3,
+      mandatory: data.get(`c-mandatory-${index}`) === "on",
+      safetyCritical: data.get(`c-safety-${index}`) === "on",
+      questionIds
+    };
+  });
+  const parsed = {
+    id: String(data.get("id") || "").trim(),
+    version: "1.0.0",
+    status: form.dataset.activeMode === "published" ? "published" : "draft",
+    title: String(data.get("title") || "").trim(),
+    description: String(data.get("description") || "").trim(),
+    scope: String(data.get("scope") || "").trim(),
+    difficulty: String(data.get("difficulty") || "foundation"),
+    estimatedMinutes: Number(data.get("estimatedMinutes") || 0),
+    mandatory: data.get("mandatory") === "on",
+    illustrativeDisclaimer: String(data.get("illustrativeDisclaimer") || "").trim(),
+    assessorGuidance: "Reward sound investigation order and appropriate escalation.",
+    acceptableAlternativeApproaches: ["Document-led investigation before platform changes."],
+    documentationReferences: [{ title: "Illustrative runbook title", note: "Confirm locally." }],
+    initialIncident: {
+      callSummary: String(data.get("callSummary") || "").trim(),
+      serviceNow: {
+        incidentNumber: String(data.get("incidentNumber") || "").trim(),
+        priority: String(data.get("priority") || "").trim(),
+        assignmentGroup: String(data.get("assignmentGroup") || "").trim(),
+        opened: String(data.get("opened") || "").trim(),
+        caller: String(data.get("caller") || "").trim(),
+        affectedCI: String(data.get("affectedCI") || "").trim(),
+        shortDescription: String(data.get("shortDescription") || "").trim(),
+        description: String(data.get("snowDescription") || "").trim()
+      },
+      impact: {
+        customers: String(data.get("impactUsers") || "").trim(),
+        colleagues: String(data.get("impactColleagues") || "").trim(),
+        business: String(data.get("impactBusiness") || "").trim()
+      }
+    },
+    questions,
+    scoringCriteria
+  };
+  const check = validateScenario(parsed);
+  if (!check.ok) {
+    if (status) status.textContent = formatValidationErrors(check.errors);
+    return;
+  }
+  storage.saveCustomScenario(parsed);
+  downloadJson(`${parsed.id}.json`, parsed);
+  refreshLibrary().then(() => navigate("#/admin"));
 }
