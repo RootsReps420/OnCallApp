@@ -190,6 +190,24 @@ export function statusClass(status) {
   }[status] || "";
 }
 
+// The call plus a labelled facts list. Used on the intro and beside the write-up.
+export function incidentReportCard(incident, { title = "Initial report" } = {}) {
+  if (!incident) return "";
+  const facts = Array.isArray(incident.facts) ? incident.facts : [];
+  return `
+    <section class="card incident-report">
+      <h2>${escapeHtml(title)}</h2>
+      <p>${nl(incident.callSummary)}</p>
+      ${facts.length ? `
+        <h3>What you already know</h3>
+        <dl class="snow-ticket">
+          ${facts.map((item) => `<dt>${escapeHtml(item.label)}</dt><dd>${escapeHtml(item.value)}</dd>`).join("")}
+        </dl>
+      ` : ""}
+    </section>
+  `;
+}
+
 // The illustrative ServiceNow-style ticket on a scenario intro.
 export function snowCard(snow) {
   return `

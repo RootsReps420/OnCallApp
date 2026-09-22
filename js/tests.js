@@ -3,6 +3,7 @@
 
 import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions } from "./scoring.js";
 import { validateScenario } from "./validation.js";
+import { isNewerVersion, mergeScenarios } from "./content.js";
 import * as storage from "./storage.js";
 
 // A tiny single-choice question with full, partial, and zero credit.
@@ -190,6 +191,13 @@ export function runVerification() {
 
   const invalid = validateScenario({ id: "x" });
   check("Incomplete JSON is rejected", invalid.ok === false && invalid.errors.length > 0);
+
+  check("Bundled 1.3.0 is newer than a saved 1.1.0 copy", isNewerVersion("1.3.0", "1.1.0") === true);
+  const merged = mergeScenarios(
+    [{ id: "vds-auth-group-003", version: "1.3.0", title: "Bundled", questions: [{ id: "q1" }] }],
+    [{ id: "vds-auth-group-003", version: "1.1.0", title: "Stale custom", questions: [{ id: "q1" }, { id: "q2" }] }]
+  );
+  check("Newer bundled scenario wins over a stale local copy", merged[0].version === "1.3.0" && merged[0].questions.length === 1);
 
   const emptySpoke = applyEvidenceWeight(
     [{ id: "proxy-solution", name: "Proxy", percentage: null, coverageLabel: "None", mandatoryUnmet: [] }],

@@ -9,7 +9,7 @@
   "estimatedMinutes": 40,
   "mandatory": false,
   "illustrativeDisclaimer": "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank-specific policy.",
-  "assessorGuidance": "Replace: what a good answer looks like, and what must not be scored as demonstrated (unsafe production change, wrong owner, unofficial callout).",
+  "assessorGuidance": "Replace: what a good write-up looks like, and what must not be scored as demonstrated (unsafe production change, wrong owner, unofficial callout).",
   "acceptableAlternativeApproaches": [
     "Replace with a valid investigation order.",
     "Replace with another valid order if more than one path is acceptable."
@@ -21,7 +21,12 @@
     }
   ],
   "initialIncident": {
-    "callSummary": "Replace with the call you would get: time, who rang, symptoms, what already works, what does not, any change or vendor already named. Put every fact the engineer needs here. There are no extra evidence panels.",
+    "callSummary": "Replace with the call: time, who rang, and the main symptom.",
+    "facts": [
+      { "label": "Affected", "value": "Who cannot work, and what they see." },
+      { "label": "Still working", "value": "What still works, so the blast radius is clear." },
+      { "label": "Change", "value": "Any change, vendor, or Service Health note already in the story." }
+    ],
     "serviceNow": {
       "incidentNumber": "INC0000000",
       "priority": "1 — Critical",
@@ -42,31 +47,13 @@
     {
       "id": "q1",
       "type": "written",
-      "prompt": "What would you check first, and why?",
-      "capabilityDomainIds": ["platform-troubleshooting"],
-      "helpText": "Cover what you would check, who you would involve, and what you would not change.",
-      "assessorGuidance": "Reward a scoped first check. Do not score an unsafe first action as demonstrated."
-    },
-    {
-      "id": "q2",
-      "type": "written",
-      "prompt": "What fault domains would you keep in play, and which would you set aside?",
-      "capabilityDomainIds": ["avd-infrastructure", "networking"],
-      "assessorGuidance": "Look for more than one relevant domain, and for setting aside something the story does not support."
-    },
-    {
-      "id": "q3",
-      "type": "written",
-      "prompt": "Who would you engage (Ops, TRM, another team, a vendor), and what would you not do in production?",
-      "capabilityDomainIds": ["trm-escalation-ops"],
-      "assessorGuidance": "Reward using the support model. Unsafe production changes must not score as demonstrated."
-    },
-    {
-      "id": "q4",
-      "type": "written",
-      "prompt": "How would you confirm recovery and what would you say in a stakeholder update?",
-      "capabilityDomainIds": ["trm-escalation-ops"],
-      "assessorGuidance": "Expect user confirmation plus a factual update. Closing from a green portal tile alone is not enough."
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+      "capabilityDomainIds": [
+        "platform-troubleshooting",
+        "trm-escalation-ops"
+      ],
+      "helpText": "There is no single correct order. Cover the whole incident so an assessor can see your reasoning.",
+      "assessorGuidance": "Reward a scoped investigation and an appropriate escalation. Do not score an unsafe production change as demonstrated."
     }
   ],
   "scoringCriteria": [
@@ -77,7 +64,9 @@
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": false,
-      "questionIds": ["q1"]
+      "questionIds": [
+        "q1"
+      ]
     },
     {
       "id": "c2",
@@ -86,7 +75,9 @@
       "maxScore": 3,
       "mandatory": true,
       "safetyCritical": true,
-      "questionIds": ["q3"]
+      "questionIds": [
+        "q1"
+      ]
     }
   ]
 }

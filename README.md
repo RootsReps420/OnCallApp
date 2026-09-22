@@ -45,7 +45,7 @@ Users see Overview, Library, Evidence, Readiness, and Propose. Assessors see the
 ## A practice attempt
 
 1. Sign in as Alex and open a required scenario from the library.
-2. Each question is a text box. A suggested timer counts down from the scenario’s minutes; overtime does not block submit. Cover what you would check, who you would involve, and what you would not change.
+2. Each scenario is one write-up. A suggested timer counts down from the scenario’s minutes; overtime does not block submit. Cover what you would check, who you would involve, what you would not change, and how you would confirm recovery.
 3. Submit. Sign out, then sign in as Jordan and score each criterion from 0 to 3 beside the answer.
 4. Release the feedback. Sign in as Alex again. The feedback quotes what was written next to how it was read.
 
@@ -104,8 +104,8 @@ Everyone sees files listed in `data/config.json` under `bundledScenarioFiles`. T
 
 1. Copy `data/scenarios/_template.json` to a new name, for example `data/scenarios/pega-bridge.json`. Do not add `_template.json` itself to the library.
 2. Change `id` to something unique (`vdi-pega-bridge-004`). Leave `mandatory` as `false` unless it should be required for Ready.
-3. Rewrite `title`, `description`, `scope`, `assessorGuidance`, and `initialIncident` (call summary, mock ServiceNow ticket, impact). Put every fact the engineer needs in that initial report. There are no extra evidence panels.
-4. Rewrite `questions` (4–12 written prompts). `assessorGuidance` on a question is for the reviewer only. `capabilityDomainIds` must use the spoke ids below.
+3. Rewrite `title`, `description`, `scope`, `assessorGuidance`, and `initialIncident` (short `callSummary`, labelled `facts`, mock ServiceNow ticket, impact). Put every fact the engineer needs in that report.
+4. Rewrite `questions` to a single written prompt (`q1`). `assessorGuidance` on that question is for the reviewer only. `capabilityDomainIds` must use the spoke ids below.
 5. Rewrite `scoringCriteria`. Each criterion needs `domainId` (one spoke), `questionIds` such as `["q1"]`, `maxScore` 3, and `mandatory` / `safetyCritical` true or false.
 6. Add `"data/scenarios/pega-bridge.json"` to `bundledScenarioFiles` in `data/config.json`.
 7. Serve locally (`python -m http.server 8080`) and hard-refresh. Ask for the live site to be published when it looks right.
@@ -138,7 +138,7 @@ Each script starts with a short note, and each function has a comment above it.
 | `staticwebapp.config.json` | Fallback so hash routes still serve `index.html` on Azure Static Web Apps. |
 | `assets/lloyds-horse.svg` | The horse in the sidebar. |
 
-Scenario files are JSON, so they cannot contain comments. A question asks for a written answer. `assessorGuidance` is what the reviewer sees, not the engineer. `scoringCriteria` links each 0–3 score to one or more questions and to a `domainId` from `capabilityDomains`.
+Scenario files are JSON, so they cannot contain comments. Each scenario has one written prompt. `assessorGuidance` is what the reviewer sees, not the engineer. `scoringCriteria` links each 0–3 score to that response (`q1`) and to a `domainId` from `capabilityDomains`.
 
 An attempt keeps a copy of the scenario version it started with. Later edits do not rewrite that copy.
 

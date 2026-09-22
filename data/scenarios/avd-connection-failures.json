@@ -1,6 +1,6 @@
 {
   "id": "vds-avd-conn-001",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "status": "published",
   "title": "Widespread AVD connection failures overnight",
   "description": "A Friday night Sev1: many users cannot connect to one Azure Virtual Desktop host pool. Azure Service Health shows an AVD investigation in UK South. The task is to assess impact, choose a safe investigation order, and decide when Microsoft and Major Incident Management should be involved.",
@@ -30,7 +30,7 @@
     }
   ],
   "initialIncident": {
-    "callSummary": "22:14 UTC, Friday. Service Desk calls VDI on-call. Overnight operations and several remote users cannot launch desktops from host pool VDI-UK-PROD-HP01. The client shows “We couldn’t connect. Try connecting again.” A few users on VDI-UK-PROD-HP02 connected successfully. About 180 users are in the affected pool. Overnight finance batch monitoring sits on that pool. Azure Service Health is investigating Azure Virtual Desktop in UK South (tracking 7A-AVD-UKSOUTH-218). Existing sessions on a handful of HP01 hosts are still connected; new connections fail with gateway timeout 0x3000047. Most session hosts show Unavailable for new sessions. Path checks from a working host to the AVD gateway succeed.",
+    "callSummary": "22:14 UTC, Friday. Service Desk pages VDI on-call: overnight users cannot launch desktops from VDI-UK-PROD-HP01. The client shows “We couldn’t connect. Try connecting again.”",
     "serviceNow": {
       "incidentNumber": "INC0001847",
       "priority": "1 — Critical",
@@ -39,118 +39,58 @@
       "caller": "Service Desk on behalf of Overnight Operations",
       "affectedCI": "VDI-UK-PROD-HP01 (host pool)",
       "shortDescription": "Multiple users unable to connect to AVD host pool VDI-UK-PROD-HP01",
-      "description": "Users report failure at connection time, not after login to Windows. Error text: We couldn’t connect to the remote PC. Try connecting again. First report 22:09 UTC. Impact growing. Azure Service Health investigating AVD in UK South. Existing HP01 sessions may remain; new connections fail. No recent approved change recorded against this host pool in the mock change calendar."
+      "description": "Failure at connection time, not after Windows login. First report 22:09 UTC. Impact growing. No recent approved change against this host pool."
     },
     "impact": {
       "customers": "Internal desktop users of VDI-UK-PROD-HP01, including overnight operations (~180 users in pool; reports still arriving).",
       "colleagues": "Service Desk handling repeat contacts; finance operations awaiting batch monitoring access.",
       "business": "Overnight monitoring of finance batch jobs cannot be performed from the affected desktops. Duration 20+ minutes at raise time."
-    }
+    },
+    "facts": [
+      {
+        "label": "Affected",
+        "value": "HP01, about 180 users. Overnight finance batch monitoring sits on this pool."
+      },
+      {
+        "label": "Still working",
+        "value": "HP02 connections. A few existing HP01 sessions remain connected."
+      },
+      {
+        "label": "Symptom",
+        "value": "New connections fail. Gateway timeout 0x3000047."
+      },
+      {
+        "label": "Hosts",
+        "value": "Most HP01 session hosts show Unavailable for new sessions."
+      },
+      {
+        "label": "Service Health",
+        "value": "AVD in UK South investigating (7A-AVD-UKSOUTH-218)."
+      },
+      {
+        "label": "Path check",
+        "value": "From a working host to the AVD gateway: succeeds."
+      },
+      {
+        "label": "Change",
+        "value": "None recorded against this pool."
+      }
+    ]
   },
   "questions": [
     {
       "id": "q1",
       "type": "written",
-      "prompt": "What would you check first, and why? Describe what belongs in the initial five minutes.",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
       "capabilityDomainIds": [
         "platform-troubleshooting",
-        "avd-infrastructure"
-      ],
-      "assessorGuidance": "Full credit if the engineer protects existing sessions, uses the runbook, and checks health/impact. Selecting a reboot-all or image rebuild should not receive a demonstrated score. A strong answer covers: Confirm who is affected, which host pool is named, and whether existing sessions survive — before changing hosts. (Establishes blast radius and avoids treating a control-plane issue as a local host fault.); Open the illustrative AVD connectivity runbook and Azure Service Health for the region. (Documentation use and service-health awareness are expected first steps.); Ask Service Desk to keep gathering user counts, error text, and whether HP02 remains usable. (Improves impact assessment without delaying the platform checks.). Do not treat the response as demonstrated if it relies on: Immediately reboot every session host in VDI-UK-PROD-HP01 to clear a probable local freeze.; Rebuild the host pool golden image as the first action so users can connect to new hosts..",
-      "helpText": "More than one investigation path can be valid. Focus on safe, high-value first checks rather than a single root-cause guess.",
-      "acceptableApproaches": [
-        "Runbook + Service Health + impact confirmation, in any order, before host changes."
-      ]
-    },
-    {
-      "id": "q2",
-      "type": "written",
-      "prompt": "What additional information would you ask for next, once the initial call details are captured?",
-      "capabilityDomainIds": [
-        "platform-troubleshooting",
-        "avd-infrastructure"
-      ],
-      "assessorGuidance": "A strong answer covers: Whether users fail before a Windows desktop appears, and whether any existing AVD sessions in HP01 are still working. (Separates connection/control-plane failure from desktop or app failure and shows if hosts themselves are still alive.); Whether the Service Desk can recreate the issue on a physical PC unconnected to AVD. (A weak discriminator; physical PCs are out of scope if the fault is AVD connection.). Do not treat the response as demonstrated if it relies on: Each user’s favourite application list so you can reinstall line-of-business software.; A full memory dump from every unavailable session host before any other investigation..",
-      "helpText": "Think about what distinguishes a Microsoft dependency from a local pool fault."
-    },
-    {
-      "id": "q3",
-      "type": "written",
-      "prompt": "What fault domains would you keep in play after you see host status and the Service Health advisory?",
-      "capabilityDomainIds": [
         "avd-infrastructure",
-        "networking",
-        "vendor-management"
-      ],
-      "assessorGuidance": "A strong answer covers: Azure Virtual Desktop control plane / gateway in UK South (Microsoft dependency). (Service Health plus new-connection failures with surviving sessions support this domain.); This host pool’s broker registration or agent health, still worth confirming with logs. (A parallel local domain that should be confirmed, not assumed away.); Client-side Workspace feed issues for some users, as a secondary check if symptoms split. (Valid lesser domain; not the primary widespread pattern, but reasonable to keep in view.). Do not treat the response as demonstrated if it relies on: A core internal DNS outage for all company services, as the most likely single cause.; A simultaneous storage-account key rotation on an unrelated subscription.."
-    },
-    {
-      "id": "q4",
-      "type": "written",
-      "prompt": "What evidence supports or weakens a Microsoft service dependency versus a local host-pool fault? Explain your current working hypothesis and what would change your mind.",
-      "helpText": "Assessors look for reasoning against the evidence, not a lucky guess at the final root cause.",
-      "capabilityDomainIds": [
-        "avd-infrastructure",
-        "vendor-management"
-      ],
-      "assessorGuidance": "Look for: new connections fail, existing sessions survive, Service Health investigating AVD in UK South, HP02 less affected, local path from a working host succeeds. Weakening a purely local story: many hosts unavailable at once with no change. A strong answer keeps a local agent issue as a residual check.",
-      "feedbackExamples": {
-        "strengths": [
-          "Links Service Health to the symptom pattern rather than treating the advisory as optional colour."
-        ],
-        "development": [
-          "Avoid declaring a single root cause before Microsoft has confirmed mitigation; keep residual local checks."
-        ]
-      }
-    },
-    {
-      "id": "q5",
-      "type": "written",
-      "prompt": "What tools or logs would you use next, and what would you look for?",
-      "capabilityDomainIds": [
-        "avd-infrastructure",
-        "platform-troubleshooting"
-      ],
-      "assessorGuidance": "A strong answer covers: Connection diagnostics / WVDConnections for failure error codes, plus the connectivity runbook’s Service Health and host-agent checks. (Matches the staged evidence and rewards runbook usage.); A full packet capture on every session host before notifying anyone. (Disproportionate and delays incident process.). Do not treat the response as demonstrated if it relies on: Only the Windows Event Log on a random user’s laptop, looking for Outlook errors.; Azure Cost Management anomalies for the subscription.."
-    },
-    {
-      "id": "q6",
-      "type": "written",
-      "prompt": "When would you engage Microsoft, Major Incident Management, and any internal teams? What would you prepare for a Microsoft case?",
-      "helpText": "Independent OOH response includes using the support model. Asking for help is expected.",
-      "capabilityDomainIds": [
         "vendor-management",
-        "trm-escalation-ops"
-      ],
-      "assessorGuidance": "Expect prompt MIM notification for Sev1 OOH with business impact; Microsoft engagement now that AVD Service Health is investigating and new connections fail across the pool; do not wait to 'fix it personally'. Case prep: correlation IDs, host pool name, region, error codes, timeline, impact count. Networking or identity teams only if evidence later points there.",
-      "feedbackExamples": {
-        "strengths": [
-          "Treats Microsoft engagement as part of a good response, not a last resort after heroic local changes."
-        ],
-        "development": [
-          "If silent on MIM or stakeholder ownership, mark developing for incident process."
-        ]
-      }
-    },
-    {
-      "id": "q7",
-      "type": "written",
-      "prompt": "Draft the stakeholder update you would send at this point (about 30–40 minutes in). Include what you know, what you do not know, impact, and next update time.",
-      "capabilityDomainIds": [
         "trm-escalation-ops",
-        "platform-troubleshooting"
+        "networking"
       ],
-      "assessorGuidance": "Factual, non-blaming language. State affected pool, connection-time failure, existing sessions may still work, Microsoft investigating UK South AVD, no unsanctioned host reboots, next update time. Do not claim full restoration or name an unconfirmed root cause as fact."
-    },
-    {
-      "id": "q8",
-      "type": "written",
-      "prompt": "Microsoft later marks the incident as mitigating. How would you confirm service recovery?",
-      "capabilityDomainIds": [
-        "trm-escalation-ops",
-        "avd-infrastructure"
-      ],
-      "assessorGuidance": "A strong answer covers: Ask Service Desk / a named user in HP01 to start a new connection, confirm host statuses return to Available, and watch for new failure events before declaring recovery. (User confirmation plus platform telemetry; does not trust a portal colour alone.). Do not treat the response as demonstrated if it relies on: Close the incident as soon as Service Health text contains the word mitigating, without a user test.; Delete and recreate the host pool to be certain.; Wait 24 hours with no communication because overnight users can try again tomorrow.."
+      "helpText": "There is no single correct order. Cover the whole incident so an assessor can see your reasoning.",
+      "assessorGuidance": "Score the whole write-up. Reward confirming blast radius and protecting existing sessions before host changes; using the connectivity runbook and Azure Service Health; treating AVD control plane / gateway in UK South as the leading domain while still checking this pool’s agent health; engaging MIM and Microsoft with case facts (pool, region, error codes, impact) rather than trying to restore a Microsoft fault personally; a factual stakeholder update; and recovery confirmed with a new user connection plus host status, not Service Health wording alone. Do not score as demonstrated: reboot or rebuild every host as a first action; a company-wide DNS story as the primary cause; waiting to fix it personally before raising Microsoft/MIM."
     }
   ],
   "scoringCriteria": [
@@ -162,9 +102,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q1",
-        "q2",
-        "q7"
+        "q1"
       ]
     },
     {
@@ -175,7 +113,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q6"
+        "q1"
       ]
     },
     {
@@ -186,9 +124,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q3",
-        "q4",
-        "q6"
+        "q1"
       ]
     },
     {
@@ -199,10 +135,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q2",
-        "q3",
-        "q4",
-        "q5"
+        "q1"
       ]
     },
     {
@@ -213,7 +146,7 @@
       "mandatory": false,
       "safetyCritical": false,
       "questionIds": [
-        "q3"
+        "q1"
       ]
     },
     {
@@ -224,8 +157,7 @@
       "mandatory": false,
       "safetyCritical": false,
       "questionIds": [
-        "q1",
-        "q5"
+        "q1"
       ]
     },
     {
@@ -236,7 +168,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q6"
+        "q1"
       ]
     },
     {
@@ -247,8 +179,7 @@
       "mandatory": false,
       "safetyCritical": false,
       "questionIds": [
-        "q7",
-        "q8"
+        "q1"
       ]
     },
     {

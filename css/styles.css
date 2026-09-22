@@ -1023,12 +1023,22 @@ th {
 .snow-ticket {
   display: grid;
   gap: 0.4rem 1rem;
-  grid-template-columns: 8.5rem 1fr;
+  grid-template-columns: 9.25rem 1fr;
   font-size: 0.9rem;
 }
 
 .snow-ticket dt { color: var(--ink-subtle); font-weight: 500; }
 .snow-ticket dd { margin: 0; }
+
+.incident-report > p { margin: 0 0 0.85rem; }
+.incident-report h3 {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
 
 .callout {
   border: 1px solid var(--line);
@@ -1171,7 +1181,7 @@ th {
 }
 
 .field textarea { min-height: 8rem; resize: vertical; }
-.answer-box { min-height: 14rem; line-height: 1.55; }
+.answer-box { min-height: 22rem; line-height: 1.55; }
 
 .option-list { display: grid; gap: 0.4rem; }
 

@@ -5,6 +5,7 @@ import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js";
 import {
   pillsForScenario,
   snowCard,
+  incidentReportCard,
   domainBars,
   kpiCard,
   capabilityLineChart,
@@ -182,7 +183,7 @@ export function libraryView(state) {
   return `
     <div class="page-header">
       <h1>Scenario library</h1>
-      <p class="lede">Collection of prior SevA incidents to practice and test your experience against, each test has a rough timer next to it with a series of questions. Tests can be resat once reviewed by an assessor.</p>
+      <p class="lede">Collection of prior SevA incidents to practice and test your experience against. Each test has a timer and one write-up covering the whole incident. Tests can be resat once reviewed by an assessor.</p>
     </div>
     <div class="stack">
       ${published.map((scenario) => {
@@ -222,27 +223,28 @@ export function scenarioIntroView(state, scenario) {
       <p>${escapeHtml(scenario.illustrativeDisclaimer)}</p>
     </div>
     <div class="grid grid-2">
-      <section class="card">
-        <h2>Initial support call</h2>
-        <p>${nl(scenario.initialIncident.callSummary)}</p>
-        <h3>Known impact</h3>
-        <ul>
-          <li><strong>Users:</strong> ${escapeHtml(scenario.initialIncident.impact.customers)}</li>
-          <li><strong>Colleagues:</strong> ${escapeHtml(scenario.initialIncident.impact.colleagues)}</li>
-          <li><strong>Business:</strong> ${escapeHtml(scenario.initialIncident.impact.business)}</li>
-        </ul>
-      </section>
-      ${snowCard(scenario.initialIncident.serviceNow)}
+      ${incidentReportCard(scenario.initialIncident, { title: "Initial support call" })}
+      <div class="stack">
+        <section class="card">
+          <h2>Known impact</h2>
+          <ul>
+            <li><strong>Users:</strong> ${escapeHtml(scenario.initialIncident.impact.customers)}</li>
+            <li><strong>Colleagues:</strong> ${escapeHtml(scenario.initialIncident.impact.colleagues)}</li>
+            <li><strong>Business:</strong> ${escapeHtml(scenario.initialIncident.impact.business)}</li>
+          </ul>
+        </section>
+        ${snowCard(scenario.initialIncident.serviceNow)}
+      </div>
     </div>
     <div class="grid grid-2" style="margin-top:1rem">
       ${docsList(scenario.documentationReferences)}
       <section class="card">
         <h2>How this assessment works</h2>
         <ul>
-          <li>${scenario.questions.length} written questions. Answer in your own words.</li>
-          <li>The initial report stays beside the questions. There are no extra evidence panels.</li>
-          <li>You can save and resume. Review your answers before submitting.</li>
-          <li>An assessor scores each answer. Nothing is marked by keyword matching.</li>
+          <li>One written response covering the whole incident. Answer in your own words.</li>
+          <li>The initial report stays beside your answer.</li>
+          <li>You can save and resume. Review before submitting.</li>
+          <li>An assessor scores the write-up. Nothing is marked by keyword matching.</li>
           <li>Retries create a new attempt and keep earlier ones.</li>
         </ul>
         <div class="btn-row">
@@ -261,7 +263,7 @@ export function scenarioIntroView(state, scenario) {
   `;
 }
 
-// One question at a time, with the incident report beside the text box.
+// The write-up sits beside the incident report.
 export function workspaceView(state, attempt) {
   if (!attempt) return errorPage("Attempt not found", "That assessment could not be opened.");
   if (attempt.status !== "in-progress") {
@@ -271,46 +273,47 @@ export function workspaceView(state, attempt) {
   const index = attempt.currentQuestionIndex || 0;
   const question = scenario.questions[index];
   const answer = attempt.answers?.[question.id];
+  const single = scenario.questions.length === 1;
 
   return `
     <div class="page-header">
       <p class="subtle">Assessed attempt · scenario version ${escapeHtml(attempt.scenarioVersion)} · model guidance is withheld until an assessor releases feedback</p>
       <h1>${escapeHtml(scenario.title)}</h1>
-      <p>Question ${index + 1} of ${scenario.questions.length}</p>
+      ${single ? `<p>Walk through the whole incident in one response.</p>` : `<p>Question ${index + 1} of ${scenario.questions.length}</p>`}
     </div>
     ${attemptTimerHtml(attempt, scenario.estimatedMinutes)}
+    ${single ? "" : `
     <div class="question-nav" role="navigation" aria-label="Questions">
       ${scenario.questions.map((item, i) => `
         <button type="button" class="${i === index ? "current" : ""} ${hasAnswer(attempt.answers?.[item.id]) ? "answered" : ""}"
           data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${i}"
           aria-current="${i === index ? "step" : "false"}">${i + 1}<span class="sr-only"> ${escapeHtml(item.prompt.slice(0, 40))}</span></button>
       `).join("")}
-    </div>
+    </div>`}
     <div class="workspace">
       <section class="card">
-        <h2>Question</h2>
+        <h2>${single ? "Your response" : "Question"}</h2>
         <p>${escapeHtml(question.prompt)}</p>
         ${question.helpText ? `<p class="hint muted">${escapeHtml(question.helpText)}</p>` : ""}
         <ul class="answer-cues" aria-label="Cover these in your answer">
-          <li>What you would check</li>
+          <li>What you would check, and in what order</li>
           <li>Who you would involve</li>
           <li>What you would not change</li>
+          <li>How you would update people and confirm recovery</li>
         </ul>
         ${renderAnswerInput(question, answer, attempt.id)}
-        <p class="subtle">A short paragraph is enough.</p>
+        <p class="subtle">Write through the whole incident. A few paragraphs is fine.</p>
         <p class="status-msg" data-save-status aria-live="polite"></p>
         <div class="btn-row">
           <button class="btn secondary" data-action="save-progress" data-attempt-id="${attempt.id}">Save progress</button>
+          ${single ? "" : `
           <button class="btn ghost" ${index === 0 ? "disabled" : ""} data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${index - 1}">Previous</button>
-          <button class="btn ghost" ${index >= scenario.questions.length - 1 ? "disabled" : ""} data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${index + 1}">Next</button>
-          <a class="btn" href="#/review/${attempt.id}">Review answers</a>
+          <button class="btn ghost" ${index >= scenario.questions.length - 1 ? "disabled" : ""} data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${index + 1}">Next</button>`}
+          <a class="btn" href="#/review/${attempt.id}">Review and submit</a>
         </div>
       </section>
       <aside class="stack">
-        <section class="card">
-          <h2>Initial report</h2>
-          <p>${nl(scenario.initialIncident.callSummary)}</p>
-        </section>
+        ${incidentReportCard(scenario.initialIncident)}
         ${snowCard(scenario.initialIncident.serviceNow)}
       </aside>
     </div>
@@ -331,7 +334,7 @@ function renderAnswerInput(question, answer, attemptId) {
   return `
     <div class="field">
       <label for="answer-${question.id}">Your answer</label>
-      <textarea id="answer-${question.id}" class="answer-box" name="answer" data-attempt-id="${attemptId}" data-question-id="${question.id}" data-answer-type="written" placeholder="Write the approach you would take. Include what you would check, who you would involve, and what you would avoid.">${escapeHtml(text)}</textarea>
+      <textarea id="answer-${question.id}" class="answer-box" name="answer" data-attempt-id="${attemptId}" data-question-id="${question.id}" data-answer-type="written" placeholder="Walk through the whole incident in your own words.">${escapeHtml(text)}</textarea>
     </div>
   `;
 }
@@ -344,16 +347,16 @@ export function reviewAnswersView(attempt) {
   return `
     <div class="page-header">
       <h1>Review your answers</h1>
-      <p class="lede">Check your responses before submitting. You can still go back and edit. After you submit, an assessor reads each answer. This attempt keeps scenario version ${escapeHtml(attempt.scenarioVersion)}.</p>
+      <p class="lede">Check your write-up before submitting. You can still go back and edit. After you submit, an assessor reads it. This attempt keeps scenario version ${escapeHtml(attempt.scenarioVersion)}.</p>
     </div>
-    ${missing.length ? `<div class="callout warn"><p>${missing.length} question(s) have no answer yet. You can still submit, but unanswered criteria will show as not answered rather than zero.</p></div>` : ""}
+    ${missing.length ? `<div class="callout warn"><p>This response is still empty. You can still submit, but unanswered criteria will show as not answered rather than zero.</p></div>` : ""}
     <div class="stack">
       ${scenario.questions.map((question, index) => `
         <section class="card">
-          <h2>Question ${index + 1}</h2>
+          <h2>${scenario.questions.length === 1 ? "Your response" : `Question ${index + 1}`}</h2>
           <p>${escapeHtml(question.prompt)}</p>
           <p><strong>Your answer</strong><br>${formatAnswer(question, attempt.answers?.[question.id])}</p>
-          <p><a href="#/assess/${attempt.id}" data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${index}">Edit this answer</a></p>
+          <p><a href="#/assess/${attempt.id}" data-action="goto-question" data-attempt-id="${attempt.id}" data-index="${index}">Edit this response</a></p>
         </section>
       `).join("")}
     </div>
@@ -436,7 +439,7 @@ export function feedbackView(state, attempt) {
         return `
           <article class="reflection">
             <div>
-              <h3>Question ${index + 1}</h3>
+              <h3>${scenario.questions.length === 1 ? "Your response" : `Question ${index + 1}`}</h3>
               <p>${escapeHtml(question.prompt)}</p>
               <p class="subtle">What you wrote</p>
               <blockquote>${formatAnswer(question, attempt.answers?.[question.id])}</blockquote>
@@ -644,7 +647,7 @@ export function assessorReviewView(state, attempt) {
         return `
           <section class="card question-review">
             <div>
-              <h2>Question ${index + 1}${question.type === "written" ? "" : ` · ${escapeHtml(question.type)}`}</h2>
+              <h2>${scenario.questions.length === 1 ? "Response" : `Question ${index + 1}`}${question.type === "written" || scenario.questions.length === 1 ? "" : ` · ${escapeHtml(question.type)}`}</h2>
               <p>${escapeHtml(question.prompt)}</p>
               <p class="subtle">What they wrote</p>
               <blockquote>${formatAnswer(question, attempt.answers?.[question.id])}</blockquote>
@@ -816,12 +819,12 @@ function howToAddScenarioHtml() {
       <ol>
         <li>Copy <code>data/scenarios/_template.json</code> to a new file, for example <code>data/scenarios/pega-bridge.json</code>.</li>
         <li>Give it a unique <code>id</code> (lowercase, hyphens). Leave <code>mandatory</code> as <code>false</code> unless it should be required for Ready.</li>
-        <li>Rewrite the title, description, call summary, mock ServiceNow ticket, questions, and scoring criteria. Put every fact the engineer needs in the initial report. There are no extra evidence panels.</li>
+        <li>Rewrite the title, description, short call summary, labelled facts, mock ServiceNow ticket, the one response prompt, and scoring criteria.</li>
         <li>Spoke ids for <code>capabilityDomainIds</code> and <code>domainId</code> must be one of: <code>avd-infrastructure</code>, <code>networking</code>, <code>trm-escalation-ops</code>, <code>proxy-solution</code>, <code>vendor-management</code>, <code>platform-troubleshooting</code>, <code>m365-stack</code>.</li>
         <li>Add the new path to <code>bundledScenarioFiles</code> in <code>data/config.json</code>.</li>
         <li>Check it locally, then ask for the live site to be published. Saving here is not enough.</li>
       </ol>
-      <p class="subtle">Need 4–12 written questions. Each scoring criterion uses maxScore 3 and must list at least one question id such as q1.</p>
+      <p class="subtle">One written prompt is enough. Each scoring criterion uses maxScore 3 and must list the question id (q1).</p>
     </section>
   `;
 }
@@ -995,30 +998,9 @@ function sampleTemplate() {
       {
         id: "q1",
         type: "written",
-        prompt: "What would you check first, and why?",
-        capabilityDomainIds: ["platform-troubleshooting"],
-        assessorGuidance: "Reward a scoped first check before any platform change. Do not score an unsafe first action as demonstrated."
-      },
-      {
-        id: "q2",
-        type: "written",
-        prompt: "What fault domains would you consider, and which would you set aside?",
-        capabilityDomainIds: ["avd-infrastructure", "networking"],
-        assessorGuidance: "Look for more than one relevant fault domain, and for the engineer setting aside an unsupported one."
-      },
-      {
-        id: "q3",
-        type: "written",
-        prompt: "When would you engage Microsoft or another team?",
-        capabilityDomainIds: ["trm-escalation-ops"],
-        assessorGuidance: "Written answers require assessor review. Do not use keyword matching."
-      },
-      {
-        id: "q4",
-        type: "written",
-        prompt: "How would you confirm service recovery?",
-        capabilityDomainIds: ["trm-escalation-ops"],
-        assessorGuidance: "Expect user confirmation plus telemetry. Closing from a green portal tile alone is not enough."
+        prompt: "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
+        capabilityDomainIds: ["platform-troubleshooting", "trm-escalation-ops"],
+        assessorGuidance: "Reward a scoped investigation and an appropriate escalation. Do not score an unsafe production change as demonstrated."
       }
     ],
     scoringCriteria: [
@@ -1038,7 +1020,7 @@ function sampleTemplate() {
         maxScore: 3,
         mandatory: true,
         safetyCritical: true,
-        questionIds: ["q3"]
+        questionIds: ["q1"]
       }
     ]
   }, null, 2);
@@ -1480,10 +1462,7 @@ export function assessorPersonView(state, personId) {
 }
 
 const AUTHOR_QUESTION_PROMPTS = [
-  "What would you check first, and why?",
-  "What fault domains would you consider, and which would you set aside?",
-  "When would you engage Microsoft or another team?",
-  "How would you confirm service recovery?"
+  "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words."
 ];
 
 // Guided form that writes scenario JSON. Administrators can still paste JSON on Import.
@@ -1591,8 +1570,8 @@ export function adminAuthorView(state) {
         <label for="a-business">Business impact</label>
         <input id="a-business" name="impactBusiness" type="text" required>
       </div>
-      <h2>Questions</h2>
-      <p class="subtle">Written answers, scored by a person. Provide at least four.</p>
+      <h2>Response</h2>
+      <p class="subtle">One written prompt covering the whole incident. An assessor scores the write-up against the criteria below.</p>
       <div data-author-questions>
         ${AUTHOR_QUESTION_PROMPTS.map((prompt, index) => authorQuestionBlock(domains, index, prompt)).join("")}
       </div>
@@ -1602,7 +1581,7 @@ export function adminAuthorView(state) {
       <p class="subtle">Each criterion is 0–3 and must link to a question id such as q1.</p>
       <div data-author-criteria>
         ${authorCriterionBlock(domains, 0, { label: "Establishes impact before changes", domainId: "platform-troubleshooting", questionIds: "q1", mandatory: true, safety: false })}
-        ${authorCriterionBlock(domains, 1, { label: "Uses the support model", domainId: "trm-escalation-ops", questionIds: "q3", mandatory: true, safety: true })}
+        ${authorCriterionBlock(domains, 1, { label: "Uses the support model", domainId: "trm-escalation-ops", questionIds: "q1", mandatory: true, safety: true })}
       </div>
       <p class="btn-row"><button type="button" class="btn ghost" data-action="add-author-criterion">Add a criterion</button></p>
       <template id="author-criterion-template">${authorCriterionBlock(domains, "__INDEX__", { label: "", domainId: domains[0]?.id, questionIds: "q1", mandatory: false, safety: false })}</template>

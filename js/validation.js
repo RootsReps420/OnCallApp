@@ -59,13 +59,23 @@ export function validateScenario(scenario) {
         .forEach((key) => requireString(errors, `initialIncident.serviceNow.${key}`, snow[key]));
     }
     if (!scenario.initialIncident.impact) fail(errors, "initialIncident.impact", "Impact details are required.");
+    if (scenario.initialIncident.facts != null) {
+      if (!Array.isArray(scenario.initialIncident.facts)) {
+        fail(errors, "initialIncident.facts", "facts must be an array of labelled items.");
+      } else {
+        scenario.initialIncident.facts.forEach((item, index) => {
+          requireString(errors, `initialIncident.facts[${index}].label`, item?.label);
+          requireString(errors, `initialIncident.facts[${index}].value`, item?.value);
+        });
+      }
+    }
   }
 
   if (!requireArray(errors, "questions", scenario.questions)) {
     return { ok: false, errors };
   }
-  if (scenario.questions.length < 4 || scenario.questions.length > 12) {
-    fail(errors, "questions", "Provide between 4 and 12 questions (MVP target is 6–8).");
+  if (scenario.questions.length < 1 || scenario.questions.length > 12) {
+    fail(errors, "questions", "Provide between 1 and 12 questions.");
   }
 
   const questionIds = new Set();

@@ -1,6 +1,6 @@
 {
   "id": "vds-app-access-002",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "status": "published",
   "title": "Business applications unreachable from virtual desktops",
   "description": "Users can connect to AVD but cannot open several internal web applications. Possible causes include DNS, routing, Secure Access / Prisma, or firewall change. The engineer must separate desktop platform health from path-to-application dependencies.",
@@ -30,7 +30,7 @@
     }
   ],
   "initialIncident": {
-    "callSummary": "01:07 UTC, Saturday. Users in host pools VDI-UK-PROD-HP01 and HP02 can launch Windows desktops, but Payments Portal, HR Self-Service, and the overnight batch console fail to load in Edge. Errors are 'Hmm… can’t reach this page' or spinning until timeout. Outlook web and Microsoft 365 appear to work. Service Desk has 40+ calls. A change window for an edge firewall policy was due at 00:30 UTC; completion status is unknown. Host pools are Available and Azure Service Health has no AVD incident. From a session host, DNS for the internal apps resolves, but HTTPS to those VIPs times out while Microsoft 365 succeeds. Secure Access connector vds-sa-03 dropped around 00:34 UTC. CHG004412 attached inspection profile OOH-Tightened-Inspection to VDI-to-internal-app rules; implementer notes at 01:12 UTC say unexpected deny on unknown-app and rollback is in progress.",
+    "callSummary": "01:07 UTC, Saturday. Users can launch Windows on HP01 and HP02, but internal web apps will not load in Edge. Service Desk has 40+ calls.",
     "serviceNow": {
       "incidentNumber": "INC0001902",
       "priority": "1 — Critical",
@@ -39,97 +39,59 @@
       "caller": "Service Desk on behalf of Payments Operations",
       "affectedCI": "VDI-UK-PROD (desktop service) / apps.internal.example (illustrative)",
       "shortDescription": "Multiple business web apps unreachable from AVD sessions",
-      "description": "Desktop connect OK. Internal HTTPS apps fail. External Microsoft 365 sites OK from the same desktop. First user report 00:51 UTC. DNS for the apps resolves; TCP 443 to the internal VIPs times out. Possible related change CHG004412 (illustrative) — edge firewall / inspection profile update, scheduled 00:30 UTC, rollback in progress."
+      "description": "Desktop connect OK. Internal HTTPS apps fail. Microsoft 365 from the same desktop is OK. First user report 00:51 UTC."
     },
     "impact": {
       "customers": "AVD users needing internal web apps; payments operations overnight team blocked.",
       "colleagues": "Service Desk, application support on standby, network on-call not yet paged.",
       "business": "Overnight payments exception handling cannot proceed. Illustrative impact only."
-    }
+    },
+    "facts": [
+      {
+        "label": "Failing apps",
+        "value": "Payments Portal, HR Self-Service, overnight batch console — timeout or “can’t reach this page”."
+      },
+      {
+        "label": "Still working",
+        "value": "Outlook on the web and Microsoft 365 from the same AVD session."
+      },
+      {
+        "label": "Hosts",
+        "value": "HP01 and HP02 Available. No AVD Service Health incident."
+      },
+      {
+        "label": "DNS",
+        "value": "Internal app names resolve from a session host."
+      },
+      {
+        "label": "Path",
+        "value": "HTTPS to those VIPs times out. TCP 443 to Microsoft 365 succeeds."
+      },
+      {
+        "label": "Proxy",
+        "value": "Secure Access connector vds-sa-03 last seen 00:34 UTC, then disconnected."
+      },
+      {
+        "label": "Change",
+        "value": "CHG004412 at 00:30 UTC attached inspection profile OOH-Tightened-Inspection. Implementer notes unexpected deny; rollback in progress."
+      }
+    ]
   },
   "questions": [
     {
       "id": "q1",
       "type": "written",
-      "prompt": "What would you check first, and why?",
+      "prompt": "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words.",
       "capabilityDomainIds": [
         "platform-troubleshooting",
-        "avd-infrastructure"
-      ],
-      "assessorGuidance": "A strong answer covers: Confirm that AVD connection and session host health are good, then treat this as application-path failure inside a working desktop. (Correct split of fault domains; avoids rebuilding hosts for an app-path issue.); Open a Microsoft AVD Sev1 first, because all VDI issues start with Microsoft. (Premature; Service Health and successful connections argue against AVD control plane.). Do not treat the response as demonstrated if it relies on: Redeploy the host pool immediately because users cannot 'use VDI'.; Reset every user profile to clear likely profile corruption.."
-    },
-    {
-      "id": "q2",
-      "type": "written",
-      "prompt": "What additional information do you need before changing anything on the hosts?",
-      "capabilityDomainIds": [
-        "platform-troubleshooting",
-        "networking",
-        "proxy-solution"
-      ],
-      "assessorGuidance": "A strong answer covers: Exact URLs and whether failure is DNS error versus timeout. (Distinguishes resolution from path/firewall.); Whether a physical or non-VDI client can still reach the same apps. (Isolates VDI egress from the application itself.); Recent network / Secure Access / firewall changes around 00:30 UTC. (The incident hint already points at a change window.). Do not treat the response as demonstrated if it relies on: Each user’s local printer mapping.."
-    },
-    {
-      "id": "q3",
-      "type": "written",
-      "prompt": "What fault domains remain plausible after DNS resolution succeeds but TCP/443 to the VIP times out?",
-      "capabilityDomainIds": [
-        "networking",
         "avd-infrastructure",
+        "networking",
         "proxy-solution",
-        "m365-stack"
-      ],
-      "assessorGuidance": "A strong answer covers: Firewall or Secure Access / Prisma inspection dropping VDI-to-app traffic. (Matches timeout with successful DNS and working M365 bypass.); Routing or connector failure on the VDI egress path. (Connector disconnect is later evidence; already a fair hypothesis.); The applications themselves if a non-VDI client also fails — still to be confirmed. (Keep the app domain until a contrasting path is proven.). Do not treat the response as demonstrated if it relies on: AVD gateway control-plane outage.; FSLogix profile share as the primary cause of HTTPS timeouts.."
-    },
-    {
-      "id": "q4",
-      "type": "written",
-      "prompt": "What evidence supports or weakens each remaining hypothesis? What would you look for in tools or logs, and which runbook would you follow?",
-      "capabilityDomainIds": [
-        "networking",
-        "platform-troubleshooting",
-        "proxy-solution"
-      ],
-      "assessorGuidance": "Expect DNS success weakening a pure DNS outage; timeout on 443 strengthening path/firewall; M365 success suggesting bypass/inspection difference; runbook named in illustrative terms. Reward asking network on-call rather than experimenting with NSG or host firewalls alone."
-    },
-    {
-      "id": "q5",
-      "type": "written",
-      "prompt": "A connector shows disconnected after the firewall change. What is the safest next operational step?",
-      "capabilityDomainIds": [
-        "trm-escalation-ops"
-      ],
-      "assessorGuidance": "A strong answer covers: Page network / Secure Access on-call with DNS, timeout, connector, and change evidence; notify MIM; do not disable inspection yourself. (Uses the support model; preserves safety.). Do not treat the response as demonstrated if it relies on: Detach the inspection profile from the VDI hosts using a personal admin login to test.; Add an Any/Any allow on the session host NSG toward 10.0.0.0/8.; Tell users to work from home on unmanaged PCs until Monday.."
-    },
-    {
-      "id": "q6",
-      "type": "written",
-      "prompt": "When would you engage Microsoft, and when would you not? Who else should be on the bridge?",
-      "capabilityDomainIds": [
-        "vendor-management",
-        "trm-escalation-ops"
-      ],
-      "assessorGuidance": "Microsoft AVD support is not the primary path while desktops launch and Service Health is clear. Application owners should confirm service health; network/security own the change. MIM coordinates Sev1. A later Microsoft discussion is only if evidence shifts to Azure networking Microsoft owns (for example a platform-side outage), which it has not."
-    },
-    {
-      "id": "q7",
-      "type": "written",
-      "prompt": "Write a stakeholder update covering impact, current hypothesis, actions, and what you are asking others to do.",
-      "capabilityDomainIds": [
-        "trm-escalation-ops"
-      ],
-      "assessorGuidance": "Do not blame a named colleague. Do not claim a confirmed root cause if rollback is still in progress. Include that desktops work, internal apps time out, network rollback underway, next update time."
-    },
-    {
-      "id": "q8",
-      "type": "written",
-      "prompt": "Network reports rollback complete. How do you confirm recovery?",
-      "capabilityDomainIds": [
         "trm-escalation-ops",
-        "networking",
-        "proxy-solution"
+        "vendor-management"
       ],
-      "assessorGuidance": "A strong answer covers: Repeat HTTPS probes from a session host and ask payments operations to open the real application, then watch for new tickets before closure. (Platform probe plus real user confirmation.); Trust the change ticket moving to Closed and close INC0001902 immediately. (Insufficient confirmation.). Do not treat the response as demonstrated if it relies on: Reboot all session hosts as a cleansing step even if probes succeed.; Leave the incident open for seven days with no user contact.."
+      "helpText": "There is no single correct order. Cover the whole incident so an assessor can see your reasoning.",
+      "assessorGuidance": "Score the whole write-up. Reward splitting working desktops from a failed application path; DNS then timeout/path/Secure Access rather than rebuilding hosts or resetting profiles; handing the change and connector to network/security with MIM on a Sev1; not disabling inspection or opening Any/Any to test; Microsoft AVD support only if evidence later points at Azure; a factual update; and recovery confirmed with a probe from a session host plus a real user opening the app. Do not score as demonstrated: redeploying the pool, detaching inspection yourself, or closing on a closed change ticket without a user test."
     }
   ],
   "scoringCriteria": [
@@ -141,8 +103,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q1",
-        "q2"
+        "q1"
       ]
     },
     {
@@ -153,7 +114,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q5"
+        "q1"
       ]
     },
     {
@@ -164,7 +125,7 @@
       "mandatory": false,
       "safetyCritical": false,
       "questionIds": [
-        "q6"
+        "q1"
       ]
     },
     {
@@ -175,8 +136,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q1",
-        "q3"
+        "q1"
       ]
     },
     {
@@ -187,9 +147,7 @@
       "mandatory": true,
       "safetyCritical": false,
       "questionIds": [
-        "q2",
-        "q3",
-        "q4"
+        "q1"
       ]
     },
     {
@@ -200,7 +158,7 @@
       "mandatory": false,
       "safetyCritical": false,
       "questionIds": [
-        "q4"
+        "q1"
       ]
     },
     {
@@ -211,8 +169,7 @@
       "mandatory": true,
       "safetyCritical": true,
       "questionIds": [
-        "q5",
-        "q6"
+        "q1"
       ]
     },
     {
@@ -223,8 +180,7 @@
       "mandatory": false,
       "safetyCritical": false,
       "questionIds": [
-        "q7",
-        "q8"
+        "q1"
       ]
     }
   ]

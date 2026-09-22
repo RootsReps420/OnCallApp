@@ -6,9 +6,9 @@ import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from 
 import * as storage from "./storage.js";
 import { loadConfig, loadLibrary } from "./content.js";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=25";
-import * as views from "./views.js?v=25";
-import * as auth from "./auth.js?v=25";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=28";
+import * as views from "./views.js?v=28";
+import * as auth from "./auth.js?v=28";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
 import { runVerification } from "./tests.js";
 
@@ -52,6 +52,9 @@ async function refreshLibrary() {
   state.evidence = storage.getEvidence();
   state.proposals = storage.getProposals();
   state.readinessConfig = storage.getReadinessConfig(state.config.readinessCriteria);
+  state.attempts
+    .filter((item) => item.status === "in-progress")
+    .forEach((item) => ensureWrittenAttempt(item));
   syncSession();
 }
 
@@ -534,22 +537,32 @@ function writtenQuestion(question) {
   return { ...rest, type: "written" };
 }
 
-// Upgrade an in-progress attempt that still has the old choices. Short option letters are not copied into the text box.
+// Refresh an in-progress attempt if the library scenario has moved on (new version or fewer questions).
 function ensureWrittenAttempt(attempt) {
   if (!attempt || attempt.status !== "in-progress") return attempt;
+  const current = findScenario(attempt.scenarioId);
   const questions = attempt.scenarioSnapshot?.questions || [];
   const hasChoices = questions.some((question) => question.type !== "written" || question.options);
-  if (!hasChoices) return attempt;
-  const current = findScenario(attempt.scenarioId);
-  const currentWritten = current?.questions?.length && current.questions.every((question) => question.type === "written" && !question.options);
-  attempt.scenarioSnapshot = currentWritten ? cloneScenario(current) : writtenScenario(attempt.scenarioSnapshot);
-  attempt.scenarioVersion = currentWritten ? current.version : attempt.scenarioVersion;
+  const libraryChanged = Boolean(
+    current
+    && (
+      current.version !== attempt.scenarioVersion
+      || (current.questions || []).length !== questions.length
+    )
+  );
+  if (!hasChoices && !libraryChanged) return attempt;
+  const currentWritten = current?.questions?.length
+    && current.questions.every((question) => question.type === "written" && !question.options);
+  const next = currentWritten ? writtenScenario(current) : writtenScenario(attempt.scenarioSnapshot);
   const answers = {};
-  for (const question of attempt.scenarioSnapshot.questions) {
+  for (const question of next.questions || []) {
     const previous = attempt.answers?.[question.id];
     if (typeof previous === "string" && previous.trim().length > 12) answers[question.id] = previous;
   }
+  attempt.scenarioSnapshot = cloneScenario(next);
+  attempt.scenarioVersion = currentWritten ? current.version : attempt.scenarioVersion;
   attempt.answers = answers;
+  attempt.currentQuestionIndex = 0;
   storage.saveAttempt(attempt);
   state.attempts = storage.getAttempts();
   return attempt;

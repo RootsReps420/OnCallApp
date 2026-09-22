@@ -29,10 +29,24 @@ export async function loadBundledScenarios(config) {
 }
 
 // Custom scenarios with the same id replace the bundled file in this browser only.
+// Custom scenarios with the same id replace the bundled file in this browser only,
+// unless the bundled file is a newer version.
+export function isNewerVersion(a, b) {
+  const left = String(a || "0").split(".").map((part) => Number(part) || 0);
+  const right = String(b || "0").split(".").map((part) => Number(part) || 0);
+  const n = Math.max(left.length, right.length);
+  for (let i = 0; i < n; i += 1) {
+    if ((left[i] || 0) !== (right[i] || 0)) return (left[i] || 0) > (right[i] || 0);
+  }
+  return false;
+}
+
 export function mergeScenarios(bundled, custom) {
   const map = new Map();
   bundled.forEach((scenario) => map.set(scenario.id, scenario));
   custom.forEach((scenario) => {
+    const existing = map.get(scenario.id);
+    if (existing && isNewerVersion(existing.version, scenario.version)) return;
     map.set(scenario.id, { ...scenario, origin: scenario.origin || "custom" });
   });
   return [...map.values()].sort((a, b) => a.title.localeCompare(b.title));
