@@ -40,7 +40,7 @@ A local practice session is labelled **Local** in the sidebar. Sign in with Micr
 
 The shell is a dashboard: Lloyds horse on a white tile, **Virtual Team / Incident Lab**, Grove green on carbon black (dark) or a pale canvas (light). Theme is a moon/sun slider under the signed-in name.
 
-Users see Overview, Library, Evidence, Readiness, and Propose. Assessors see the review queue and a person page. Administrators see scenario management, the authoring form, proposals, criteria, access, and verification.
+Users see Overview, Library, Reading, Evidence, Readiness, and Propose. Assessors see the review queue, a person page, and Reading. Administrators see scenario management, the authoring form, proposals, criteria, access, verification, and Reading.
 
 ## A practice attempt
 
@@ -81,6 +81,12 @@ The seven capability areas are listed in `data/config.json`:
 | M365 Stack | Entra ID, Conditional Access, other M365 dependencies |
 
 A spoke with no released score is incomplete evidence, not a pass. Ready needs one scenario per spoke, released at Demonstrated (score 2) or above. Any numbered scenario in that spoke can count. Workplace tickets can thicken a spoke (capped). They cannot replace a spoke on the Ready gate or cancel a mandatory gap.
+
+## Reading
+
+**Reading** is marked **WORK IN PROGRESS**. The aim is to link approved Confluence documentation into the app. Until that is wired, it is a shelf of notes for platform, troubleshooting, and on-call pages — not a flat list of URLs. Each spine is a collection. Each note says what kind of page to open and what to take from it. It is not a runbook and it is not bank policy.
+
+Paste an approved `https` Confluence URL into `href` on an article in `data/reading.json`. Until that field is set, the note still reads in the app and the Open in Confluence button stays hidden. Opened and read ticks stay in this browser.
 
 ## Evidence log
 
@@ -127,13 +133,14 @@ Each script starts with a short note, and each function has a comment above it.
 | `js/views.js` | The HTML for each screen. |
 | `js/render.js` | Sidebar chrome, pills, evidence, KPI cards, charts, and the readiness map. |
 | `js/storage.js` | Reads and writes this browser's saved data. |
-| `js/content.js` | Loads `data/config.json` and the scenario files. |
+| `js/content.js` | Loads `data/config.json`, the scenario files, and the Reading catalog. |
 | `js/scoring.js` | Turns answers and a review into scores and charts. |
 | `js/validation.js` | Checks scenario JSON before it is published. |
 | `js/util.js` | Small helpers: safe HTML, dates, ids, and navigation. |
 | `js/tests.js` | Checks run from Administrator → Verification. |
 | `js/vendor/msal-browser.min.js` | MSAL browser library. Do not edit. |
 | `data/config.json` | App name, Entra ids, capability domains, demo people, bundled scenario paths. |
+| `data/reading.json` | Reading room collections and notes. Set each article `href` to an approved Confluence URL when you have it. |
 | `data/scenarios/` | Practice incidents. Copy `_template.json` to add one. |
 | `staticwebapp.config.json` | Fallback so hash routes still serve `index.html` on Azure Static Web Apps. |
 | `assets/lloyds-horse.svg` | The horse in the sidebar. |

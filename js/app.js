@@ -4,11 +4,11 @@
 
 import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js";
 import * as storage from "./storage.js";
-import { loadConfig, loadLibrary } from "./content.js";
+import { loadConfig, loadLibrary, loadReading } from "./content.js";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=38";
-import * as views from "./views.js?v=38";
-import * as auth from "./auth.js?v=38";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=41";
+import * as views from "./views.js?v=41";
+import * as auth from "./auth.js?v=41";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
 import { runVerification } from "./tests.js";
 
@@ -26,7 +26,9 @@ const state = {
   readinessConfig: null,    // gates behind a Ready recommendation
   flash: "",                // one-line message for the next Access page draw
   entraEnabled: false,      // Microsoft sign-in is configured in config.json
-  authError: ""             // last Entra error shown on the sign-in page
+  authError: "",            // last Entra error shown on the sign-in page
+  reading: null,            // data/reading.json catalog
+  readingProgress: {}       // opened / read ticks for Reading
 };
 
 // Match the saved session id to a colleague. A stale id is cleared.
@@ -52,6 +54,8 @@ async function refreshLibrary() {
   state.evidence = storage.getEvidence();
   state.proposals = storage.getProposals();
   state.readinessConfig = storage.getReadinessConfig(state.config.readinessCriteria);
+  state.reading = await loadReading();
+  state.readingProgress = storage.getReadingProgress();
   state.attempts
     .filter((item) => item.status === "in-progress")
     .forEach((item) => ensureWrittenAttempt(item));
@@ -104,6 +108,7 @@ function render() {
   state.evidence = storage.getEvidence();
   state.proposals = storage.getProposals();
   state.readinessConfig = storage.getReadinessConfig(state.config.readinessCriteria);
+  state.readingProgress = storage.getReadingProgress();
   const { parts, path } = parseHash();
   const body = state.person ? route(parts) : views.signInView(state);
   state.flash = "";
@@ -140,6 +145,13 @@ function route(parts) {
     return views.dashboardView(state);
   }
   if (area === "library") return views.libraryView(state);
+  if (area === "reading" && (!id || id === "")) return views.readingView(state);
+  if (area === "reading" && id === "shelf") return views.readingShelfView(state, extra);
+  if (area === "reading" && id === "page") {
+    storage.markReadingOpened(extra);
+    state.readingProgress = storage.getReadingProgress();
+    return views.readingPageView(state, extra);
+  }
   if (area === "scenario") return views.scenarioIntroView(state, findScenario(id));
   if (area === "assess") return views.workspaceView(state, ensureWrittenAttempt(storage.getAttempt(id)));
   if (area === "review") return views.reviewAnswersView(ensureWrittenAttempt(storage.getAttempt(id)));
@@ -290,6 +302,19 @@ function onClick(event) {
   }
   if (action === "toggle-sidebar") {
     document.querySelector(".app-shell")?.classList.toggle("sidebar-open");
+    return;
+  }
+  if (action === "reading-open") {
+    const href = button.getAttribute("data-reading-href") || "";
+    const readingId = button.getAttribute("data-reading-id") || "";
+    storage.markReadingOpened(readingId);
+    if (/^https:\/\//i.test(href)) window.open(href, "_blank", "noopener,noreferrer");
+    render();
+    return;
+  }
+  if (action === "reading-done") {
+    storage.markReadingRead(button.getAttribute("data-reading-id") || "");
+    render();
     return;
   }
   if (action === "dash-range") {
@@ -717,7 +742,7 @@ function verificationView() {
   let results = [];
   let crashed = "";
   try {
-    results = runVerification();
+    results = runVerification(state.reading);
   } catch (error) {
     crashed = String(error?.message || error);
   }

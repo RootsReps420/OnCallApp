@@ -15,10 +15,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=38">
+  <link rel="stylesheet" href="css/styles.css?v=41">
   <link rel="icon" href="assets/lloyds-horse.svg">
 </head>
 <body>
+  <!-- Lloyds-style organic bands sit behind the app in both themes. -->
+  <div class="brand-banding" aria-hidden="true">
+    <svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" focusable="false">
+      <ellipse class="band-a" cx="120" cy="-20" rx="760" ry="600"/>
+      <ellipse class="band-c" cx="-60" cy="720" rx="580" ry="430"/>
+      <ellipse class="band-b" cx="1680" cy="980" rx="900" ry="640"/>
+    </svg>
+  </div>
   <!-- Skip link is for keyboard users. The app replaces #app on every page draw. -->
   <a class="skip-link" href="#main">Skip to content</a>
   <div id="app">
@@ -26,6 +34,6 @@
   </div>
   <!-- MSAL must load before the app module so window.msal exists. The ?v= query avoids a stale cached copy. -->
   <script src="js/vendor/msal-browser.min.js"></script>
-  <script type="module" src="js/app.js?v=38"></script>
+  <script type="module" src="js/app.js?v=41"></script>
 </body>
 </html>

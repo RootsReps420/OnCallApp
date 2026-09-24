@@ -2,7 +2,8 @@
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
 import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js";
-import { validateScenario } from "./validation.js";
+import { validateScenario, validateReadingCatalog } from "./validation.js";
+import { continueReading } from "./content.js";
 import { isNewerVersion, mergeScenarios, sortScenarios } from "./content.js";
 import * as storage from "./storage.js";
 
@@ -119,7 +120,7 @@ function fixtureScenario() {
 }
 
 // Run the checks and return { name, ok, detail } rows for the Verification page.
-export function runVerification() {
+export function runVerification(readingCatalog) {
   const results = [];
   const check = (name, condition, detail = "") => {
     results.push({ name, ok: Boolean(condition), detail });
@@ -266,6 +267,30 @@ export function runVerification() {
 
   const bothMet = spokeGateStatus(gateDomains, [avdOne, avdTwo, netOne], [goodAttempt(avdTwo), goodAttempt(netOne)]);
   check("One satisfactory scenario per spoke meets the Ready gate", allSpokesSatisfied(bothMet) === true);
+
+  const readingFixture = {
+    disclaimer: "Illustrative reading catalog used only by verification.",
+    collections: [{ id: "on-call", title: "On-call", spine: "On-call", folio: "01", tone: "ops", summary: "Rota and first-hour pages." }],
+    articles: [{
+      id: "ooh-rota",
+      collectionId: "on-call",
+      title: "Who is on",
+      lede: "Find the live rota before you assume you are alone.",
+      source: "Confluence",
+      sourceLabel: "On-call space",
+      minutes: 4,
+      spokeIds: ["trm-escalation-ops"],
+      href: "",
+      sections: [{ heading: "What to open", paragraphs: ["The approved on-call space should have a rota page."] }]
+    }]
+  };
+  const readingOk = validateReadingCatalog(readingFixture);
+  check("Reading catalog fixture validates", readingOk.ok, readingOk.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));
+  check("Continue reading prefers an unread note", continueReading(readingFixture, {})?.id === "ooh-rota");
+  if (readingCatalog) {
+    const liveReading = validateReadingCatalog(readingCatalog);
+    check("Bundled reading catalog validates", liveReading.ok, liveReading.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));
+  }
 
   check("Development actions split on new lines", splitActions("Read the runbook\nShadow a SevA").length === 2);
 

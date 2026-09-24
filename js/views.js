@@ -21,7 +21,7 @@ import {
   roleLabel
 } from "./render.js";
 import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete } from "./scoring.js";
-import { publishedScenarios, groupScenariosBySpoke } from "./content.js";
+import { publishedScenarios, groupScenariosBySpoke, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading } from "./content.js";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -99,7 +99,10 @@ export function dashboardView(state) {
         <h1>Dashboard Overview</h1>
         <p class="lede">Track your SevA practice and readiness for ${escapeHtml(config.serviceName)} in real time.</p>
       </div>
-      <a class="btn" href="#/library">Open library</a>
+      <div class="btn-row">
+        <a class="btn" href="#/library">Open library</a>
+        <a class="btn secondary" href="#/reading">Reading · WIP</a>
+      </div>
     </section>
     <div class="filter-row">
       <div class="range-pills" role="group" aria-label="Activity range">
@@ -217,7 +220,7 @@ export function libraryView(state) {
   return `
     <div class="page-header">
       <h1>Scenario library</h1>
-      <p class="lede">Collection of prior SevA incidents to practice and test your experience against. Grouped by readiness spoke. Ready needs one scenario per spoke at Demonstrated; any numbered scenario in that spoke can count.</p>
+      <p class="lede">Collection of prior SevA incidents to practice and test your experience against. Grouped by readiness spoke. Ready needs one scenario per spoke at Demonstrated; any numbered scenario in that spoke can count. Platform and on-call pages live under <a href="#/reading">Reading</a>.</p>
     </div>
     <div class="stack">
       ${groups.map((group) => `
@@ -1693,6 +1696,194 @@ function authorCriterionBlock(domains, index, values) {
         <label><input type="checkbox" name="c-safety-${index}" ${values.safety ? "checked" : ""}> Safety-critical</label>
       </div>
     </fieldset>
+  `;
+}
+
+function readingProgressFor(state) {
+  return state.readingProgress || {};
+}
+
+function articleStatus(progress, id) {
+  const entry = progress[id] || {};
+  if (entry.readAt) return { label: "Read", cls: "released" };
+  if (entry.openedAt) return { label: "Opened", cls: "progress" };
+  return { label: "Unread", cls: "" };
+}
+
+function readingMeter(read, total) {
+  const pct = total ? Math.round((read / total) * 100) : 0;
+  return `
+    <div class="reading-meter" role="img" aria-label="${read} of ${total} notes marked read">
+      <span class="reading-meter-track"><span class="reading-meter-fill" style="width:${pct}%"></span></span>
+      <strong>${read} of ${total}</strong>
+      <span>marked read</span>
+    </div>
+  `;
+}
+
+function readingDisclaimer(catalog) {
+  return `<p class="reading-disclaimer">${escapeHtml(catalog?.disclaimer || "")}</p>`;
+}
+
+function readingWipBanner() {
+  return `
+    <div class="callout warn reading-wip" role="status">
+      <p><strong>WORK IN PROGRESS.</strong> Confluence is not linked into Incident Lab yet. These notes are a shelf for approved pages once those URLs can be wired in.</p>
+    </div>
+  `;
+}
+
+function articleSearchText(article, collection) {
+  return [article.title, article.lede, article.source, article.sourceLabel, collection?.title, collection?.spine, ...(article.spokeIds || [])].join(" ");
+}
+
+function collectionTile(collection, articles, progress) {
+  const read = articles.filter((item) => progress[item.id]?.readAt).length;
+  return `
+    <a class="reading-tile" data-tone="${escapeHtml(collection.tone)}" href="#/reading/shelf/${encodeURIComponent(collection.id)}" data-search="${escapeHtml(`${collection.title} ${collection.summary} ${articles.map((item) => item.title).join(" ")}`)}">
+      <span class="reading-folio" aria-hidden="true">${escapeHtml(collection.folio)}</span>
+      <p class="eyebrow">${articles.length} note${articles.length === 1 ? "" : "s"}</p>
+      <h2>${escapeHtml(collection.title)}</h2>
+      <p>${escapeHtml(collection.summary)}</p>
+      <span class="reading-tile-foot">
+        <span class="reading-dots" aria-hidden="true">${articles.map((item) => `<i class="${progress[item.id]?.readAt ? "is-read" : progress[item.id]?.openedAt ? "is-open" : ""}"></i>`).join("")}</span>
+        <span>${read ? `${read} read` : "Not started"}</span>
+      </span>
+    </a>
+  `;
+}
+
+function articleCard(article, collection, progress, { compact = false } = {}) {
+  const status = articleStatus(progress, article.id);
+  return `
+    <a class="reading-issue ${compact ? "is-compact" : ""}" data-tone="${escapeHtml(collection?.tone || "ops")}" href="#/reading/page/${encodeURIComponent(article.id)}" data-search="${escapeHtml(articleSearchText(article, collection))}">
+      <span class="reading-issue-mark">${escapeHtml(collection?.spine || "Note")}</span>
+      <h3>${escapeHtml(article.title)}</h3>
+      <p>${escapeHtml(article.lede)}</p>
+      <span class="reading-issue-meta">
+        <span class="pill">${escapeHtml(article.source)}</span>
+        <span class="pill">${article.minutes} min</span>
+        <span class="pill ${status.cls}">${escapeHtml(status.label)}</span>
+      </span>
+    </a>
+  `;
+}
+
+// Reading room home: bookshelf of collections plus a continue strip.
+export function readingView(state) {
+  const catalog = state.reading || { collections: [], articles: [] };
+  const progress = readingProgressFor(state);
+  const collections = readingCollections(catalog);
+  const articles = readingArticles(catalog);
+  const read = articles.filter((item) => progress[item.id]?.readAt).length;
+  const next = continueReading(catalog, progress);
+  const nextCollection = next ? findReadingCollection(catalog, next.collectionId) : null;
+  return `
+    <section class="reading-hero">
+      <div>
+        <p class="eyebrow">Field notes · Work in progress</p>
+        <h1>Reading</h1>
+        <p class="reading-wip-stamp" aria-hidden="true">WORK IN PROGRESS</p>
+        <p class="lede">Platform, troubleshooting, and on-call pages — in a shelf, not a link dump. Open a spine, read the note, then jump to Confluence when the URL is set.</p>
+        ${readingMeter(read, articles.length)}
+        ${next ? `<p class="reading-continue">Continue with <a href="#/reading/page/${encodeURIComponent(next.id)}">${escapeHtml(next.title)}</a> in ${escapeHtml(nextCollection?.title || "the shelf")}.</p>` : ""}
+      </div>
+      <div class="reading-spines" role="navigation" aria-label="Collections">
+        ${collections.map((collection) => {
+          const inShelf = articlesForCollection(catalog, collection.id);
+          const done = inShelf.length && inShelf.every((item) => progress[item.id]?.readAt);
+          return `<a class="reading-spine ${done ? "is-read" : ""}" data-tone="${escapeHtml(collection.tone)}" href="#/reading/shelf/${encodeURIComponent(collection.id)}" data-search="${escapeHtml(collection.title)}"><span>${escapeHtml(collection.spine)}</span></a>`;
+        }).join("")}
+      </div>
+    </section>
+    ${readingWipBanner()}
+    ${readingDisclaimer(catalog)}
+    <div class="reading-grid">
+      ${collections.map((collection) => collectionTile(collection, articlesForCollection(catalog, collection.id), progress)).join("") || `<div class="empty-state">No reading collections loaded.</div>`}
+    </div>
+    <section class="reading-strip">
+      <div class="card-head">
+        <h2>On the rail</h2>
+        <span class="subtle">Every note in the catalog</span>
+      </div>
+      <div class="reading-rail">
+        ${articles.map((article) => articleCard(article, findReadingCollection(catalog, article.collectionId), progress, { compact: true })).join("")}
+      </div>
+    </section>
+  `;
+}
+
+// One collection: large title, then the notes in that spine.
+export function readingShelfView(state, collectionId) {
+  const catalog = state.reading || {};
+  const collection = findReadingCollection(catalog, collectionId);
+  if (!collection) return errorPage("Shelf not found", "That reading collection is not in the catalog.");
+  const progress = readingProgressFor(state);
+  const articles = articlesForCollection(catalog, collection.id);
+  const read = articles.filter((item) => progress[item.id]?.readAt).length;
+  return `
+    <p class="crumb"><a href="#/reading">Reading</a> / ${escapeHtml(collection.title)}</p>
+    ${readingWipBanner()}
+    <section class="reading-hero is-shelf" data-tone="${escapeHtml(collection.tone)}">
+      <div>
+        <p class="eyebrow">Volume ${escapeHtml(collection.folio)}</p>
+        <h1>${escapeHtml(collection.title)}</h1>
+        <p class="lede">${escapeHtml(collection.summary)}</p>
+        ${readingMeter(read, articles.length)}
+      </div>
+    </section>
+    ${readingDisclaimer(catalog)}
+    <div class="reading-shelf">
+      ${articles.map((article) => articleCard(article, collection, progress)).join("") || `<div class="empty-state">No notes in this shelf yet.</div>`}
+    </div>
+  `;
+}
+
+// In-app reader. External Confluence opens from the side rail when href is set.
+export function readingPageView(state, articleId) {
+  const catalog = state.reading || {};
+  const article = findReadingArticle(catalog, articleId);
+  if (!article) return errorPage("Note not found", "That reading item is not in the catalog.");
+  const collection = findReadingCollection(catalog, article.collectionId);
+  const progress = readingProgressFor(state);
+  const status = articleStatus(progress, article.id);
+  const siblings = articlesForCollection(catalog, article.collectionId);
+  const index = siblings.findIndex((item) => item.id === article.id);
+  const next = siblings[index + 1] || siblings[0];
+  const spokes = (article.spokeIds || [])
+    .map((id) => state.config.capabilityDomains.find((item) => item.id === id)?.name || id)
+    .filter(Boolean);
+  const href = String(article.href || "").trim();
+  return `
+    <p class="crumb"><a href="#/reading">Reading</a> / <a href="#/reading/shelf/${encodeURIComponent(collection?.id || "")}">${escapeHtml(collection?.title || "Shelf")}</a> / ${escapeHtml(article.title)}</p>
+    ${readingWipBanner()}
+    <article class="reading-page" data-tone="${escapeHtml(collection?.tone || "ops")}">
+      <aside class="reading-margin">
+        <p class="eyebrow">${escapeHtml(collection?.spine || "Note")}</p>
+        <p class="reading-margin-source">${escapeHtml(article.sourceLabel)}</p>
+        <p class="subtle">${article.minutes} min · ${escapeHtml(article.source)}</p>
+        <p><span class="pill ${status.cls}">${escapeHtml(status.label)}</span></p>
+        ${spokes.length ? `<p class="subtle">${spokes.map((name) => escapeHtml(name)).join(" · ")}</p>` : ""}
+        ${href
+          ? `<button class="btn" type="button" data-action="reading-open" data-reading-id="${escapeHtml(article.id)}" data-reading-href="${escapeHtml(href)}">Open in Confluence</button>`
+          : `<p class="reading-missing">Confluence URL not set. Paste the approved https link into <code>href</code> on this article in <code>data/reading.json</code>.</p>`}
+        ${status.label === "Read"
+          ? `<p class="subtle">Marked read ${formatDateTime(progress[article.id].readAt)}</p>`
+          : `<button class="btn secondary" type="button" data-action="reading-done" data-reading-id="${escapeHtml(article.id)}">Mark as read</button>`}
+        ${next && next.id !== article.id ? `<a class="btn ghost" href="#/reading/page/${encodeURIComponent(next.id)}">Next: ${escapeHtml(next.title)}</a>` : `<a class="btn ghost" href="#/reading/shelf/${encodeURIComponent(collection?.id || "")}">Back to shelf</a>`}
+      </aside>
+      <div class="reading-paper">
+        <p class="eyebrow">Volume ${escapeHtml(collection?.folio || "—")}</p>
+        <h1>${escapeHtml(article.title)}</h1>
+        <p class="reading-lede">${escapeHtml(article.lede)}</p>
+        ${(article.sections || []).map((section) => `
+          <section>
+            <h2>${escapeHtml(section.heading)}</h2>
+            ${section.paragraphs.map((paragraph) => `<p>${nl(paragraph)}</p>`).join("")}
+          </section>
+        `).join("")}
+      </div>
+    </article>
   `;
 }
 

@@ -1,0 +1,373 @@
+{
+  "disclaimer": "These notes tell you what kind of page to open. They are not bank policy and they are not a substitute for approved Confluence, runbooks, or the on-call procedure. Paste the real page URL into href when you have it. Validate every title against the live space before you treat it as current.",
+  "collections": [
+    {
+      "id": "on-call",
+      "title": "On-call procedures",
+      "spine": "On-call",
+      "folio": "01",
+      "tone": "ops",
+      "summary": "Rota, the first hour, and how a shift is meant to be handed over."
+    },
+    {
+      "id": "platform",
+      "title": "Platform",
+      "spine": "Platform",
+      "folio": "02",
+      "tone": "platform",
+      "summary": "Where the VDI space lives, and which pages describe the estate rather than a single ticket."
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "spine": "Troubleshoot",
+      "folio": "03",
+      "tone": "fix",
+      "summary": "How to start from a symptom and use a runbook without inventing a path."
+    },
+    {
+      "id": "identity",
+      "title": "Identity & M365",
+      "spine": "Identity",
+      "folio": "04",
+      "tone": "identity",
+      "summary": "Sign-in, groups, and the Microsoft 365 pages that sit in front of the desktop."
+    },
+    {
+      "id": "networking",
+      "title": "Networking & proxy",
+      "spine": "Network",
+      "folio": "05",
+      "tone": "path",
+      "summary": "Name resolution, path, and inspection pages — not a guess at the live fault."
+    },
+    {
+      "id": "vendors",
+      "title": "Escalation & vendors",
+      "spine": "Vendors",
+      "folio": "06",
+      "tone": "vendor",
+      "summary": "When another team or a vendor case is the next step, and what those pages usually ask you to have ready."
+    }
+  ],
+  "articles": [
+    {
+      "id": "ooh-rota",
+      "collectionId": "on-call",
+      "title": "Who is on",
+      "lede": "Find the live rota before you assume you are the only pair of hands.",
+      "source": "Confluence",
+      "sourceLabel": "On-call space · rota",
+      "minutes": 4,
+      "spokeIds": ["trm-escalation-ops"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "The approved on-call space should have a rota or duty page that names who is primary, who is backup, and which hours the shift covers. That page is the source of truth, not a chat memory or a spreadsheet someone forwarded last month.",
+            "If the URL is not set here yet, search the team Confluence for the current rota title and paste the link into this article's href."
+          ]
+        },
+        {
+          "heading": "What to take from it",
+          "paragraphs": [
+            "Note who else is on, how they expect to be reached, and whether a manager-in-hours or major-incident path is listed on the same page. Do not invent a contact tree that is not written down."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ooh-first-hour",
+      "collectionId": "on-call",
+      "title": "The first hour",
+      "lede": "The procedure for the opening of a SevA, before anyone starts changing the platform.",
+      "source": "Confluence",
+      "sourceLabel": "On-call space · first hour",
+      "minutes": 7,
+      "spokeIds": ["trm-escalation-ops", "platform-troubleshooting"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Look for the out-of-hours first-hour or SevA opening page in the on-call space. It should say how impact is confirmed, who is told, and what must not be changed without a named authority.",
+            "Read that page as a sequence. Skip-reading a procedure and then changing hosts is how first hours go wrong."
+          ]
+        },
+        {
+          "heading": "What this note is not",
+          "paragraphs": [
+            "This is not the diagnosis for any one incident. The practice scenarios still expect you to write your own path. The page you open should be the team's approved procedure, not this paragraph."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ooh-handover",
+      "collectionId": "on-call",
+      "title": "Handover to the day",
+      "lede": "What the morning page expects to see when a night shift ends.",
+      "source": "Confluence",
+      "sourceLabel": "On-call space · handover",
+      "minutes": 5,
+      "spokeIds": ["trm-escalation-ops"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "The on-call space should have a handover or shift-close page: what to write, where to write it, and who picks it up. Use that template rather than a free-form dump in the ticket.",
+            "If the night is still live at handover, the same page should say whether the incoming engineer takes the bridge or only the written state."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plat-space",
+      "collectionId": "platform",
+      "title": "The VDI space",
+      "lede": "Where platform pages actually live, so you are not searching the whole wiki at 02:00.",
+      "source": "Confluence",
+      "sourceLabel": "VDI / AVD space · home",
+      "minutes": 5,
+      "spokeIds": ["avd-infrastructure", "platform-troubleshooting"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Bookmark the home of the Virtual Desktop space, not a random child page from an old ticket. The home should list host-pool, networking, identity, and operations children so you can walk the tree instead of guessing titles.",
+            "If several spaces look similar, use the one the team names in the on-call procedure. Unofficial copies go stale."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plat-estate",
+      "collectionId": "platform",
+      "title": "Estate pages",
+      "lede": "Pages that describe host pools, session hosts, and how the estate is meant to be read.",
+      "source": "Confluence",
+      "sourceLabel": "VDI space · estate",
+      "minutes": 8,
+      "spokeIds": ["avd-infrastructure"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Find the pages that describe the production estate: which pools exist, what they are for, and where the live status is supposed to be checked. Those pages tell you the vocabulary. They do not tell you what is broken tonight.",
+            "Treat pool names, region labels, and ownership notes on those pages as the approved map. If a ticket uses a nickname that is not on the page, stop and match it before you change anything."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plat-change",
+      "collectionId": "platform",
+      "title": "Change and freeze",
+      "lede": "Where the team writes what may be changed out of hours, and what must wait.",
+      "source": "Confluence",
+      "sourceLabel": "VDI space · change",
+      "minutes": 6,
+      "spokeIds": ["platform-troubleshooting", "trm-escalation-ops"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Look for the change, freeze, or standard-action page that sits with the platform space. It should say which actions need a change record, which are standard out of hours, and who can authorise a deviation.",
+            "If that page is silent on the action you want to take, the action is not approved by this note. Stop and use the escalation page instead."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ts-symptom",
+      "collectionId": "troubleshooting",
+      "title": "Start from the symptom",
+      "lede": "Split desktop, application, and sign-in before you open a platform page at random.",
+      "source": "Note",
+      "sourceLabel": "How to use the troubleshooting pages",
+      "minutes": 6,
+      "spokeIds": ["platform-troubleshooting"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "Why this comes first",
+          "paragraphs": [
+            "Most VDI spaces have more than one troubleshooting tree. Opening the host-pool page because the word desktop was on the call is how you spend an hour in the wrong chapter.",
+            "Write down what fails, for whom, and what still works. Then open the tree that matches that split: cannot launch a desktop, cannot sign in, or cannot use an app inside a session that otherwise works."
+          ]
+        },
+        {
+          "heading": "What to open next",
+          "paragraphs": [
+            "Use the child pages under Troubleshooting in the VDI space, or the index the first-hour procedure points to. Do not start from a vendor blog or an old personal note."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ts-runbook",
+      "collectionId": "troubleshooting",
+      "title": "How to use a runbook",
+      "lede": "Read the page as a sequence. The runbook is the team's order, not a menu of optional ideas.",
+      "source": "Note",
+      "sourceLabel": "How to use a runbook",
+      "minutes": 6,
+      "spokeIds": ["platform-troubleshooting"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Open the runbook the symptom tree names. If two runbooks could apply, the first-hour or troubleshooting index should say which one wins. If it does not, say so on the bridge rather than merging them in your head.",
+            "Work the checks in the order written. Skipping to a familiar change because you have done it before is not using the page."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ts-notes",
+      "collectionId": "troubleshooting",
+      "title": "What to write down",
+      "lede": "The evidence the next person needs, before anyone changes a control.",
+      "source": "Note",
+      "sourceLabel": "Troubleshooting · notes",
+      "minutes": 4,
+      "spokeIds": ["platform-troubleshooting", "trm-escalation-ops"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What belongs in the ticket",
+          "paragraphs": [
+            "Time you started, who called, what still works, what you opened, and what you have not changed. That list is what a handover page and a vendor case both ask for.",
+            "Do not paste customer names, raw dumps, or screenshots with personal data into this app. Keep those in the approved ticket system after you have redacted them."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "id-signin",
+      "collectionId": "identity",
+      "title": "Sign-in pages",
+      "lede": "Where Entra, Conditional Access, and AVD sign-in notes are supposed to live.",
+      "source": "Confluence",
+      "sourceLabel": "Identity / M365 space · sign-in",
+      "minutes": 7,
+      "spokeIds": ["m365-stack"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Find the identity or M365 space the VDI home links to. The sign-in pages should say which checks belong to the desktop broker and which belong to Entra, MFA, or Conditional Access.",
+            "Use those pages to learn the split. They will not tell you which policy fired for tonight's caller — that still has to be checked in the live tools the page names."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "id-groups",
+      "collectionId": "identity",
+      "title": "Groups and assignment",
+      "lede": "Pages that explain how a cohort is meant to get a desktop or an app.",
+      "source": "Confluence",
+      "sourceLabel": "Identity / VDI space · assignment",
+      "minutes": 6,
+      "spokeIds": ["m365-stack", "avd-infrastructure"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Look for the application-group, assignment, or entitlement page that the estate pages point to. It should say who is expected to own group changes and what an engineer may check out of hours.",
+            "If a whole named cohort fails and others on the same pool succeed, this is usually the chapter to open first — then follow whatever that page says to verify, rather than resetting people in bulk."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "net-name",
+      "collectionId": "networking",
+      "title": "Name resolution",
+      "lede": "Pages that describe how names are supposed to resolve for VDI traffic.",
+      "source": "Confluence",
+      "sourceLabel": "Networking / VDI space · DNS",
+      "minutes": 7,
+      "spokeIds": ["networking"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Open the DNS or name-resolution page that the VDI or networking space lists for this estate. It should say which resolvers different paths use, and which team owns a change.",
+            "Not every failure is the same resolver. The page is there so you do not treat every lookup as one system."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "net-path",
+      "collectionId": "networking",
+      "title": "Path and inspection",
+      "lede": "Proxy, connector, and firewall pages between the desktop and the application.",
+      "source": "Confluence",
+      "sourceLabel": "Networking / proxy space · path",
+      "minutes": 8,
+      "spokeIds": ["networking", "proxy-solution"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Find the path or Secure Access / proxy page the platform space links for application access from inside a session. It should describe the intended hop, not a workaround from a single old ticket.",
+            "If the desktop launches and the app does not, this chapter is usually the one to read before you treat it as a host-pool fault."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ven-when",
+      "collectionId": "vendors",
+      "title": "When to open another team",
+      "lede": "The escalation page that says who owns the next step, instead of a name you remember from last time.",
+      "source": "Confluence",
+      "sourceLabel": "On-call / operations · escalation",
+      "minutes": 6,
+      "spokeIds": ["trm-escalation-ops", "vendor-management"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Use the escalation or support-model page named in the first-hour procedure. It should list when MIM, another internal team, or a vendor case is expected — and what you must have written down first.",
+            "Do not page a team because a practice scenario once mentioned them. Page them because the live page says this symptom is theirs."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ven-case",
+      "collectionId": "vendors",
+      "title": "Preparing a vendor case",
+      "lede": "What the vendor or Microsoft case page usually asks you to have ready.",
+      "source": "Confluence",
+      "sourceLabel": "Vendor / Microsoft · case intake",
+      "minutes": 7,
+      "spokeIds": ["vendor-management"],
+      "href": "",
+      "sections": [
+        {
+          "heading": "What to open",
+          "paragraphs": [
+            "Find the case-intake or vendor-engagement page for Microsoft and any other named vendor the estate uses. It should list the evidence they expect and who is allowed to open the case out of hours.",
+            "Prepare what that page lists. Do not open a case with a one-line symptom and no times, impact, or checks already tried."
+          ]
+        }
+      ]
+    }
+  ]
+}

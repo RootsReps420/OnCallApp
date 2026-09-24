@@ -158,6 +158,78 @@ export function validateScenario(scenario) {
   return { ok: errors.length === 0, errors };
 }
 
+const READING_TONES = new Set(["ops", "platform", "fix", "identity", "path", "vendor"]);
+
+// Catalog for the Reading room. Articles may have an empty href until a Confluence URL is pasted in.
+export function validateReadingCatalog(catalog) {
+  const errors = [];
+  if (!catalog || typeof catalog !== "object" || Array.isArray(catalog)) {
+    return { ok: false, errors: [{ path: "$", message: "Reading catalog must be a JSON object." }] };
+  }
+  requireString(errors, "disclaimer", catalog.disclaimer, 20);
+  if (!requireArray(errors, "collections", catalog.collections) || !requireArray(errors, "articles", catalog.articles)) {
+    return { ok: false, errors };
+  }
+  if (!catalog.collections.length) fail(errors, "collections", "Provide at least one collection.");
+  if (!catalog.articles.length) fail(errors, "articles", "Provide at least one article.");
+
+  const collectionIds = new Set();
+  catalog.collections.forEach((item, index) => {
+    const path = `collections[${index}]`;
+    requireString(errors, `${path}.id`, item?.id);
+    if (item?.id) {
+      if (collectionIds.has(item.id)) fail(errors, `${path}.id`, "Collection ids must be unique.");
+      collectionIds.add(item.id);
+    }
+    requireString(errors, `${path}.title`, item?.title, 3);
+    requireString(errors, `${path}.spine`, item?.spine);
+    requireString(errors, `${path}.folio`, item?.folio);
+    requireString(errors, `${path}.summary`, item?.summary, 12);
+    if (!READING_TONES.has(item?.tone)) fail(errors, `${path}.tone`, "tone must be a known reading tone.");
+  });
+
+  const articleIds = new Set();
+  catalog.articles.forEach((item, index) => {
+    const path = `articles[${index}]`;
+    requireString(errors, `${path}.id`, item?.id);
+    if (item?.id) {
+      if (articleIds.has(item.id)) fail(errors, `${path}.id`, "Article ids must be unique.");
+      articleIds.add(item.id);
+    }
+    if (!collectionIds.has(item?.collectionId)) fail(errors, `${path}.collectionId`, "collectionId must match a collection.");
+    requireString(errors, `${path}.title`, item?.title, 3);
+    requireString(errors, `${path}.lede`, item?.lede, 12);
+    requireString(errors, `${path}.source`, item?.source);
+    requireString(errors, `${path}.sourceLabel`, item?.sourceLabel);
+    if (typeof item?.minutes !== "number" || item.minutes < 1) {
+      fail(errors, `${path}.minutes`, "minutes must be a number of at least 1.");
+    }
+    if (item?.href != null && typeof item.href !== "string") {
+      fail(errors, `${path}.href`, "href must be a string. Leave it empty until the Confluence URL is known.");
+    }
+    if (item?.href && !/^https:\/\//i.test(item.href)) {
+      fail(errors, `${path}.href`, "href must be empty or an https URL.");
+    }
+    if (Array.isArray(item?.spokeIds)) {
+      item.spokeIds.forEach((spokeId, spokeIndex) => {
+        if (!SPOKE_IDS.has(spokeId)) fail(errors, `${path}.spokeIds[${spokeIndex}]`, "spokeId must be one of the seven readiness spokes.");
+      });
+    }
+    if (!requireArray(errors, `${path}.sections`, item?.sections)) return;
+    if (!item.sections.length) fail(errors, `${path}.sections`, "Provide at least one section.");
+    item.sections.forEach((section, sectionIndex) => {
+      requireString(errors, `${path}.sections[${sectionIndex}].heading`, section?.heading);
+      if (!requireArray(errors, `${path}.sections[${sectionIndex}].paragraphs`, section?.paragraphs)) return;
+      if (!section.paragraphs.length) fail(errors, `${path}.sections[${sectionIndex}].paragraphs`, "Provide at least one paragraph.");
+      section.paragraphs.forEach((paragraph, paragraphIndex) => {
+        requireString(errors, `${path}.sections[${sectionIndex}].paragraphs[${paragraphIndex}]`, paragraph, 12);
+      });
+    });
+  });
+
+  return { ok: errors.length === 0, errors };
+}
+
 // Join path and message into one block of text for the import form.
 export function formatValidationErrors(errors) {
   return errors.map((error) => `${error.path}: ${error.message}`).join("\n");

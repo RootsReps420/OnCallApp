@@ -12,7 +12,8 @@ const KEYS = {
   theme: `${ROOT}:theme`,
   directory: `${ROOT}:directory`,
   session: `${ROOT}:session`,
-  evidence: `${ROOT}:evidence`
+  evidence: `${ROOT}:evidence`,
+  reading: `${ROOT}:reading`
 };
 
 // Parse a JSON value from localStorage. A corrupt value falls back instead of breaking the page.
@@ -177,9 +178,35 @@ export function saveReadinessConfig(config) {
   return config;
 }
 
-// Clear attempts, imports, proposals, ticket write-ups, and readiness edits. The colleague directory and the signed-in person stay.
+// Opened and finished Reading articles for this browser.
+export function getReadingProgress() {
+  const saved = read(KEYS.reading, {});
+  return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+}
+
+export function markReadingOpened(id) {
+  if (!id) return getReadingProgress();
+  const all = getReadingProgress();
+  const prev = all[id] || {};
+  const now = new Date().toISOString();
+  all[id] = { ...prev, openedAt: prev.openedAt || now };
+  write(KEYS.reading, all);
+  return all;
+}
+
+export function markReadingRead(id) {
+  if (!id) return getReadingProgress();
+  const all = getReadingProgress();
+  const prev = all[id] || {};
+  const now = new Date().toISOString();
+  all[id] = { ...prev, openedAt: prev.openedAt || now, readAt: now };
+  write(KEYS.reading, all);
+  return all;
+}
+
+// Clear attempts, imports, proposals, ticket write-ups, readiness edits, and reading ticks. The colleague directory and the signed-in person stay.
 export function resetDemoData() {
-  [KEYS.attempts, KEYS.customScenarios, KEYS.proposals, KEYS.readinessConfig, KEYS.reviews, KEYS.evidence].forEach((key) => {
+  [KEYS.attempts, KEYS.customScenarios, KEYS.proposals, KEYS.readinessConfig, KEYS.reviews, KEYS.evidence, KEYS.reading].forEach((key) => {
     localStorage.removeItem(key);
   });
 }
@@ -192,6 +219,7 @@ export function exportStore() {
     customScenarios: getCustomScenarios(),
     proposals: getProposals(),
     readinessConfig: getReadinessConfig(null),
+    readingProgress: getReadingProgress(),
     exportedAt: new Date().toISOString()
   };
 }

@@ -1,7 +1,7 @@
 // Loads config.json and the scenario files, then merges any scenarios
 // an administrator has saved in this browser on top of the bundled ones.
 
-import { validateScenario } from "./validation.js";
+import { validateScenario, validateReadingCatalog } from "./validation.js";
 import { getCustomScenarios } from "./storage.js";
 
 // Fetch data/config.json. cache: no-store so a refresh sees file edits.
@@ -89,4 +89,55 @@ export async function loadLibrary(config) {
 // Drafts stay out of the engineer library.
 export function publishedScenarios(scenarios) {
   return scenarios.filter((scenario) => scenario.status === "published");
+}
+
+const EMPTY_READING = {
+  disclaimer: "Reading catalog could not be loaded. Serve data/reading.json over HTTP.",
+  collections: [],
+  articles: []
+};
+
+// Fetch the Reading room catalog. A broken file still returns an object so the app can boot.
+export async function loadReading() {
+  try {
+    const response = await fetch("data/reading.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Unable to load reading catalog.");
+    const catalog = await response.json();
+    const check = validateReadingCatalog(catalog);
+    if (!check.ok) console.warn("Reading catalog failed validation", check.errors);
+    return { ...catalog, validation: check };
+  } catch (error) {
+    console.warn(error);
+    return { ...EMPTY_READING, validation: { ok: false, errors: [{ path: "reading.json", message: String(error.message || error) }] } };
+  }
+}
+
+export function readingCollections(catalog) {
+  return catalog?.collections || [];
+}
+
+export function readingArticles(catalog) {
+  return catalog?.articles || [];
+}
+
+export function findReadingCollection(catalog, id) {
+  return readingCollections(catalog).find((item) => item.id === id) || null;
+}
+
+export function findReadingArticle(catalog, id) {
+  return readingArticles(catalog).find((item) => item.id === id) || null;
+}
+
+export function articlesForCollection(catalog, collectionId) {
+  return readingArticles(catalog).filter((item) => item.collectionId === collectionId);
+}
+
+// First unread article, otherwise the one opened most recently.
+export function continueReading(catalog, progress = {}) {
+  const articles = readingArticles(catalog);
+  const unread = articles.find((item) => !progress[item.id]?.readAt);
+  if (unread) return unread;
+  return articles
+    .slice()
+    .sort((a, b) => String(progress[b.id]?.openedAt || "").localeCompare(String(progress[a.id]?.openedAt || "")))[0] || null;
 }
