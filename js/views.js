@@ -21,7 +21,7 @@ import {
   roleLabel
 } from "./render.js";
 import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete } from "./scoring.js";
-import { publishedScenarios, groupScenariosBySpoke, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading } from "./content.js";
+import { publishedScenarios, groupScenariosBySpoke, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=45";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -82,7 +82,9 @@ export function dashboardView(state) {
   const inProgress = mine.filter((item) => item.status === "in-progress");
   const domainSummaries = aggregateReleasedDomains(state);
 
-  const firstName = person.name.split(" ")[0];
+  const greetingName = person.source === "entra"
+    ? (person.name.split(/\s+/)[0] || person.name)
+    : person.name;
   const gaps = areasToImprove(domainSummaries);
   const scored = domainSummaries.filter((item) => item.percentage != null);
   const average = scored.length
@@ -95,7 +97,7 @@ export function dashboardView(state) {
   return `
     <section class="dash-hero">
       <div>
-        <p class="eyebrow">Welcome back, ${escapeHtml(firstName)}</p>
+        <p class="eyebrow">Welcome back, ${escapeHtml(greetingName)}</p>
         <h1>Dashboard Overview</h1>
         <p class="lede">Track your SevA practice and readiness for ${escapeHtml(config.serviceName)} in real time.</p>
       </div>
@@ -787,8 +789,7 @@ function personCard(person) {
   return `
     <button type="button" class="person-card" data-action="sign-in" data-person-id="${escapeHtml(person.id)}">
       <strong>${escapeHtml(person.name)}</strong>
-      <span>${escapeHtml(person.roleTitle || roleLabel(person.role))}</span>
-      <span>${roleLabel(person.role)}</span>
+      <span>${escapeHtml(roleLabel(person.role))}</span>
     </button>
   `;
 }
@@ -799,7 +800,7 @@ export function accessView(state) {
   const adminCount = people.filter((person) => person.role === "administrator").length;
   return `
     <div class="page-header">
-      <h1>Access</h1>
+      <h1>Role Access</h1>
       <p class="lede">ignitemyfire.co.uk colleagues receive User, Assessor, or Administrator from the Incident Lab enterprise application in Entra ID. The names below that are only for this browser can still be added and changed here. Attempts stay in this browser.</p>
       ${state.flash ? `<p class="status-msg">${escapeHtml(state.flash)}</p>` : ""}
     </div>
@@ -859,7 +860,7 @@ function howToAddScenarioHtml() {
   return `
     <section class="card">
       <h2>Add a scenario everyone can see</h2>
-      <p class="subtle">The Author form and Import page only save in this browser. The live library is the JSON files listed in <code>data/config.json</code>.</p>
+      <p class="subtle">The Create Scenario form and Import page only save in this browser. The live library is the JSON files listed in <code>data/config.json</code>.</p>
       <ol>
         <li>Copy <code>data/scenarios/_template.json</code> to a new file, for example <code>data/scenarios/pega-bridge.json</code>.</li>
         <li>Give it a unique <code>id</code> (lowercase, hyphens). Leave <code>mandatory</code> as <code>false</code> — Ready is one satisfactory scenario per spoke, not a flag on a file.</li>
@@ -886,9 +887,8 @@ export function adminScenariosView(state) {
         <h1>Dashboard Overview</h1>
         <p class="lede">Create or import JSON, validate, and publish. Bundled sample scenarios can be overridden in this browser without changing the source files until you export.</p>
       </div>
-      <a class="btn" href="#/admin/author">Author a scenario</a>
+      <a class="btn" href="#/admin/author">Create scenario</a>
     </section>
-    ${howToAddScenarioHtml()}
     <div class="kpi-grid">
       ${kpiCard({ label: "Scenarios", value: state.scenarios.length, hint: "In this library" })}
       ${kpiCard({ label: "Published", value: published, hint: `<span class="delta up">Live for users</span>` })}
@@ -928,7 +928,7 @@ export function adminImportView(scenario) {
   return `
     <div class="page-header">
       <h1>${scenario ? "Edit scenario JSON" : "Import or create a scenario"}</h1>
-      <p class="lede">Prefer the <a href="#/admin/author">guided authoring form</a> for a new incident. This page still accepts a JSON file or paste. JSON is validated before it is stored.</p>
+      <p class="lede">Prefer the <a href="#/admin/author">Create Scenario form</a> for a new incident. This page still accepts a JSON file or paste. JSON is validated before it is stored.</p>
     </div>
     <form class="card" data-form="import-scenario">
       <div class="field">
@@ -975,7 +975,7 @@ export function adminCriteriaView(state) {
   const cfg = state.readinessConfig;
   return `
     <div class="page-header">
-      <h1>Readiness criteria</h1>
+      <h1>On-Call Criteria</h1>
       <p class="lede">These gates support the assessor. They do not auto-certify anyone.</p>
     </div>
     <form class="card" data-form="criteria">
@@ -1514,7 +1514,7 @@ export function adminAuthorView(state) {
   const defaultDisclaimer = "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank policy.";
   return `
     <div class="page-header">
-      <h1>Author a scenario</h1>
+      <h1>Create Scenario</h1>
       <p class="lede">Fill the form for a draft that stays in this browser. To put it in the library for everyone, download the JSON and follow the file steps below. You can still <a href="#/admin/import">paste JSON</a> if you already have a file.</p>
     </div>
     ${howToAddScenarioHtml()}
@@ -1713,10 +1713,10 @@ function articleStatus(progress, id) {
 function readingMeter(read, total) {
   const pct = total ? Math.round((read / total) * 100) : 0;
   return `
-    <div class="reading-meter" role="img" aria-label="${read} of ${total} notes marked read">
+    <div class="reading-meter" role="img" aria-label="${total ? `${read} of ${total} pages marked read` : "No live pages on this shelf yet"}">
       <span class="reading-meter-track"><span class="reading-meter-fill" style="width:${pct}%"></span></span>
-      <strong>${read} of ${total}</strong>
-      <span>marked read</span>
+      <strong>${total ? `${read} of ${total}` : "—"}</strong>
+      <span>${total ? "marked read" : "no live pages yet"}</span>
     </div>
   `;
 }
@@ -1725,10 +1725,45 @@ function readingDisclaimer(catalog) {
   return `<p class="reading-disclaimer">${escapeHtml(catalog?.disclaimer || "")}</p>`;
 }
 
-function readingWipBanner() {
+function readingWipChip() {
+  return `<span class="reading-wip-chip">WIP</span>`;
+}
+
+function readingWipBanner(message) {
   return `
     <div class="callout warn reading-wip" role="status">
-      <p><strong>WORK IN PROGRESS.</strong> Confluence is not linked into Incident Lab yet. These notes are a shelf for approved pages once those URLs can be wired in.</p>
+      <p><strong>Work in progress.</strong> ${escapeHtml(message)}</p>
+    </div>
+  `;
+}
+
+function readingLinkKind(href) {
+  const url = String(href || "");
+  if (/atlassian\.net/i.test(url)) return { kind: "confluence", venue: "Confluence", mark: "Wiki" };
+  if (/sharepoint\.com/i.test(url)) return { kind: "sharepoint", venue: "SharePoint", mark: "Files" };
+  if (/service-now\.com/i.test(url)) return { kind: "servicenow", venue: "ServiceNow", mark: "Now" };
+  if (/portal\.azure\.com/i.test(url)) return { kind: "azure", venue: "Azure", mark: "Azure" };
+  return { kind: "web", venue: "Web", mark: "Open" };
+}
+
+function readingOpenButtons(article) {
+  const links = articleLinks(article);
+  if (!links.length) {
+    return `
+      <div class="reading-awaiting">
+        <p class="reading-wip-stamp">WIP</p>
+        <p>This page is still to be added.</p>
+      </div>
+    `;
+  }
+  return `
+    <div class="reading-open-stack">
+      <p class="eyebrow">Open</p>
+      ${links.map((link, index) => {
+        const kind = readingLinkKind(link.href);
+        const cls = index === 0 ? "btn reading-open" : "btn secondary reading-open";
+        return `<button class="${cls}" type="button" data-action="reading-open" data-reading-id="${escapeHtml(article.id)}" data-reading-href="${escapeHtml(link.href)}"><span class="reading-open-mark" data-kind="${kind.kind}">${escapeHtml(kind.mark)}</span><span class="reading-open-copy"><strong>${escapeHtml(link.label)}</strong><em>${escapeHtml(kind.venue)}</em></span></button>`;
+      }).join("")}
     </div>
   `;
 }
@@ -1739,15 +1774,20 @@ function articleSearchText(article, collection) {
 
 function collectionTile(collection, articles, progress) {
   const read = articles.filter((item) => progress[item.id]?.readAt).length;
+  const live = articles.filter((item) => !articleIsWip(item)).length;
+  const incomplete = collectionIsIncomplete(collection, articles);
+  const foot = incomplete
+    ? (live ? `${live} live · rest to add` : "Awaiting pages")
+    : (read ? `${read} read` : "Not started");
   return `
-    <a class="reading-tile" data-tone="${escapeHtml(collection.tone)}" href="#/reading/shelf/${encodeURIComponent(collection.id)}" data-search="${escapeHtml(`${collection.title} ${collection.summary} ${articles.map((item) => item.title).join(" ")}`)}">
+    <a class="reading-tile ${incomplete ? "is-wip" : ""}" data-tone="${escapeHtml(collection.tone)}" href="#/reading/shelf/${encodeURIComponent(collection.id)}" data-search="${escapeHtml(`${collection.title} ${collection.summary} ${articles.map((item) => item.title).join(" ")}`)}">
       <span class="reading-folio" aria-hidden="true">${escapeHtml(collection.folio)}</span>
-      <p class="eyebrow">${articles.length} note${articles.length === 1 ? "" : "s"}</p>
+      <p class="eyebrow">${articles.length} card${articles.length === 1 ? "" : "s"}${incomplete ? ` ${readingWipChip()}` : ""}</p>
       <h2>${escapeHtml(collection.title)}</h2>
       <p>${escapeHtml(collection.summary)}</p>
       <span class="reading-tile-foot">
-        <span class="reading-dots" aria-hidden="true">${articles.map((item) => `<i class="${progress[item.id]?.readAt ? "is-read" : progress[item.id]?.openedAt ? "is-open" : ""}"></i>`).join("")}</span>
-        <span>${read ? `${read} read` : "Not started"}</span>
+        <span class="reading-dots" aria-hidden="true">${articles.map((item) => `<i class="${progress[item.id]?.readAt ? "is-read" : progress[item.id]?.openedAt ? "is-open" : articleIsWip(item) ? "is-wip" : ""}"></i>`).join("")}</span>
+        <span>${foot}</span>
       </span>
     </a>
   `;
@@ -1755,14 +1795,18 @@ function collectionTile(collection, articles, progress) {
 
 function articleCard(article, collection, progress, { compact = false } = {}) {
   const status = articleStatus(progress, article.id);
+  const wip = articleIsWip(article);
+  const links = articleLinks(article);
+  const venues = [...new Set(links.map((link) => readingLinkKind(link.href).venue))];
   return `
-    <a class="reading-issue ${compact ? "is-compact" : ""}" data-tone="${escapeHtml(collection?.tone || "ops")}" href="#/reading/page/${encodeURIComponent(article.id)}" data-search="${escapeHtml(articleSearchText(article, collection))}">
-      <span class="reading-issue-mark">${escapeHtml(collection?.spine || "Note")}</span>
+    <a class="reading-issue ${compact ? "is-compact" : ""} ${wip ? "is-wip" : ""}" data-tone="${escapeHtml(collection?.tone || "ops")}" href="#/reading/page/${encodeURIComponent(article.id)}" data-search="${escapeHtml(articleSearchText(article, collection))}">
+      <span class="reading-issue-mark">${escapeHtml(collection?.spine || "Note")}${wip ? readingWipChip() : ""}</span>
       <h3>${escapeHtml(article.title)}</h3>
       <p>${escapeHtml(article.lede)}</p>
       <span class="reading-issue-meta">
-        <span class="pill">${escapeHtml(article.source)}</span>
-        <span class="pill">${article.minutes} min</span>
+        ${wip
+          ? `<span class="pill develop">Awaiting URL</span>`
+          : `${venues.map((venue) => `<span class="pill">${escapeHtml(venue)}</span>`).join("")}${links.length > 1 ? `<span class="pill">${links.length} pages</span>` : ""}<span class="pill">${article.minutes} min</span>`}
         <span class="pill ${status.cls}">${escapeHtml(status.label)}</span>
       </span>
     </a>
@@ -1775,28 +1819,31 @@ export function readingView(state) {
   const progress = readingProgressFor(state);
   const collections = readingCollections(catalog);
   const articles = readingArticles(catalog);
-  const read = articles.filter((item) => progress[item.id]?.readAt).length;
+  const liveArticles = articles.filter((item) => !articleIsWip(item));
+  const read = liveArticles.filter((item) => progress[item.id]?.readAt).length;
   const next = continueReading(catalog, progress);
   const nextCollection = next ? findReadingCollection(catalog, next.collectionId) : null;
+  const catalogIncomplete = collections.some((collection) => collectionIsIncomplete(collection, articlesForCollection(catalog, collection.id)));
   return `
     <section class="reading-hero">
       <div>
-        <p class="eyebrow">Field notes · Work in progress</p>
+        <p class="eyebrow">Approved pages · ${catalogIncomplete ? "Still filling" : "Live"}</p>
         <h1>Reading</h1>
-        <p class="reading-wip-stamp" aria-hidden="true">WORK IN PROGRESS</p>
-        <p class="lede">Platform, troubleshooting, and on-call pages — in a shelf, not a link dump. Open a spine, read the note, then jump to Confluence when the URL is set.</p>
-        ${readingMeter(read, articles.length)}
+        ${catalogIncomplete ? `<p class="reading-wip-stamp" aria-hidden="true">WORK IN PROGRESS</p>` : ""}
+        <p class="lede">Platform, troubleshooting, and on-call pages arranged as a shelf. Open a card, then use the buttons on the rail — not a list of URLs.</p>
+        ${readingMeter(read, liveArticles.length)}
         ${next ? `<p class="reading-continue">Continue with <a href="#/reading/page/${encodeURIComponent(next.id)}">${escapeHtml(next.title)}</a> in ${escapeHtml(nextCollection?.title || "the shelf")}.</p>` : ""}
       </div>
       <div class="reading-spines" role="navigation" aria-label="Collections">
         ${collections.map((collection) => {
           const inShelf = articlesForCollection(catalog, collection.id);
           const done = inShelf.length && inShelf.every((item) => progress[item.id]?.readAt);
-          return `<a class="reading-spine ${done ? "is-read" : ""}" data-tone="${escapeHtml(collection.tone)}" href="#/reading/shelf/${encodeURIComponent(collection.id)}" data-search="${escapeHtml(collection.title)}"><span>${escapeHtml(collection.spine)}</span></a>`;
+          const incomplete = collectionIsIncomplete(collection, inShelf);
+          return `<a class="reading-spine ${done ? "is-read" : ""} ${incomplete ? "is-wip" : ""}" data-tone="${escapeHtml(collection.tone)}" href="#/reading/shelf/${encodeURIComponent(collection.id)}" data-search="${escapeHtml(collection.title)}"><span>${escapeHtml(collection.spine)}</span></a>`;
         }).join("")}
       </div>
     </section>
-    ${readingWipBanner()}
+    ${catalogIncomplete ? readingWipBanner("Some shelves still need pages. Live cards open the approved wiki, SharePoint, ServiceNow, or Azure page from the rail.") : ""}
     ${readingDisclaimer(catalog)}
     <div class="reading-grid">
       ${collections.map((collection) => collectionTile(collection, articlesForCollection(catalog, collection.id), progress)).join("") || `<div class="empty-state">No reading collections loaded.</div>`}
@@ -1804,7 +1851,7 @@ export function readingView(state) {
     <section class="reading-strip">
       <div class="card-head">
         <h2>On the rail</h2>
-        <span class="subtle">Every note in the catalog</span>
+        <span class="subtle">Every card in the catalog</span>
       </div>
       <div class="reading-rail">
         ${articles.map((article) => articleCard(article, findReadingCollection(catalog, article.collectionId), progress, { compact: true })).join("")}
@@ -1820,16 +1867,19 @@ export function readingShelfView(state, collectionId) {
   if (!collection) return errorPage("Shelf not found", "That reading collection is not in the catalog.");
   const progress = readingProgressFor(state);
   const articles = articlesForCollection(catalog, collection.id);
-  const read = articles.filter((item) => progress[item.id]?.readAt).length;
+  const liveArticles = articles.filter((item) => !articleIsWip(item));
+  const read = liveArticles.filter((item) => progress[item.id]?.readAt).length;
+  const incomplete = collectionIsIncomplete(collection, articles);
   return `
     <p class="crumb"><a href="#/reading">Reading</a> / ${escapeHtml(collection.title)}</p>
-    ${readingWipBanner()}
+    ${incomplete ? readingWipBanner("This shelf still needs pages. Add the approved URLs when you have them.") : ""}
     <section class="reading-hero is-shelf" data-tone="${escapeHtml(collection.tone)}">
       <div>
-        <p class="eyebrow">Volume ${escapeHtml(collection.folio)}</p>
+        <p class="eyebrow">Volume ${escapeHtml(collection.folio)}${incomplete ? ` ${readingWipChip()}` : ""}</p>
         <h1>${escapeHtml(collection.title)}</h1>
+        ${incomplete ? `<p class="reading-wip-stamp" aria-hidden="true">WORK IN PROGRESS</p>` : ""}
         <p class="lede">${escapeHtml(collection.summary)}</p>
-        ${readingMeter(read, articles.length)}
+        ${readingMeter(read, liveArticles.length)}
       </div>
     </section>
     ${readingDisclaimer(catalog)}
@@ -1839,7 +1889,7 @@ export function readingShelfView(state, collectionId) {
   `;
 }
 
-// In-app reader. External Confluence opens from the side rail when href is set.
+// One centered sheet: large title, then the open buttons and status from the old rail.
 export function readingPageView(state, articleId) {
   const catalog = state.reading || {};
   const article = findReadingArticle(catalog, articleId);
@@ -1849,39 +1899,38 @@ export function readingPageView(state, articleId) {
   const status = articleStatus(progress, article.id);
   const siblings = articlesForCollection(catalog, article.collectionId);
   const index = siblings.findIndex((item) => item.id === article.id);
-  const next = siblings[index + 1] || siblings[0];
+  const previous = index > 0 ? siblings[index - 1] : null;
+  const next = index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : null;
+  const shelfHref = `#/reading/shelf/${encodeURIComponent(collection?.id || "")}`;
   const spokes = (article.spokeIds || [])
     .map((id) => state.config.capabilityDomains.find((item) => item.id === id)?.name || id)
     .filter(Boolean);
-  const href = String(article.href || "").trim();
+  const wip = articleIsWip(article);
   return `
-    <p class="crumb"><a href="#/reading">Reading</a> / <a href="#/reading/shelf/${encodeURIComponent(collection?.id || "")}">${escapeHtml(collection?.title || "Shelf")}</a> / ${escapeHtml(article.title)}</p>
-    ${readingWipBanner()}
+    <p class="crumb"><a href="#/reading">Reading</a> / <a href="${shelfHref}">${escapeHtml(collection?.title || "Shelf")}</a> / ${escapeHtml(article.title)}</p>
+    ${wip ? readingWipBanner("This card is waiting for an approved URL.") : ""}
     <article class="reading-page" data-tone="${escapeHtml(collection?.tone || "ops")}">
-      <aside class="reading-margin">
-        <p class="eyebrow">${escapeHtml(collection?.spine || "Note")}</p>
-        <p class="reading-margin-source">${escapeHtml(article.sourceLabel)}</p>
-        <p class="subtle">${article.minutes} min · ${escapeHtml(article.source)}</p>
-        <p><span class="pill ${status.cls}">${escapeHtml(status.label)}</span></p>
-        ${spokes.length ? `<p class="subtle">${spokes.map((name) => escapeHtml(name)).join(" · ")}</p>` : ""}
-        ${href
-          ? `<button class="btn" type="button" data-action="reading-open" data-reading-id="${escapeHtml(article.id)}" data-reading-href="${escapeHtml(href)}">Open in Confluence</button>`
-          : `<p class="reading-missing">Confluence URL not set. Paste the approved https link into <code>href</code> on this article in <code>data/reading.json</code>.</p>`}
-        ${status.label === "Read"
-          ? `<p class="subtle">Marked read ${formatDateTime(progress[article.id].readAt)}</p>`
-          : `<button class="btn secondary" type="button" data-action="reading-done" data-reading-id="${escapeHtml(article.id)}">Mark as read</button>`}
-        ${next && next.id !== article.id ? `<a class="btn ghost" href="#/reading/page/${encodeURIComponent(next.id)}">Next: ${escapeHtml(next.title)}</a>` : `<a class="btn ghost" href="#/reading/shelf/${encodeURIComponent(collection?.id || "")}">Back to shelf</a>`}
-      </aside>
-      <div class="reading-paper">
-        <p class="eyebrow">Volume ${escapeHtml(collection?.folio || "—")}</p>
+      <div class="reading-sheet">
+        <p class="eyebrow">${escapeHtml(collection?.spine || "Note")} · Volume ${escapeHtml(collection?.folio || "—")}${wip ? readingWipChip() : ""}</p>
         <h1>${escapeHtml(article.title)}</h1>
-        <p class="reading-lede">${escapeHtml(article.lede)}</p>
-        ${(article.sections || []).map((section) => `
-          <section>
-            <h2>${escapeHtml(section.heading)}</h2>
-            ${section.paragraphs.map((paragraph) => `<p>${nl(paragraph)}</p>`).join("")}
-          </section>
-        `).join("")}
+        <div class="reading-sheet-body">
+          <p class="reading-sheet-source">${escapeHtml(article.sourceLabel)}</p>
+          ${wip ? "" : `<p class="subtle">${article.minutes} min · ${escapeHtml(article.source)}</p>`}
+          <p><span class="pill ${status.cls}">${escapeHtml(status.label)}</span></p>
+          ${spokes.length ? `<p class="subtle">${spokes.map((name) => escapeHtml(name)).join(" · ")}</p>` : ""}
+          ${readingOpenButtons(article)}
+          ${status.label === "Read"
+            ? `<p class="subtle">Marked read ${formatDateTime(progress[article.id].readAt)}</p>`
+            : `<button class="btn secondary" type="button" data-action="reading-done" data-reading-id="${escapeHtml(article.id)}">Mark as read</button>`}
+          <nav class="reading-pager" aria-label="More in this shelf">
+            ${previous
+              ? `<a class="btn ghost" href="#/reading/page/${encodeURIComponent(previous.id)}">Previous: ${escapeHtml(previous.title)}</a>`
+              : `<a class="btn ghost" href="#/reading">Back to reading menu</a>`}
+            ${next
+              ? `<a class="btn ghost" href="#/reading/page/${encodeURIComponent(next.id)}">Next: ${escapeHtml(next.title)}</a>`
+              : previous ? `<a class="btn ghost" href="#/reading">Back to reading menu</a>` : ""}
+          </nav>
+        </div>
       </div>
     </article>
   `;

@@ -52,9 +52,9 @@
     "notes": "Ready needs one scenario per spoke, released, with mandatory and safety-critical criteria at Demonstrated (2) or above. A high domain average must not hide an unmet criterion. Workplace tickets cannot replace a spoke. Completion of attempts is not readiness."
   },
   "demoPeople": {
-    "engineer": { "id": "demo-engineer", "name": "Alex Chen", "roleTitle": "VDI Platform Engineer" },
-    "assessor": { "id": "demo-assessor", "name": "Jordan Blake", "roleTitle": "VDI Senior Engineer / Assessor" },
-    "administrator": { "id": "demo-admin", "name": "Sam Rivera", "roleTitle": "VDI Enablement Administrator" }
+    "engineer": { "id": "demo-engineer", "name": "Engineer", "roleTitle": "User" },
+    "assessor": { "id": "demo-assessor", "name": "Assessor (Senior Engineer)", "roleTitle": "Assessor" },
+    "administrator": { "id": "demo-admin", "name": "Site Administrator", "roleTitle": "Administrator" }
   },
   "bundledScenarioFiles": [
     "data/scenarios/avd-connection-failures.json",

@@ -33,18 +33,38 @@ function write(key, value) {
 
 const ACCESS_ROLES = new Set(["engineer", "assessor", "administrator"]);
 
-// Create Alex, Jordan, and Sam the first time the app runs. Later visits keep the saved directory.
+// Seed the three local practice profiles. Existing browsers pick up name changes for those ids.
 export function ensureDirectory(demoPeople) {
-  const existing = read(KEYS.directory, null);
-  if (Array.isArray(existing) && existing.length) return existing;
   const seeded = ["engineer", "assessor", "administrator"].map((role) => ({
     id: demoPeople[role].id,
     name: demoPeople[role].name,
     roleTitle: demoPeople[role].roleTitle,
     role
   }));
-  write(KEYS.directory, seeded);
-  return seeded;
+  const existing = read(KEYS.directory, null);
+  if (!Array.isArray(existing) || !existing.length) {
+    write(KEYS.directory, seeded);
+    return seeded;
+  }
+  const byId = new Map(seeded.map((item) => [item.id, item]));
+  let changed = false;
+  const merged = existing.map((person) => {
+    const update = byId.get(person.id);
+    if (!update || person.source === "entra") return person;
+    if (person.name === update.name && person.roleTitle === update.roleTitle && person.role === update.role) {
+      return person;
+    }
+    changed = true;
+    return { ...person, name: update.name, roleTitle: update.roleTitle, role: update.role };
+  });
+  seeded.forEach((item) => {
+    if (!merged.some((person) => person.id === item.id)) {
+      merged.push(item);
+      changed = true;
+    }
+  });
+  if (changed) write(KEYS.directory, merged);
+  return merged;
 }
 
 // Everyone who can sign in on this browser.

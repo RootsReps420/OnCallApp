@@ -13,12 +13,12 @@ export function roleLabel(role) {
 
 // Two letters for the sidebar avatar, from the signed-in name.
 function initialsOf(name) {
-  return String(name || "?")
+  const letters = String(name || "?")
     .split(/\s+/)
+    .map((part) => (part.replace(/[^A-Za-z]/g, "")[0] || "").toUpperCase())
     .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join("");
+    .slice(0, 2);
+  return letters.join("") || "?";
 }
 
 // Small stroke icons for the sidebar and search field.
@@ -130,16 +130,15 @@ function navFor(role, path) {
   if (role === "administrator") {
     return navSection("Manage", [
       ["#/admin", "Overview", "manage"],
-      ["#/admin/author", "Author", "author"],
+      ["#/admin/author", "Create Scenario", "author"],
       ["#/admin/proposals", "Proposals", "proposals"],
-      ["#/admin/criteria", "Criteria", "criteria"],
-      ["#/admin/access", "Access", "access"]
+      ["#/admin/criteria", "On-Call Criteria", "criteria"],
+      ["#/admin/access", "Role Access", "access"]
     ], path)
       + navSection("Library", [
         ["#/library", "Scenarios", "library"],
         ["#/reading", "Reading", "reading", "WIP"]
-      ], path)
-      + navSection("System", [["#/verify", "Verification", "verify"]], path);
+      ], path);
   }
   return navSection("Practice", [
     ["#/dashboard", "Overview", "overview"],

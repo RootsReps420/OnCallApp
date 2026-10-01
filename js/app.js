@@ -3,14 +3,14 @@
 // The address after #/ decides which screen route() returns.
 
 import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js";
-import * as storage from "./storage.js";
-import { loadConfig, loadLibrary, loadReading } from "./content.js";
+import * as storage from "./storage.js?v=50";
+import { loadConfig, loadLibrary, loadReading } from "./content.js?v=50";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=41";
-import * as views from "./views.js?v=41";
-import * as auth from "./auth.js?v=41";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=50";
+import * as views from "./views.js?v=50";
+import * as auth from "./auth.js?v=50";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
-import { runVerification } from "./tests.js";
+import { runVerification } from "./tests.js?v=50";
 
 const appRoot = document.getElementById("app");
 // Live page data. It is rebuilt from localStorage on every render.

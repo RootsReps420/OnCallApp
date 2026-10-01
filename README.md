@@ -26,13 +26,13 @@ The left sidebar holds search, role navigation, and the account block (theme, Si
 
 Attempts still live in this browser. A shared database would be needed if assessors and users must see the same records on different machines.
 
-For practice without Entra, open **Practice on this browser** and pick a name:
+For practice without Entra, open **Practice on this browser** and pick a profile:
 
-| Person | Access | What they do |
+| Profile | Access | What they do |
 | --- | --- | --- |
-| Alex Chen | User | Takes scenarios and reads their own released feedback |
-| Jordan Blake | Assessor | Scores answers and releases feedback |
-| Sam Rivera | Administrator | Publishes scenarios and adds or removes colleagues |
+| Engineer | User | Takes scenarios and reads their own released feedback |
+| Assessor (Senior Engineer) | Assessor | Scores answers and releases feedback |
+| Site Administrator | Administrator | Publishes scenarios and adds or removes colleagues |
 
 A local practice session is labelled **Local** in the sidebar. Sign in with Microsoft stays available until the session comes from Entra.
 
@@ -40,14 +40,14 @@ A local practice session is labelled **Local** in the sidebar. Sign in with Micr
 
 The shell is a dashboard: Lloyds horse on a white tile, **Virtual Team / Incident Lab**, Grove green on carbon black (dark) or a pale canvas (light). Theme is a moon/sun slider under the signed-in name.
 
-Users see Overview, Library, Reading, Evidence, Readiness, and Propose. Assessors see the review queue, a person page, and Reading. Administrators see scenario management, the authoring form, proposals, criteria, access, verification, and Reading.
+Users see Overview, Library, Reading, Evidence, Readiness, and Propose. Assessors see the review queue, a person page, and Reading. Administrators see scenario management, the authoring form, proposals, criteria, access, and Reading.
 
 ## A practice attempt
 
-1. Sign in as Alex and open any scenario in a spoke from the library. Ready needs one satisfactory attempt per spoke, not a named required file.
+1. Sign in as Engineer and open any scenario in a spoke from the library. Ready needs one satisfactory attempt per spoke, not a named required file.
 2. Each scenario is one write-up. A suggested timer counts down from the scenario’s minutes; overtime does not block submit. Cover what you would check, who you would involve, what you would not change, and how you would confirm recovery.
-3. Submit. Sign out, then sign in as Jordan and score each criterion from 0 to 3 beside the answer.
-4. Release the feedback. Sign in as Alex again. The feedback quotes what was written next to how it was read.
+3. Submit. Sign out, then sign in as Assessor (Senior Engineer) and score each criterion from 0 to 3 beside the answer.
+4. Release the feedback. Sign in as Engineer again. The feedback quotes what was written next to how it was read.
 
 Scores:
 
@@ -84,9 +84,9 @@ A spoke with no released score is incomplete evidence, not a pass. Ready needs o
 
 ## Reading
 
-**Reading** is marked **WORK IN PROGRESS**. The aim is to link approved Confluence documentation into the app. Until that is wired, it is a shelf of notes for platform, troubleshooting, and on-call pages — not a flat list of URLs. Each spine is a collection. Each note says what kind of page to open and what to take from it. It is not a runbook and it is not bank policy.
+**Reading** is still being filled. Live cards open approved Confluence, SharePoint, ServiceNow, or Azure pages from labelled buttons on the rail — not a list of URLs. A **WIP** mark on a shelf or card means that page is not in yet (identity, networking, TSA, and Microsoft engagement in the first drop).
 
-Paste an approved `https` Confluence URL into `href` on an article in `data/reading.json`. Until that field is set, the note still reads in the app and the Open in Confluence button stays hidden. Opened and read ticks stay in this browser.
+Put live `https` URLs on an article as `href` plus optional labelled `links`. Leave `href` empty and set `wip: true` until you have the page. Opened and read ticks stay in this browser.
 
 ## Evidence log
 
@@ -98,7 +98,7 @@ People → open a colleague for the capability map, Ready gate (one satisfactory
 
 ## Authoring
 
-Administrators use **Author** to fill a form that writes scenario JSON. Paste or upload JSON still lives under Import.
+Administrators use **Create Scenario** to fill a form that writes scenario JSON. Paste or upload JSON still lives under Import.
 
 ## Saved in this browser
 
@@ -106,7 +106,7 @@ Attempts, workplace tickets, the colleague list, the signed-in person, and the l
 
 ## Add a scenario
 
-Everyone sees files listed in `data/config.json` under `bundledScenarioFiles`. The Author form only saves in this browser until you add a file.
+Everyone sees files listed in `data/config.json` under `bundledScenarioFiles`. The Create Scenario form only saves in this browser until you add a file.
 
 1. Copy `data/scenarios/_template.json` to a new name, for example `data/scenarios/pega-bridge.json`. Do not add `_template.json` itself to the library.
 2. Change `id` to something unique (`vdi-pega-bridge-004`). Leave `mandatory` as `false`. Ready is one satisfactory scenario per spoke, not a flag on a file.
@@ -118,7 +118,7 @@ Everyone sees files listed in `data/config.json` under `bundledScenarioFiles`. T
 
 Spoke ids: `avd-infrastructure`, `networking`, `trm-escalation-ops`, `proxy-solution`, `vendor-management`, `platform-troubleshooting`, `m365-stack`.
 
-Administrators can also fill **Author** in the app. That publishes for this browser only and downloads a JSON file you still need to drop into `data/scenarios/` as above.
+Administrators can also fill **Create Scenario** in the app. That publishes for this browser only and downloads a JSON file you still need to drop into `data/scenarios/` as above.
 
 ## Where to look in the code
 
@@ -137,10 +137,10 @@ Each script starts with a short note, and each function has a comment above it.
 | `js/scoring.js` | Turns answers and a review into scores and charts. |
 | `js/validation.js` | Checks scenario JSON before it is published. |
 | `js/util.js` | Small helpers: safe HTML, dates, ids, and navigation. |
-| `js/tests.js` | Checks run from Administrator → Verification. |
+| `js/tests.js` | Scoring and catalog checks used while building the app. Not shown in the administrator menu. |
 | `js/vendor/msal-browser.min.js` | MSAL browser library. Do not edit. |
 | `data/config.json` | App name, Entra ids, capability domains, demo people, bundled scenario paths. |
-| `data/reading.json` | Reading room collections and notes. Set each article `href` to an approved Confluence URL when you have it. |
+| `data/reading.json` | Reading room collections and destination buttons. Set `href` / `links`, or `wip: true` until the URL is known. |
 | `data/scenarios/` | Practice incidents. Copy `_template.json` to add one. |
 | `staticwebapp.config.json` | Fallback so hash routes still serve `index.html` on Azure Static Web Apps. |
 | `assets/lloyds-horse.svg` | The horse in the sidebar. |

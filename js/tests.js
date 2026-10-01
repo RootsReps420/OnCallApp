@@ -1,11 +1,11 @@
-// In-browser checks opened from Administrator → Verification.
+// Scoring and catalog checks. Not shown in the administrator menu.
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
 import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js";
 import { validateScenario, validateReadingCatalog } from "./validation.js";
 import { continueReading } from "./content.js";
 import { isNewerVersion, mergeScenarios, sortScenarios } from "./content.js";
-import * as storage from "./storage.js";
+import * as storage from "./storage.js?v=50";
 
 // A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {
@@ -287,6 +287,24 @@ export function runVerification(readingCatalog) {
   const readingOk = validateReadingCatalog(readingFixture);
   check("Reading catalog fixture validates", readingOk.ok, readingOk.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));
   check("Continue reading prefers an unread note", continueReading(readingFixture, {})?.id === "ooh-rota");
+  const wipArticle = {
+    ...readingFixture.articles[0],
+    id: "pending-guide",
+    wip: true,
+    href: "",
+    lede: "No live page on this card yet."
+  };
+  const wipCatalog = { ...readingFixture, articles: [wipArticle] };
+  check("WIP reading card with empty href validates", validateReadingCatalog(wipCatalog).ok);
+  const linkedCatalog = {
+    ...readingFixture,
+    articles: [{
+      ...readingFixture.articles[0],
+      href: "https://example.com/rota",
+      links: [{ label: "Rota page", href: "https://example.com/rota" }]
+    }]
+  };
+  check("Reading card with labelled https buttons validates", validateReadingCatalog(linkedCatalog).ok);
   if (readingCatalog) {
     const liveReading = validateReadingCatalog(readingCatalog);
     check("Bundled reading catalog validates", liveReading.ok, liveReading.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));

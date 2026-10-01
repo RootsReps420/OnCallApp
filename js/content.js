@@ -1,8 +1,8 @@
 // Loads config.json and the scenario files, then merges any scenarios
 // an administrator has saved in this browser on top of the bundled ones.
 
-import { validateScenario, validateReadingCatalog } from "./validation.js";
-import { getCustomScenarios } from "./storage.js";
+import { validateScenario, validateReadingCatalog } from "./validation.js?v=45";
+import { getCustomScenarios } from "./storage.js?v=50";
 
 // Fetch data/config.json. cache: no-store so a refresh sees file edits.
 export async function loadConfig() {
@@ -132,9 +132,37 @@ export function articlesForCollection(catalog, collectionId) {
   return readingArticles(catalog).filter((item) => item.collectionId === collectionId);
 }
 
-// First unread article, otherwise the one opened most recently.
+// Live destination buttons for a card. Prefers labelled `links`, else a single `href`.
+export function articleLinks(article) {
+  const listed = Array.isArray(article?.links) ? article.links : [];
+  const fromLinks = listed
+    .map((link) => ({
+      label: String(link?.label || "").trim() || "Open page",
+      href: String(link?.href || "").trim()
+    }))
+    .filter((link) => /^https:\/\//i.test(link.href));
+  if (fromLinks.length) return fromLinks;
+  const href = String(article?.href || "").trim();
+  if (/^https:\/\//i.test(href)) {
+    return [{ label: String(article?.sourceLabel || "Open page").trim() || "Open page", href }];
+  }
+  return [];
+}
+
+export function articleIsWip(article) {
+  return Boolean(article?.wip) || articleLinks(article).length === 0;
+}
+
+export function collectionIsIncomplete(collection, articles) {
+  return Boolean(collection?.wip) || !articles.length || articles.some(articleIsWip);
+}
+
+// First unread live page, then any unread card, otherwise the one opened most recently.
 export function continueReading(catalog, progress = {}) {
   const articles = readingArticles(catalog);
+  const live = articles.filter((item) => !articleIsWip(item));
+  const unreadLive = live.find((item) => !progress[item.id]?.readAt);
+  if (unreadLive) return unreadLive;
   const unread = articles.find((item) => !progress[item.id]?.readAt);
   if (unread) return unread;
   return articles

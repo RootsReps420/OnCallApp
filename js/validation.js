@@ -186,6 +186,7 @@ export function validateReadingCatalog(catalog) {
     requireString(errors, `${path}.folio`, item?.folio);
     requireString(errors, `${path}.summary`, item?.summary, 12);
     if (!READING_TONES.has(item?.tone)) fail(errors, `${path}.tone`, "tone must be a known reading tone.");
+    if (item?.wip != null && typeof item.wip !== "boolean") fail(errors, `${path}.wip`, "wip must be a boolean.");
   });
 
   const articleIds = new Set();
@@ -204,11 +205,22 @@ export function validateReadingCatalog(catalog) {
     if (typeof item?.minutes !== "number" || item.minutes < 1) {
       fail(errors, `${path}.minutes`, "minutes must be a number of at least 1.");
     }
+    if (item?.wip != null && typeof item.wip !== "boolean") fail(errors, `${path}.wip`, "wip must be a boolean.");
     if (item?.href != null && typeof item.href !== "string") {
-      fail(errors, `${path}.href`, "href must be a string. Leave it empty until the Confluence URL is known.");
+      fail(errors, `${path}.href`, "href must be a string. Leave it empty until the live URL is known.");
     }
     if (item?.href && !/^https:\/\//i.test(item.href)) {
       fail(errors, `${path}.href`, "href must be empty or an https URL.");
+    }
+    if (item?.links != null) {
+      if (requireArray(errors, `${path}.links`, item.links)) {
+        item.links.forEach((link, linkIndex) => {
+          requireString(errors, `${path}.links[${linkIndex}].label`, link?.label);
+          if (typeof link?.href !== "string" || !/^https:\/\//i.test(link.href)) {
+            fail(errors, `${path}.links[${linkIndex}].href`, "Each extra link must be an https URL.");
+          }
+        });
+      }
     }
     if (Array.isArray(item?.spokeIds)) {
       item.spokeIds.forEach((spokeId, spokeIndex) => {

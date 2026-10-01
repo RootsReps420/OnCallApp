@@ -1,0 +1,69 @@
+shelf: On-call procedures
+title: On Call Escalation & Engagement Process
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/562094528/AVD+On-Call+Escalations?xpis=eyJicmlkZ2UiOiJzbWFydExpbmtzIiwiaWQiOiIxNzkwODY0MTQzNDAxIiwic291cmNlIjoiY29uZmx1ZW5jZSJ9
+
+shelf: on-call procedures
+title: TRM, OPS Contact Information
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/993990629/Out+of+Hours+On+Call+Ops+TRM+Engagement+Process.
+
+shelf: on-call procedures
+title: Useful On-Call Links (Additional)
+url: https://lloydsbanking.sharepoint.com/sites/CDW_HUB/SitePages/CDWTRMInfo.aspx?isSPOFile=1&xsdata=MDV8MDJ8fDkwYTNjMmI0NDk4MDQ1MWM3NjMzMDhkZjE3YzU2YjYyfDNkZWQyOTYwMjE0YTQ2ZmY4Y2Y0NjExZjEyNWUyMzk4fDB8MHw2MzkyNTU4MDg3ODc1MTA4MzV8VW5rbm93bnxWR1ZoYlhOVFpXTjFjbWwwZVZObGNuWnBZMlY4ZXlKRFFTSTZJbFJsWVcxelgwRlVVRk5sY25acFkyVmZVMUJQVEU5R0lpd2lWaUk2SWpBdU1DNHdNREF3SWl3aVVDSTZJbGRwYmpNeUlpd2lRVTRpT2lKUGRHaGxjaUlzSWxkVUlqb3hNWDA9fDF8TDJOb1lYUnpMekU1T21NeFpqZzVNVFExTFRjNVlXWXROREJtTXkxaU9XSTBMVGxtWm1NMk16RTJOekZsTVY5bE5EY3hNMkUyTlMxaU1EWTRMVFE0TURFdFlUSmhOaTB4TlRVeU1qZ3pZMlZtWVRoQWRXNXhMbWRpYkM1emNHRmpaWE12YldWemMyRm5aWE12TVRjNE9UazROREEzTmpRMk13PT18NGFhNjUxMzU4MTcxNGJkNTMyMWYwOGRmMTdjNTZiNjJ8NDUxMjYwNGUyMmJlNDYyMWIyOGI0NDk1Yzg1MjAyNmY%3D&sdata=K2RjSXhPUnpPR0crRTY0RTZCM3dGNTM0TjBvc1FWOU5pYmVNUExIQm5sZz0%3D&ovuser=3ded2960-214a-46ff-8cf4-611f125e2398%2CDan.Bowen%40lloydsbanking.com&TeamsCID=5379f23d-3b11-4180-9648-c58557dc9ddb&OR=Teams-HL&CT=1789984790106&clickparams=eyJBcHBOYW1lIjoiVGVhbXMtRGVza3RvcCIsIkFwcFZlcnNpb24iOiI1MC8yNjA4MTMxOTMyMSJ9&linkOpenTime=1789984790107
+url: https://lbg.service-now.com/now/nav/ui/classic/params/target/%24oc.do%3Fsysparm_group_id%3D84e6c8fa1b629d904dd24198b04bcb98%26sysparm_redirect%3D%24oc_groups.do%26sysparm_include_view%3Ddaily%2Cweekly%2Cmonthly%26sysparm_timezone%3DEurope%252FLondon%26sysparm_start_date%3D2026-10-01%26sysparm_timeline_enabled%3Dfalse%26sysparm_current_view%3Dmonthly%26sysparm_rotas%3D9fab787b1bcbdd18963a3735464bcb9f%26sysparm_rosters%3D6fabf0bb1bcbdd18963a3735464bcb47%26sysparm_show_gaps%3Dtrue%26sysparm_show_conflicts%3Dtrue
+
+shelf: on-call procedures
+title: Virtual Team - On Call Rota
+url: https://lloydsbanking.sharepoint.com/:x:/r/sites/ClientInfrastruture/Shared%20Documents/Service%20Ops/Schedules%202026.xlsx?d=wc170c38c3ee94c76b708a42b93409be2&csf=1&web=1&e=biH75E
+url: https://lbg.service-now.com/$oc.do?sysparm_group_id=7fcde624db1b93c06631f2eb0c96193f&sysparm_include_view=daily,weekly,monthly&sysparm_timezone=Europe%2FLondon&sysparm_current_view=monthly&sysparm_start_date=2026-10-01&sysparm_timeline_enabled=false&sysparm_rotas=f6d26c321b942150e9e664e7b04bcba9&sysparm_rosters=47d2ac321b942150e9e664e7b04bcbf8&sysparm_show_gaps=true&sysparm_show_conflicts=true
+
+shelf: on-call procedures
+title: Engineer runbook (Including Day Shift handover details)
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/563196056/Run+Engineer+-+Service+Runbook
+
+shelf: platform
+title: AVD Personal Resources (LLD, HLD, MVD, Guides)
+url: https://lbg.atlassian.net/wiki/spaces/MWPT/pages/930818315/VDI+-+AVD+Personal+-+Minimum+Viable+Design+MVD?xpis=eyJicmlkZ2UiOiJxdWlja0ZpbmQiLCJpZCI6IjE3OTA4NjQxNDM0MDEiLCJzb3VyY2UiOiJjb25mbHVlbmNlIn0%3D
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/307535681/WE-020-FT001-DN001+-+Personal+Windows+11+on+Azure+Virtual+Desktop
+url: https://lbg.atlassian.net/wiki/spaces/MWPT/pages/912665981/VDI+-+AVD+-+Minimum+Viable+Design+MVD
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/559972478/Personal+AVD+Guides?xpis=eyJicmlkZ2UiOiJxdWlja0ZpbmQiLCJpZCI6IjE3OTA4NjQxNDM0MDEiLCJzb3VyY2UiOiJjb25mbHVlbmNlIn0%3D
+shelf: platform
+title: AVD Landing Zone Resources (Az 2.0)
+url: https://lbg.atlassian.net/wiki/spaces/MWPT/pages/722245038/VDI+-+Landing+Zone+-+Minimum+Viable+Design+MVD?xpis=eyJicmlkZ2UiOiJxdWlja0ZpbmQiLCJpZCI6IjE3OTA4NjQxNDM0MDEiLCJzb3VyY2UiOiJjb25mbHVlbmNlIn0%3D
+
+shelf: platform
+title: AVD Multi Session Resources (LLD, HLD, MVD, Guides)
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/307538189/WE-020-FT008+-+DN001+-+Multi+Session+Remote+Apps
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/559548445/Multi-Session+guides?xpis=eyJicmlkZ2UiOiJxdWlja0ZpbmQiLCJpZCI6IjE3OTA4NjQxNDM0MDEiLCJzb3VyY2UiOiJjb25mbHVlbmNlIn0%3D
+
+shelf: troubleshooting
+title: Azure Workbooks
+url: https://portal.azure.com/#blade/AppInsightsExtension/UsageNotebookBlade/ComponentId/azure%20monitor/ConfigurationId/%2Fsubscriptions%2Fa6fe8767-8373-4b41-ad17-b4301ca6fcd0%2FresourceGroups%2Fuks-prd-vdi-avd-rsg%2Fproviders%2Fmicrosoft.insights%2Fworkbooks%2Fd56ee571-e7e6-443b-957c-bce94b979036/Type/workbook/WorkbookTemplateName/AVD%20Studio%20Personal%20-%20Current
+url: https://portal.azure.com/#blade/AppInsightsExtension/UsageNotebookBlade/ComponentId/azure%20monitor/ConfigurationId/%2Fsubscriptions%2Fa6fe8767-8373-4b41-ad17-b4301ca6fcd0%2FresourceGroups%2Fuks-prd-vdi-avd-rsg%2Fproviders%2Fmicrosoft.insights%2Fworkbooks%2Fff5d3470-452e-4e94-9219-b38ff9b0803a/Type/workbook/WorkbookTemplateName/AVD%20Studio%20Multi-Session%20-%20Current
+url: https://portal.azure.com/#blade/AppInsightsExtension/UsageNotebookBlade/ComponentId/azure%20monitor/ConfigurationId/%2Fsubscriptions%2Fa6fe8767-8373-4b41-ad17-b4301ca6fcd0%2FresourceGroups%2Fuks-prd-vdi-avd-rsg%2Fproviders%2Fmicrosoft.insights%2Fworkbooks%2Fa76a0f71-4b77-499f-8708-6cce280bb02e/Type/workbook/WorkbookTemplateName/AVD%20Studio%20Summary%20-%20Current
+url: https://portal.azure.com/#blade/AppInsightsExtension/UsageNotebookBlade/ComponentId/azure%20monitor/ConfigurationId/%2Fsubscriptions%2Fa6fe8767-8373-4b41-ad17-b4301ca6fcd0%2FresourceGroups%2Fuks-prd-vdi-avd-rsg%2Fproviders%2Fmicrosoft.insights%2Fworkbooks%2F96ca202a-c433-44fe-91ff-895627a14081/Type/workbook/WorkbookTemplateName/AVD%20Troubleshooting%20-%20Current
+
+shelf: troubleshooting
+title: Platform Troubleshooting - General
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/547494398/Support+Model+Troubleshooting+Overview?xpis=eyJicmlkZ2UiOiJxdWlja0ZpbmQiLCJpZCI6IjE3OTA4NjQxNDM0MDEiLCJzb3VyY2UiOiJjb25mbHVlbmNlIn0%3D
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/483035298/How+to+-+AVD+Troubleshooting+Workbook
+
+shelf: troubleshooting
+title: Platform Troubleshooting - Prisma Access Agent (PAA - AVD PERS)
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/983008520/Prisma+Access+Agent+-+Initial+Break+Fix+Support+Guide?xpis=eyJicmlkZ2UiOiJxdWlja0ZpbmQiLCJpZCI6IjE3OTA4NjQxNDM0MDEiLCJzb3VyY2UiOiJjb25mbHVlbmNlIn0%3D
+
+shelf: troubleshooting
+title: Platform Troubleshooting - Terminal Server Agent (TSA - AVD MSH)
+url: PENDING
+
+shelf: troubleshooting
+title: Run Engineer Handbook (Useful detail for contacts)
+url: https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/563196056/Run+Engineer+-+Service+Runbook
+
+shelf: Escalation & Vendors
+title: PA (Palo Alto) Engagement Guide
+url: https://lbg.atlassian.net/wiki/spaces/CTWAF/pages/744555233/Operational+Support
+
+shelf: Escalation & Vendors
+title: MS (Microsoft) Engagement Guide (+ CritSit engagement)
+url: PENDING
+
