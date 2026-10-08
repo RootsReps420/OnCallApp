@@ -1,11 +1,11 @@
 {
   "id": "vds-avd-conn-001",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "status": "published",
   "title": "AVD Infrastructure 1",
   "spokeId": "avd-infrastructure",
   "spokeNumber": 1,
-  "description": "Friday night Sev1. Overnight users cannot launch desktops from one host pool. The client shows they cannot connect.",
+  "description": "Friday night Sev1. Users cannot launch desktops from a Multi-Session host pool. The client shows they cannot connect.",
   "scope": "Out-of-hours Sev1: users cannot connect to a production AVD host pool.",
   "difficulty": "intermediate",
   "estimatedMinutes": 40,
@@ -19,35 +19,35 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI AVD connectivity OOH (illustrative runbook)",
+      "title": "VDI AVD connectivity OOH",
       "note": "Confirm the current approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
   "initialIncident": {
-    "callSummary": "22:14 UTC, Friday. Service Desk pages VDI on-call: overnight users cannot launch desktops from VDI-UK-PROD-HP01. The client shows “We couldn’t connect. Try connecting again.”",
+    "callSummary": "22:14 UTC, Friday. Service Desk pages VDI on-call: users cannot launch desktops from a Multi-Session host pool. The client shows “We couldn’t connect. Try connecting again.”",
     "serviceNow": {
       "incidentNumber": "INC0001847",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-18 22:16 UTC",
-      "caller": "Service Desk on behalf of Overnight Operations",
-      "affectedCI": "VDI-UK-PROD-HP01 (host pool)",
-      "shortDescription": "Multiple users unable to connect to AVD host pool VDI-UK-PROD-HP01",
-      "description": "Failure at connection time, not after Windows login. First report 22:09 UTC. Impact growing. No recent approved change against this host pool."
+      "caller": "Service Desk",
+      "affectedCI": "Multi-Session",
+      "shortDescription": "Unable to access a Multi-Session AVD host pool",
+      "description": "Users cannot connect to a Multi-Session host pool. Failure at connection time, not after Windows login. First report 22:09 UTC. Impact growing. No recent approved change against this host pool."
     },
     "impact": {
-      "customers": "Internal desktop users of VDI-UK-PROD-HP01, including overnight operations (~180 users in pool; reports still arriving).",
-      "colleagues": "Service Desk handling repeat contacts; finance operations awaiting batch monitoring access.",
-      "business": "Overnight monitoring of finance batch jobs cannot be performed from the affected desktops. Duration 20+ minutes at raise time."
+      "customers": "Users of a Multi-Session host pool cannot connect. Reports still arriving.",
+      "colleagues": "Service Desk handling repeat contacts.",
+      "business": "Work that needs those desktops cannot continue. Duration 20+ minutes at raise time."
     },
     "facts": [
       {
         "label": "Affected",
-        "value": "Host pool VDI-UK-PROD-HP01. Overnight operations, including finance batch monitoring. Reports still arriving."
+        "value": "A Multi-Session host pool. Reports still arriving."
       },
       {
         "label": "Symptom",

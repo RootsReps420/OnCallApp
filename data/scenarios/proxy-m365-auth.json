@@ -1,6 +1,6 @@
 {
   "id": "vdi-proxy-m365-007",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "status": "published",
   "title": "Proxy Solution 1",
   "spokeId": "proxy-solution",
@@ -19,11 +19,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI OOH Microsoft 365 access (illustrative runbook)",
+      "title": "VDI OOH Microsoft 365 access",
       "note": "Confirm locally against the approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
@@ -32,17 +32,17 @@
     "serviceNow": {
       "incidentNumber": "INC0002404",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-28 21:08 UTC",
       "caller": "Ops Bridge",
-      "affectedCI": "AVD Personal and Multi-Session / Microsoft 365 apps (illustrative)",
-      "shortDescription": "Sporadic M365 / OneDrive auth from AVD — Personal and Multi-Session",
-      "description": "Not every user. Mixed locations. Both Personal and Multi-Session."
+      "affectedCI": "AVD Platform",
+      "shortDescription": "Unable to access Microsoft 365 from AVD",
+      "description": "Not every user. Reports from AVD Personal and Multi-Session, mixed locations. Users cannot access or authenticate to Microsoft 365 apps."
     },
     "impact": {
-      "customers": "Random AVD users (Personal and Multi-Session, mixed locations) unable to authenticate to M365 / OneDrive. Not the whole estate.",
-      "colleagues": "Ops, Service Desk, VDI on-call.",
-      "business": "Affected colleagues cannot use M365 / OneDrive from AVD. Scale still being proven. Illustrative impact."
+      "customers": "Users on AVD Personal and Multi-Session cannot authenticate to Microsoft 365. Not every user.",
+      "colleagues": "Ops; Service Desk; VDI on-call.",
+      "business": "Work that needs Microsoft 365 cannot continue from AVD."
     },
     "facts": [
       {

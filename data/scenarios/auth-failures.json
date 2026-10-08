@@ -1,6 +1,6 @@
 {
   "id": "vds-auth-group-003",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "status": "published",
   "title": "M365 Stack 1",
   "spokeId": "m365-stack",
@@ -19,35 +19,35 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI AVD access OOH (illustrative runbook)",
+      "title": "VDI AVD access OOH",
       "note": "Confirm locally."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
   "initialIncident": {
-    "callSummary": "23:41 UTC, Thursday. Payments Operations cannot launch AVD. They fail at the Microsoft sign-in page, not inside Windows.",
+    "callSummary": "23:41 UTC, Thursday. A group of users cannot launch AVD. They fail at the Microsoft sign-in page, not inside Windows.",
     "serviceNow": {
       "incidentNumber": "INC0002011",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-17 23:44 UTC",
-      "caller": "Payments Operations Duty Manager",
-      "affectedCI": "VDI-UK-PROD-HP01 application group / Entra group sg-vds-payments-ops (illustrative)",
-      "shortDescription": "Payments Operations unable to authenticate to AVD",
-      "description": "Failure at the Microsoft sign-in page, not inside Windows. Other host-pool users succeed. A configuration change completed earlier this evening."
+      "caller": "Service Desk",
+      "affectedCI": "AVD Platform",
+      "shortDescription": "Unable to sign in to AVD",
+      "description": "Failure at the Microsoft sign-in page, not inside Windows. Other users on the same host pool can still sign in. A configuration change completed earlier this evening."
     },
     "impact": {
-      "customers": "Payments Operations cohort (~35). Other VDI users not reporting the same sign-in failure.",
-      "colleagues": "Payments Operations Duty Manager; Service Desk. VDI on-call.",
-      "business": "Overnight payments exception queue cannot be processed from VDI. Illustrative impact."
+      "customers": "A group of users cannot sign in to AVD. Other users on the same host pool are not reporting the same failure.",
+      "colleagues": "Service Desk; VDI on-call.",
+      "business": "Work for that group cannot continue from AVD."
     },
     "facts": [
       {
         "label": "Affected",
-        "value": "Payments Ops. They fail at the Microsoft sign-in page, not inside Windows."
+        "value": "A group of users. They fail at the Microsoft sign-in page, not inside Windows."
       },
       {
         "label": "Still working",

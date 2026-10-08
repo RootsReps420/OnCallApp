@@ -1,6 +1,6 @@
 {
   "id": "vdi-avd-corebank-004",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "status": "published",
   "title": "AVD Infrastructure 2",
   "spokeId": "avd-infrastructure",
@@ -19,11 +19,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI OOH application access (illustrative runbook)",
+      "title": "VDI OOH application access",
       "note": "Confirm locally against the approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
@@ -32,17 +32,17 @@
     "serviceNow": {
       "incidentNumber": "INC0002401",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-27 04:18 UTC",
       "caller": "Ops Bridge",
-      "affectedCI": "AVD Personal / core banking application path (illustrative)",
-      "shortDescription": "Core banking application not loading from AVD Personal",
-      "description": "Full AVD Personal desktop session works. Other apps on that session work. Core banking will not load. Weekend OOH. Ops callout."
+      "affectedCI": "AVD Personal",
+      "shortDescription": "Unable to access a business application from AVD Personal",
+      "description": "AVD Personal session works. Other applications on that session work. A business application will not load. Weekend OOH. Ops callout."
     },
     "impact": {
-      "customers": "AVD Personal users who need core banking for their day-to-day job (illustrative overnight / weekend cohort).",
-      "colleagues": "Ops bridge; VDI on-call.",
-      "business": "Core banking work cannot continue from AVD Personal. Illustrative impact."
+      "customers": "AVD Personal users cannot use a required business application. Other applications on the same desktop still work.",
+      "colleagues": "Ops; VDI on-call.",
+      "business": "Day-to-day work that needs that application cannot continue from AVD Personal."
     },
     "facts": [
       {

@@ -1,6 +1,6 @@
 {
   "id": "vdi-avd-msh-pool-012",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "status": "published",
   "title": "AVD Infrastructure 3",
   "spokeId": "avd-infrastructure",
@@ -19,11 +19,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "AVD Multi-Session connect OOH (illustrative runbook)",
+      "title": "AVD Multi-Session connect OOH",
       "note": "Confirm locally against the approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
@@ -32,17 +32,17 @@
     "serviceNow": {
       "incidentNumber": "INC0002409",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-29 19:15 UTC",
       "caller": "Ops Bridge",
-      "affectedCI": "One AVD Multi-Session host pool (illustrative)",
-      "shortDescription": "Unable to connect to a specific Multi-Session host pool",
-      "description": "Ops callout. One Multi-Session host pool. Users cannot connect."
+      "affectedCI": "Multi-Session",
+      "shortDescription": "Unable to access a Multi-Session AVD host pool",
+      "description": "Ops callout. Users cannot connect to a Multi-Session host pool. Other pools and AVD Personal are not yet proven."
     },
     "impact": {
-      "customers": "Users of one Multi-Session host pool who cannot connect. Other pools and Personal not yet proven.",
+      "customers": "Users of a Multi-Session host pool cannot connect. Other pools and AVD Personal are not yet proven.",
       "colleagues": "Ops; VDI on-call.",
-      "business": "The business unit on that Multi-Session pool cannot start sessions. Illustrative impact until blast radius is confirmed."
+      "business": "Work that needs that Multi-Session host pool cannot start."
     },
     "facts": [
       {

@@ -1,6 +1,6 @@
 {
   "id": "vdi-trm-unofficial-006",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "status": "published",
   "title": "TRM, Escalation & Ops 1",
   "spokeId": "trm-escalation-ops",
@@ -19,11 +19,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "Sev1 out-of-hours callout (illustrative)",
+      "title": "Sev1 out-of-hours callout",
       "note": "Confirm locally."
     },
     {
-      "title": "Change cover OOH (illustrative)",
+      "title": "Change cover OOH",
       "note": "Confirm locally."
     }
   ],
@@ -34,15 +34,15 @@
       "priority": "Unknown — no official ticket",
       "assignmentGroup": "None — no Ops assignment",
       "opened": "Not opened",
-      "caller": "Business contact on personal mobile (illustrative)",
-      "affectedCI": "AVD Multi-Session / business unit (illustrative)",
-      "shortDescription": "Unofficial report: Multi-Session down after scheduled change",
-      "description": "No INC. No official Ops callout. TRM not on the call. Caller says Multi-Session is down after a scheduled change and wants it fixed now."
+      "caller": "Business contact on personal mobile",
+      "affectedCI": "Multi-Session",
+      "shortDescription": "Unable to access a Multi-Session AVD host pool",
+      "description": "No INC. No official Ops callout. TRM not on the call. Caller says a Multi-Session host pool is down after a scheduled change and wants it fixed now."
     },
     "impact": {
-      "customers": "Business unit using AVD Multi-Session after the scheduled change — reported down, scale not yet proven on an INC.",
-      "colleagues": "Unofficial business caller. Ops and TRM not on a bridge yet.",
-      "business": "Caller says the platform is down and work cannot continue. Not yet on the major-incident record."
+      "customers": "Users of a Multi-Session host pool are reported as unable to connect. Scale is not yet proven on an INC.",
+      "colleagues": "Unofficial caller. Ops and TRM are not on a bridge yet.",
+      "business": "Caller says the host pool is down and work cannot continue. Not yet on the official record."
     },
     "facts": [
       {

@@ -1,7 +1,7 @@
 // One function per screen. Each function returns an HTML string.
 // Clicks are handled in app.js by looking for data-action on the element.
 
-import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=58";
+import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=64";
 import {
   pillsForScenario,
   snowCard,
@@ -19,10 +19,10 @@ import {
   errorPage,
   formatAttemptMeta,
   roleLabel
-} from "./render.js?v=62";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js?v=58";
-import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=61";
-import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=58";
+} from "./render.js?v=64";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js?v=64";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=64";
+import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=64";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -412,9 +412,6 @@ export function scenarioIntroView(state, scenario) {
       <h1>${escapeHtml(scenario.title)}</h1>
       <p class="lede">${escapeHtml(scenario.description)}</p>
     </div>
-    <div class="callout warn">
-      <p>${escapeHtml(scenario.illustrativeDisclaimer)}</p>
-    </div>
     <div class="grid grid-2">
       ${incidentReportCard(scenario.initialIncident, { title: "Initial support call" })}
       <div class="stack">
@@ -429,7 +426,7 @@ export function scenarioIntroView(state, scenario) {
         ${snowCard(scenario.initialIncident.serviceNow)}
       </div>
     </div>
-    <div class="grid grid-2" style="margin-top:1rem">
+    <div class="grid grid-2 scenario-intro-docs">
       ${docsList(scenario.documentationReferences)}
       <section class="card">
         <h2>How this assessment works</h2>
@@ -1169,16 +1166,16 @@ function sampleTemplate() {
     illustrativeDisclaimer: "Illustrative content. Validate against approved operational sources before use.",
     assessorGuidance: "Reward sound investigation order and appropriate escalation.",
     acceptableAlternativeApproaches: ["Document-led investigation before platform changes."],
-    documentationReferences: [{ title: "Illustrative runbook title", note: "Confirm locally." }],
+    documentationReferences: [{ title: "Runbook title", note: "Confirm locally." }],
     initialIncident: {
       callSummary: "Replace with a fictional support call summary for the engineer.",
       serviceNow: {
         incidentNumber: "INC0000000",
         priority: "1 — Critical",
-        assignmentGroup: "VDI Platform Support (illustrative)",
+        assignmentGroup: "IT.ISD.CLIENTINFRASTRUCTURE",
         opened: "2026-01-01 00:00 UTC",
         caller: "Service Desk",
-        affectedCI: "VDI-UK-PROD",
+        affectedCI: "AVD Platform",
         shortDescription: "Short description",
         description: "Longer illustrative description."
       },
@@ -1745,11 +1742,11 @@ export function adminAuthorView(state) {
       <div class="grid grid-2">
         <div class="field">
           <label for="a-assign">Assignment group</label>
-          <input id="a-assign" name="assignmentGroup" type="text" required value="VDI Platform Support (illustrative)">
+          <input id="a-assign" name="assignmentGroup" type="text" required value="IT.ISD.CLIENTINFRASTRUCTURE">
         </div>
         <div class="field">
           <label for="a-ci">Affected CI</label>
-          <input id="a-ci" name="affectedCI" type="text" required value="VDI-UK-PROD">
+          <input id="a-ci" name="affectedCI" type="text" required value="AVD Platform">
         </div>
       </div>
       <div class="field">
@@ -1969,7 +1966,6 @@ export function readingView(state) {
   const read = liveArticles.filter((item) => progress[item.id]?.readAt).length;
   const next = continueReading(catalog, progress);
   const nextCollection = next ? findReadingCollection(catalog, next.collectionId) : null;
-  const catalogIncomplete = collections.some((collection) => collectionIsIncomplete(collection, articlesForCollection(catalog, collection.id)));
   return `
     <section class="reading-hero">
       <div>
@@ -1988,7 +1984,7 @@ export function readingView(state) {
         }).join("")}
       </div>
     </section>
-    ${catalogIncomplete ? readingWipBanner() : ""}
+    ${readingWipBanner()}
     <div class="reading-grid">
       ${collections.map((collection) => collectionTile(collection, articlesForCollection(catalog, collection.id), progress)).join("") || `<div class="empty-state">No reading collections loaded.</div>`}
     </div>

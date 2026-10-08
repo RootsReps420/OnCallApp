@@ -893,7 +893,8 @@ a { color: var(--link); }
 .work-list a span:first-child { min-width: 0; }
 .work-list .pill { flex-shrink: 0; }
 
-.dash-lower { margin-top: 1rem; }
+.dash-lower,
+.scenario-intro-docs { margin-top: 1rem; }
 
 .summary {
   display: -webkit-box;
@@ -1685,8 +1686,7 @@ kbd {
 
 .crumb a { text-decoration: none; }
 
-/* Reading room: book spines, shelf tiles, magazine cards.
-   Previous tile/hero/spine/issue rules: css/reading-rollback-v51.css (not loaded). */
+/* Reading room: book spines, shelf tiles, magazine cards. */
 .reading-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.85fr);
@@ -1715,19 +1715,6 @@ kbd {
 }
 
 .reading-hero .lede { max-width: 36rem; }
-
-.reading-wip-stamp {
-  display: inline-block;
-  margin: 0 0 0.75rem;
-  padding: 0.28rem 0.7rem;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: var(--warning);
-  background: var(--warning-soft);
-  border: 1px solid var(--warning);
-  border-radius: 6px;
-}
 
 .reading-wip p { margin: 0; }
 
@@ -2164,26 +2151,7 @@ button.btn.reading-open {
   opacity: 0.78;
 }
 
-.reading-awaiting {
-  display: grid;
-  gap: 0.45rem;
-  padding: 0.8rem 0.85rem;
-  border: 1px dashed var(--warning);
-  border-radius: 10px;
-  background: var(--warning-soft);
-}
-
-.reading-awaiting .reading-wip-stamp {
-  margin: 0;
-}
-
-.reading-awaiting p:last-child {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--ink-muted);
-}
-
-/* Scenario Library: folder tabs and case-file tiles. Glow sits on the right so it differs from Reading. */
+/* SevA Scenarios: folder tabs and case-file tiles. Glow sits on the right so it differs from Reading. */
 .library-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.85fr);

@@ -1,8 +1,8 @@
 // Shared pieces of HTML: the sidebar, top bar, status pills, evidence, and charts.
 // Page-specific screens live in views.js. This file does not change stored data.
 
-import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=58";
-import { readinessCopy, scoreLabel } from "./scoring.js?v=58";
+import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=64";
+import { readinessCopy, scoreLabel } from "./scoring.js?v=64";
 
 // Screen name for a stored role. engineer is shown as User.
 export function roleLabel(role) {
@@ -219,18 +219,17 @@ export function incidentReportCard(incident, { title = "Initial report" } = {}) 
   `;
 }
 
-// The illustrative ServiceNow-style ticket on a scenario intro.
+// The practice ServiceNow-style ticket on a scenario intro.
 export function snowCard(snow) {
   return `
     <div class="card">
-      <h3>Mock ServiceNow incident</h3>
-      <p class="subtle">Illustrative ticket for practice only. Not a live record.</p>
+      <h3>ServiceNow incident</h3>
       <dl class="snow-ticket">
         <dt>Number</dt><dd>${escapeHtml(snow.incidentNumber)}</dd>
         <dt>Priority</dt><dd>${escapeHtml(snow.priority)}</dd>
         <dt>Opened</dt><dd>${escapeHtml(snow.opened)}</dd>
         <dt>Caller</dt><dd>${escapeHtml(snow.caller)}</dd>
-        <dt>Assignment</dt><dd>${escapeHtml(snow.assignmentGroup)}</dd>
+        <dt>Assignment group</dt><dd>${escapeHtml(snow.assignmentGroup)}</dd>
         <dt>Affected CI</dt><dd>${escapeHtml(snow.affectedCI)}</dd>
         <dt>Short description</dt><dd>${escapeHtml(snow.shortDescription)}</dd>
         <dt>Description</dt><dd>${nl(snow.description)}</dd>
@@ -598,15 +597,14 @@ function statusForCriterion(item) {
   return "Unreviewed";
 }
 
-// Illustrative runbook titles. They are not live links.
+// Runbook titles on a scenario intro. They are names only, not live links.
 export function docsList(refs = []) {
   if (!refs.length) return "";
   return `
     <div class="card">
       <h3>Documentation references</h3>
-      <p class="subtle">Illustrative titles only. Confirm the current approved runbook before operational use.</p>
       <ul>
-        ${refs.map((ref) => `<li><strong>${escapeHtml(ref.title)}</strong> — ${escapeHtml(ref.note)}</li>`).join("")}
+        ${refs.map((ref) => `<li>${escapeHtml(ref.title)}</li>`).join("")}
       </ul>
     </div>
   `;

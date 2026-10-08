@@ -18,7 +18,7 @@
   ],
   "documentationReferences": [
     {
-      "title": "Replace with an illustrative runbook title",
+      "title": "Replace with a runbook title",
       "note": "Confirm locally against the approved document."
     }
   ],
@@ -32,10 +32,10 @@
     "serviceNow": {
       "incidentNumber": "INC0000000",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-01-01 00:00 UTC",
       "caller": "Ops Bridge",
-      "affectedCI": "Replace with the CI name",
+      "affectedCI": "Multi-Session",
       "shortDescription": "Replace with a short ticket title",
       "description": "Replace with the mock ticket body. Repeat the facts from the call summary if they belong on the record."
     },

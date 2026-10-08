@@ -1,6 +1,6 @@
 {
   "id": "vdi-plat-offshore-vm-009",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "status": "published",
   "title": "Platform Troubleshooting 2",
   "spokeId": "platform-troubleshooting",
@@ -19,11 +19,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "AVD Personal connect OOH (illustrative runbook)",
+      "title": "AVD Personal connect OOH",
       "note": "Confirm locally against the approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
@@ -32,17 +32,17 @@
     "serviceNow": {
       "incidentNumber": "INC0002406",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-28 04:06 UTC",
       "caller": "Ops Bridge",
-      "affectedCI": "AVD Personal (illustrative)",
-      "shortDescription": "Offshore users unable to connect to AVD Personal VMs",
-      "description": "Monday 04:00. Personal. Multiple offshore tickets: unable to connect to VM."
+      "affectedCI": "AVD Personal",
+      "shortDescription": "Unable to access AVD Personal",
+      "description": "Monday 04:00. Multiple tickets: users cannot connect to their AVD Personal VM."
     },
     "impact": {
-      "customers": "Offshore AVD Personal users unable to connect to their VMs. Risk of whole Personal estate off if this is a platform outage.",
+      "customers": "AVD Personal users cannot connect to their desktops. Reports still arriving.",
       "colleagues": "Ops; VDI on-call.",
-      "business": "Offshore start-of-week work cannot begin on Personal desktops. Illustrative severe impact if the estate is off."
+      "business": "Work that needs AVD Personal cannot begin."
     },
     "facts": [
       {

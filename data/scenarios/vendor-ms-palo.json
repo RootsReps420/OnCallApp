@@ -1,6 +1,6 @@
 {
   "id": "vdi-vendor-ms-palo-008",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "status": "published",
   "title": "Vendor Management 1",
   "spokeId": "vendor-management",
@@ -19,11 +19,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "Vendor engagement OOH (illustrative)",
+      "title": "Vendor engagement OOH",
       "note": "Confirm locally against the approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
@@ -32,17 +32,17 @@
     "serviceNow": {
       "incidentNumber": "INC0002405",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-24 08:40 UTC (ongoing; now OOH)",
-      "caller": "Ops Bridge / ongoing incident",
-      "affectedCI": "Entra ID authentication via PAA tunnel (illustrative)",
-      "shortDescription": "Entra auth failures via PAA — multi-day, now OOH",
-      "description": "Multi-day, now OOH. Multiple products. Entra authentication. Traffic tunneled via PAA."
+      "caller": "Ops Bridge",
+      "affectedCI": "AVD Platform",
+      "shortDescription": "Unable to authenticate to applications from AVD",
+      "description": "Multi-day incident, now out of hours. Users cannot authenticate to more than one product. Authentication is Entra ID and that traffic is tunneled via PAA."
     },
     "impact": {
-      "customers": "Colleagues unable to authenticate to more than one product using Entra via PAA.",
-      "colleagues": "Ongoing bridge. Ops. VDI now on the OOH shift.",
-      "business": "Authentication to multiple products blocked or unreliable. Illustrative multi-day impact now in OOH."
+      "customers": "Users cannot authenticate to more than one product.",
+      "colleagues": "Ops; VDI on-call. Ongoing bridge.",
+      "business": "Authentication to applications is blocked or unreliable."
     },
     "facts": [
       {

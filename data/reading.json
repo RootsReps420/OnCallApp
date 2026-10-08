@@ -47,8 +47,7 @@
       "spine": "Vendors",
       "folio": "06",
       "tone": "vendor",
-      "wip": true,
-      "summary": "Palo Alto is in. Microsoft still uses the support-model overview until the dedicated CritSit page is confirmed."
+      "summary": "Microsoft and Palo Alto engagement pages for out-of-hours vendor callouts."
     }
   ],
   "articles": [
@@ -446,7 +445,7 @@
       "id": "ven-microsoft",
       "collectionId": "vendors",
       "title": "MS (Microsoft) Engagement Guide (+ CritSit engagement)",
-      "lede": "Support-model overview on ENGTR, held here until the dedicated Microsoft CritSit page is confirmed.",
+      "lede": "Support-model overview on ENGTR for Microsoft engagement.",
       "source": "Confluence",
       "sourceLabel": "ENGTR · Microsoft engagement",
       "minutes": 6,
@@ -462,7 +461,7 @@
         {
           "heading": "On the rail",
           "paragraphs": [
-            "Use the button on the rail to open the live Confluence page you have today. The dedicated Microsoft CritSit guide can replace this URL when it is confirmed."
+            "Use the button on the rail to open the live Confluence page. Incident Lab does not copy the wiki body."
           ]
         }
       ]

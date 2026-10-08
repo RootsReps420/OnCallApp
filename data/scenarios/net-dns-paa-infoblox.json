@@ -1,6 +1,6 @@
 {
   "id": "vdi-net-dns-paa-013",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "status": "published",
   "title": "Networking 2",
   "spokeId": "networking",
@@ -19,11 +19,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI OOH name resolution (illustrative runbook)",
+      "title": "VDI OOH name resolution",
       "note": "Confirm locally against the approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
@@ -32,17 +32,17 @@
     "serviceNow": {
       "incidentNumber": "INC0002410",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-29 20:03 UTC",
       "caller": "Ops Bridge",
-      "affectedCI": "Name resolution / application reach-back (illustrative)",
-      "shortDescription": "Websites failing to load — public and internal nslookup failing",
-      "description": "Ops callout. Sites will not load. Public and internal nslookup failing. On-prem application reach-back disrupted."
+      "affectedCI": "AVD Platform",
+      "shortDescription": "Unable to access websites from AVD",
+      "description": "Ops callout. Websites will not load. Public and internal name lookup is failing. Applications that need to reach back on-prem are disrupted."
     },
     "impact": {
-      "customers": "Users unable to load websites and unable to resolve names so on-prem applications cannot be reached. AVD versus corp physical not yet proven.",
-      "colleagues": "Ops on the call. VDI included.",
-      "business": "Name resolution failure blocking web and on-prem application work. Illustrative wide impact until the DNS plane is identified."
+      "customers": "Users cannot load websites and cannot reach applications that need name resolution.",
+      "colleagues": "Ops; VDI on-call.",
+      "business": "Web and application work is blocked until name resolution is restored."
     },
     "facts": [
       {

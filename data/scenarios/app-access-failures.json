@@ -1,6 +1,6 @@
 {
   "id": "vds-app-access-002",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "status": "published",
   "title": "Platform Troubleshooting 1",
   "spokeId": "platform-troubleshooting",
@@ -19,39 +19,39 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI OOH application access (illustrative runbook)",
+      "title": "VDI OOH application access",
       "note": "Confirm the current approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
   "initialIncident": {
-    "callSummary": "01:07 UTC, Saturday. Users can launch Windows on HP01 and HP02, but internal web apps will not load in Edge. Service Desk has 40+ calls.",
+    "callSummary": "01:07 UTC, Saturday. Users can launch Windows on AVD, but internal web applications will not load in Edge. Service Desk has a high volume of calls.",
     "serviceNow": {
       "incidentNumber": "INC0001902",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-19 01:09 UTC",
-      "caller": "Service Desk on behalf of Payments Operations",
-      "affectedCI": "VDI-UK-PROD (desktop service) / apps.internal.example (illustrative)",
-      "shortDescription": "Multiple business web apps unreachable from AVD sessions",
-      "description": "Desktop connect OK. Internal HTTPS apps fail. Microsoft 365 from the same desktop is OK. First user report 00:51 UTC."
+      "caller": "Service Desk",
+      "affectedCI": "AVD Platform",
+      "shortDescription": "Unable to access internal applications from AVD",
+      "description": "Desktop connect is working. Internal web applications fail from inside the session. Microsoft 365 from the same desktop is OK. First user report 00:51 UTC."
     },
     "impact": {
-      "customers": "AVD users needing internal web apps; payments operations overnight team blocked.",
-      "colleagues": "Service Desk. Application support on standby.",
-      "business": "Overnight payments exception handling cannot proceed. Illustrative impact only."
+      "customers": "AVD users can connect but cannot load internal web applications. Reports still arriving.",
+      "colleagues": "Service Desk handling a high volume of calls.",
+      "business": "Work that needs those internal applications cannot continue from AVD."
     },
     "facts": [
       {
         "label": "Failing",
-        "value": "Internal web apps will not load in Edge. Service Desk has 40+ calls. Payments Portal, HR Self-Service, overnight batch console among those named."
+        "value": "Internal web applications will not load in Edge. Service Desk has a high volume of calls."
       },
       {
         "label": "Still working",
-        "value": "Users can launch Windows on HP01 and HP02. Some say Outlook on the web still works from the same session."
+        "value": "Users can launch Windows on AVD. Some say Outlook on the web still works from the same session."
       },
       {
         "label": "When",

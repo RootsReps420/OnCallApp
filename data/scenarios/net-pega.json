@@ -1,6 +1,6 @@
 {
   "id": "vdi-net-pega-005",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "status": "published",
   "title": "Networking 1",
   "spokeId": "networking",
@@ -19,11 +19,11 @@
   ],
   "documentationReferences": [
     {
-      "title": "VDI OOH application access (illustrative runbook)",
+      "title": "VDI OOH application access",
       "note": "Confirm locally against the approved document."
     },
     {
-      "title": "Sev1 out-of-hours incident management (illustrative)",
+      "title": "Sev1 out-of-hours incident management",
       "note": "Confirm locally."
     }
   ],
@@ -32,17 +32,17 @@
     "serviceNow": {
       "incidentNumber": "INC0002402",
       "priority": "1 — Critical",
-      "assignmentGroup": "VDI Platform Support (illustrative)",
+      "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
       "opened": "2026-09-27 19:22 UTC",
       "caller": "Ops Bridge",
-      "affectedCI": "PEGA web URL / AVD platform (illustrative)",
-      "shortDescription": "PEGA access issues — VDI on the bridge",
-      "description": "PEGA is a web URL. MW on the bridge with Ops. PEGA team not yet a notable voice. Ops asked VDI whether this is AVD as a platform."
+      "affectedCI": "AVD Platform",
+      "shortDescription": "Unable to access a business application from AVD",
+      "description": "Ops callout. Users cannot access a business application reached as a web URL. VDI has been asked whether this is AVD as a platform."
     },
     "impact": {
-      "customers": "Colleagues who need PEGA via the web URL (AVD and possibly physical — not yet proven).",
-      "colleagues": "Ops, Modern Workplace on the bridge. PEGA owners not yet a notable voice.",
-      "business": "PEGA work blocked for affected colleagues. Illustrative impact."
+      "customers": "Users cannot access a business application from AVD. Whether other devices are also hit is not yet proven.",
+      "colleagues": "Ops; VDI on-call.",
+      "business": "Work that needs that application cannot continue."
     },
     "facts": [
       {

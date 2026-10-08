@@ -1,55 +1,68 @@
 # Incident Lab
 
-Incident Lab is a practice tool for Virtual Desktop Infrastructure engineers. They work through a fictional SevA out-of-hours incident, write what they would do, and an assessor reads the answers.
+Practice tool for Virtual Desktop Infrastructure engineers on the Virtual Team.
 
-It does not connect to Azure, ServiceNow, or a live incident. The sample tickets and runbooks are for practice. Completing a scenario is not a certificate, and there is no leaderboard.
+Engineers work a SevA out-of-hours incident, write what they would do, and an assessor scores the write-up. Completing a scenario is practice, not a certificate.
 
-The live site is https://blue-ocean-0ef426703.4.azurestaticapps.net (Azure Static Web Apps, Free). GitHub holds the source. Publishing the website is a separate Static Web Apps upload; a `git push` does not update the live site by itself.
+Live site: https://blue-ocean-0ef426703.4.azurestaticapps.net
+
+The site is static HTML, CSS, and JavaScript. Content is JSON. It does not connect to live Azure or ServiceNow.
+
+---
+
+## What each part does
+
+| Area | Who uses it | What it is |
+| --- | --- | --- |
+| **Overview** | Engineer | Dashboard of in-progress work, scores, and Ready status |
+| **SevA Scenarios** | Engineer, Assessor | Written assessments. One write-up per scenario. An assessor scores it 0–3 |
+| **Incident Sandbox** | Engineer | Interactive ServiceNow-style tickets. Instant feedback out of 5. Not marked by an assessor and does not count on Ready |
+| **Reading** | Everyone | Approved live pages (Confluence, SharePoint, ServiceNow, Azure, Microsoft Learn). The app does not copy wiki bodies |
+| **Evidence** | Engineer | Redacted prior tickets that an assessor can score |
+| **Readiness** | Engineer, Assessor | Hub-and-spoke map. Ready needs one satisfactory scenario per spoke |
+| **Propose** | Engineer | Suggest a new scenario |
+| **Create Scenario** | Administrator | Author a scenario in this browser, then download JSON for the shared library |
+| **People / review** | Assessor | Score submitted write-ups and release feedback |
+| **Access / criteria** | Administrator | Role access and on-call criteria |
+
+**Roles:** User (engineer), Assessor, Administrator.
+
+---
 
 ## Open it locally
 
-The pages load JSON with `fetch`, so use a small web server. From this folder:
+Pages load JSON with `fetch`, so use a small web server. From this folder:
 
 ```bash
 python -m http.server 8080
 ```
 
-Then open http://localhost:8080
+Then open http://localhost:8080 and hard-refresh after a change.
 
-Microsoft sign-in is registered for that origin and for the live Static Web App URL. After a local change, hard-refresh so the `?v=` cache-bust on `index.html` picks up new CSS and JS.
+---
 
 ## Sign in
 
-The left sidebar holds search, role navigation, and the account block (theme, Sign in with Microsoft, Sign out).
+**Sign in with Microsoft** uses the ignitemyfire.co.uk tenant. Roles come from the Incident Lab app registration. There is no client secret.
 
-**Sign in with Microsoft** uses the ignitemyfire.co.uk tenant. Roles come from the Incident Lab app registration (`User`, `Assessor`, `Administrator`). The browser uses MSAL with PKCE. There is no client secret, and the app does not call Microsoft Graph.
+Attempts stay in this browser. An assessor on another machine cannot see an engineer’s write-up unless they use the same browser profile.
 
-Attempts still live in this browser. A shared database would be needed if assessors and users must see the same records on different machines.
+For practice without Entra, choose **Practice on this browser**:
 
-For practice without Entra, open **Practice on this browser** and pick a profile:
+| Profile | Role |
+| --- | --- |
+| Engineer | User |
+| Assessor (Senior Engineer) | Assessor |
+| Site Administrator | Administrator |
 
-| Profile | Access | What they do |
-| --- | --- | --- |
-| Engineer | User | Takes scenarios and reads their own released feedback |
-| Assessor (Senior Engineer) | Assessor | Scores answers and releases feedback |
-| Site Administrator | Administrator | Publishes scenarios and adds or removes colleagues |
+---
 
-A local practice session is labelled **Local** in the sidebar. Sign in with Microsoft stays available until the session comes from Entra.
+## How a SevA scenario works
 
-## Layout and theme
-
-The shell is a dashboard: Lloyds horse on a white tile, **Virtual Team / Incident Lab**, Grove green on carbon black (dark) or a pale canvas (light). Theme is a moon/sun slider under the signed-in name.
-
-Users see Overview, Scenario Library, Reading, Evidence, Readiness, and Propose. Assessors see the review queue, a person page, and Reading. Administrators see scenario management, the authoring form, proposals, criteria, access, and Reading.
-
-## A practice attempt
-
-1. Sign in as Engineer and open any scenario in a spoke from the library. Ready needs one satisfactory attempt per spoke, not a named required file.
-2. Each scenario is one write-up. A suggested timer counts down from the scenario’s minutes; overtime does not block submit. Cover what you would check, who you would involve, what you would not change, and how you would confirm recovery.
-3. Submit. Sign out, then sign in as Assessor (Senior Engineer) and score each criterion from 0 to 3 beside the answer.
-4. Release the feedback. Sign in as Engineer again. The feedback quotes what was written next to how it was read.
-
-Scores:
+1. Open **SevA Scenarios** and pick a spoke.
+2. Read the call, known impact, and mock ticket. Write one response covering the whole incident.
+3. Submit. An assessor scores each criterion 0–3.
+4. When they release feedback, the engineer sees it on Overview, Evidence, and Readiness.
 
 | Score | Meaning |
 | --- | --- |
@@ -58,97 +71,52 @@ Scores:
 | 2 | Demonstrated |
 | 3 | Strongly demonstrated |
 
-A blank answer is "not answered". It is not a zero. Written answers are not marked by keyword matching.
+A blank answer is “not answered”, not a zero. Ready needs one released scenario per spoke at Demonstrated (2) or above. Workplace tickets cannot replace a spoke.
 
-Tests can be resat once an assessor has reviewed the previous attempt. Each attempt is stored separately.
-
-## Dashboard and readiness
-
-The user Overview is KPI cards (in progress, awaiting review, released feedback, capability average), a line chart of released domain scores, a coverage donut, and recent activity.
-
-Readiness is a hub-and-spoke map. You sit in the middle. Each capability is one spoke. Gaps pulse. Hover or click a node for the score and what is missing. This is not a certificate — an assessor still makes the recommendation.
-
-The seven capability areas are listed in `data/config.json`:
-
-| Spoke | What it covers |
-| --- | --- |
-| AVD Infrastructure | Host pools, session hosts, gateways, control plane |
-| Networking | DNS, routing, firewalls, name resolution |
-| TRM, Escalation & Ops | TRM, MIM, OOH process, updates, handover |
-| Proxy Solution | Secure Access / Prisma, inspection, connectors |
-| Vendor Management | Microsoft and other vendor cases, evidence to prepare |
-| Platform Troubleshooting | Impact, runbooks, evidence before platform changes |
-| M365 Stack | Entra ID, Conditional Access, other M365 dependencies |
-
-A spoke with no released score is incomplete evidence, not a pass. Ready needs one scenario per spoke, released at Demonstrated (score 2) or above. Any numbered scenario in that spoke can count. Workplace tickets can thicken a spoke (capped). They cannot replace a spoke on the Ready gate or cancel a mandatory gap.
-
-## Reading
-
-**Reading** is still being filled. Live cards open approved Confluence, SharePoint, ServiceNow, or Azure pages from labelled buttons on the rail — not a list of URLs. A **WIP** mark on a shelf or card means that page is not in yet (identity, networking, TSA, and Microsoft engagement in the first drop).
-
-Put live `https` URLs on an article as `href` plus optional labelled `links`. Leave `href` empty and set `wip: true` until you have the page. Opened and read ticks stay in this browser.
-
-## Evidence log
-
-Users add a redacted prior ticket: sanitised reference, date, role on the call, spoke, and a short write-up. An assessor scores it 0–3. Unreviewed tickets are pending, not zero.
-
-## Assessor person view
-
-People → open a colleague for the capability map, Ready gate (one satisfactory scenario per spoke), tickets, last recommendation, and agreed development actions as a list.
-
-## Authoring
-
-Administrators use **Create Scenario** to fill a form that writes scenario JSON. Paste or upload JSON still lives under Import.
+---
 
 ## Saved in this browser
 
-Attempts, workplace tickets, the colleague list, the signed-in person, and the light or dark choice stay in local storage under `incident-lab:`. Reset demo data, on the administrator scenario page, clears attempts, tickets, and imported scenarios. It does not remove colleagues.
+Attempts, sandbox runs, Reading ticks, workplace tickets, imported scenarios, and theme live in `localStorage` under `incident-lab:`. Reset demo data (administrator) clears practice records in this browser. It does not remove colleagues.
 
-## Add a scenario
+---
 
-Everyone sees files listed in `data/config.json` under `bundledScenarioFiles`. The Create Scenario form only saves in this browser until you add a file.
+## Files
 
-1. Copy `data/scenarios/_template.json` to a new name, for example `data/scenarios/pega-bridge.json`. Do not add `_template.json` itself to the library.
-2. Change `id` to something unique (`vdi-pega-bridge-004`). Leave `mandatory` as `false`. Ready is one satisfactory scenario per spoke, not a flag on a file.
-3. Set `spokeId` to one spoke and `spokeNumber` to the next free number for that spoke. `title` is the spoke name plus that number (`AVD Infrastructure 2`). Then rewrite `description`, `scope`, `assessorGuidance`, and `initialIncident` (short `callSummary`, labelled `facts`, mock ServiceNow ticket, impact). Facts are what they would hear on the first call, not who to engage or the smoking gun. Keep the playbook in `assessorGuidance`.
-4. Rewrite `questions` to a single written prompt (`q1`). `assessorGuidance` on that question is for the reviewer only. `capabilityDomainIds` must use the spoke ids below.
-5. Rewrite `scoringCriteria`. Each criterion needs `domainId` (one spoke), `questionIds` such as `["q1"]`, `maxScore` 3, and `mandatory` / `safetyCritical` true or false.
-6. Add `"data/scenarios/pega-bridge.json"` to `bundledScenarioFiles` in `data/config.json`.
-7. Serve locally (`python -m http.server 8080`) and hard-refresh. Ask for the live site to be published when it looks right.
+| Path | What it is |
+| --- | --- |
+| `index.html` | Page shell |
+| `css/styles.css` | Layout and Lloyds black/green theme |
+| `js/app.js` | Starts the app and handles `#/` routes |
+| `js/views.js` | HTML for each screen |
+| `js/render.js` | Sidebar, tickets, charts, readiness map |
+| `js/content.js` | Loads config, scenarios, Reading, and sandbox JSON |
+| `js/auth.js` | Microsoft sign-in |
+| `js/scoring.js` | 0–3 scores and Ready |
+| `js/sandbox.js` | Sandbox 0–5 feedback |
+| `js/storage.js` | This browser’s saved data |
+| `js/validation.js` | Checks scenario and catalog JSON |
+| `data/config.json` | App name, Entra ids, spokes, list of scenario files |
+| `data/reading.json` | Reading shelves and links |
+| `data/sandbox.json` | Practice ServiceNow tickets |
+| `data/scenarios/` | SevA scenario files |
+| `staticwebapp.config.json` | Azure Static Web Apps routing |
+| `assets/lloyds-horse.svg` | Sidebar horse |
+
+`?v=` on `index.html` and script imports avoids a stale cached copy after a publish.
+
+Publishing the live site is a Static Web Apps upload. A `git push` does not update the live site by itself.
+
+---
+
+## Add a SevA scenario
+
+1. Copy `data/scenarios/_template.json` to a new file. Do not add `_template.json` itself to the library.
+2. Set a unique `id`, `spokeId`, and the next `spokeNumber` for that spoke. `title` is the spoke name plus that number (`AVD Infrastructure 2`).
+3. Rewrite the call, facts, mock ticket, impact, one written prompt (`q1`), and scoring criteria. Facts are what they would hear on the first call.
+4. Add the file path to `bundledScenarioFiles` in `data/config.json`.
+5. Serve locally, hard-refresh, then publish the live site when it looks right.
 
 Spoke ids: `avd-infrastructure`, `networking`, `trm-escalation-ops`, `proxy-solution`, `vendor-management`, `platform-troubleshooting`, `m365-stack`.
 
-Administrators can also fill **Create Scenario** in the app. That publishes for this browser only and downloads a JSON file you still need to drop into `data/scenarios/` as above.
-
-## Where to look in the code
-
-Each script starts with a short note, and each function has a comment above it.
-
-| File | What it does |
-| --- | --- |
-| `index.html` | The page shell. The theme is applied before CSS loads. `?v=` avoids a stale cached copy. |
-| `css/styles.css` | Dashboard layout, Lloyds black and green, light and dark tokens. |
-| `js/app.js` | Starts the app, reads the address after `#/`, and saves work. |
-| `js/auth.js` | Microsoft Entra sign-in for ignitemyfire.co.uk. |
-| `js/views.js` | The HTML for each screen. |
-| `js/render.js` | Sidebar chrome, pills, evidence, KPI cards, charts, and the readiness map. |
-| `js/storage.js` | Reads and writes this browser's saved data. |
-| `js/content.js` | Loads `data/config.json`, the scenario files, and the Reading catalog. |
-| `js/scoring.js` | Turns answers and a review into scores and charts. |
-| `js/validation.js` | Checks scenario JSON before it is published. |
-| `js/util.js` | Small helpers: safe HTML, dates, ids, and navigation. |
-| `js/tests.js` | Scoring and catalog checks used while building the app. Not shown in the administrator menu. |
-| `js/vendor/msal-browser.min.js` | MSAL browser library. Do not edit. |
-| `data/config.json` | App name, Entra ids, capability domains, demo people, bundled scenario paths. |
-| `data/reading.json` | Reading room collections and destination buttons. Set `href` / `links`, or `wip: true` until the URL is known. |
-| `data/scenarios/` | Practice incidents. Copy `_template.json` to add one. |
-| `staticwebapp.config.json` | Fallback so hash routes still serve `index.html` on Azure Static Web Apps. |
-| `assets/lloyds-horse.svg` | The horse in the sidebar. |
-
-Scenario files are JSON, so they cannot contain comments. Each scenario has one written prompt. `assessorGuidance` is what the reviewer sees, not the engineer. `scoringCriteria` links each 0–3 score to that response (`q1`) and to a `domainId` from `capabilityDomains`.
-
-An attempt keeps a copy of the scenario version it started with. Later edits do not rewrite that copy.
-
-## Saved in this browser
-
-Attempts, the colleague list, the signed-in person, and the light or dark choice stay in local storage under `incident-lab:`. Reset demo data, on the administrator scenario page, clears attempts and imported scenarios. It does not remove colleagues.
+The Create Scenario form only saves in this browser until that JSON file is in `data/scenarios/` and listed in `config.json`.

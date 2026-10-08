@@ -2,16 +2,16 @@
 // and the onClick / onSubmit handlers are the only place that writes saved work.
 // The address after #/ decides which screen route() returns.
 
-import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=58";
-import * as storage from "./storage.js?v=58";
-import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=61";
-import { validateScenario, formatValidationErrors } from "./validation.js?v=58";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=62";
-import * as views from "./views.js?v=62";
-import * as auth from "./auth.js?v=58";
-import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=58";
-import { runVerification } from "./tests.js?v=58";
-import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=58";
+import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=64";
+import * as storage from "./storage.js?v=64";
+import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=64";
+import { validateScenario, formatValidationErrors } from "./validation.js?v=64";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=64";
+import * as views from "./views.js?v=64";
+import * as auth from "./auth.js?v=64";
+import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=64";
+import { runVerification } from "./tests.js?v=64";
+import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=64";
 
 const appRoot = document.getElementById("app");
 // Live page data. It is rebuilt from localStorage on every render.
@@ -1184,7 +1184,7 @@ function authorScenario(form) {
     illustrativeDisclaimer: String(data.get("illustrativeDisclaimer") || "").trim(),
     assessorGuidance: "Reward sound investigation order and appropriate escalation.",
     acceptableAlternativeApproaches: ["Document-led investigation before platform changes."],
-    documentationReferences: [{ title: "Illustrative runbook title", note: "Confirm locally." }],
+    documentationReferences: [{ title: "Runbook title", note: "Confirm locally." }],
     initialIncident: {
       callSummary: String(data.get("callSummary") || "").trim(),
       serviceNow: {
