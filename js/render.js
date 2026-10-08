@@ -1,8 +1,8 @@
 // Shared pieces of HTML: the sidebar, top bar, status pills, evidence, and charts.
 // Page-specific screens live in views.js. This file does not change stored data.
 
-import { escapeHtml, formatDateTime, nl, percent } from "./util.js";
-import { readinessCopy, scoreLabel } from "./scoring.js";
+import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=58";
+import { readinessCopy, scoreLabel } from "./scoring.js?v=58";
 
 // Screen name for a stored role. engineer is shown as User.
 export function roleLabel(role) {
@@ -39,6 +39,7 @@ function icon(name, size = 18) {
     author: `<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>`,
     verify: `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`,
     reading: `<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>`,
+    sandbox: `<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/>`,
     search: `<circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/>`,
     bell: `<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>`,
     sun: `<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>`,
@@ -122,7 +123,8 @@ function navFor(role, path) {
       ["#/assessor/people", "People", "people"]
     ], path)
       + navSection("Practice", [
-        ["#/library", "Scenario Library", "library"],
+        ["#/library", "SevA Scenarios", "library"],
+        ["#/sandbox", "Incident Sandbox", "sandbox"],
         ["#/reading", "Reading", "reading", "WIP"],
         ["#/readiness", "Readiness", "readiness"]
       ], path);
@@ -135,14 +137,16 @@ function navFor(role, path) {
       ["#/admin/criteria", "On-Call Criteria", "criteria"],
       ["#/admin/access", "Role Access", "access"]
     ], path)
-      + navSection("Library", [
-        ["#/library", "Scenario Library", "library"],
+      + navSection("Practice", [
+        ["#/library", "SevA Scenarios", "library"],
+        ["#/sandbox", "Incident Sandbox", "sandbox"],
         ["#/reading", "Reading", "reading", "WIP"]
       ], path);
   }
   return navSection("Practice", [
     ["#/dashboard", "Overview", "overview"],
-    ["#/library", "Scenario Library", "library"],
+    ["#/library", "SevA Scenarios", "library"],
+    ["#/sandbox", "Incident Sandbox", "sandbox"],
     ["#/reading", "Reading", "reading", "WIP"],
     ["#/evidence", "Evidence", "evidence"],
     ["#/readiness", "Readiness", "readiness"]
@@ -161,6 +165,7 @@ function isCurrentNav(hrefPath, path) {
   if (hrefPath === "/admin/access" && path.startsWith("/admin/access")) return true;
   if (hrefPath === "/reading" && path.startsWith("/reading")) return true;
   if (hrefPath === "/library" && path.startsWith("/library")) return true;
+  if (hrefPath === "/sandbox" && path.startsWith("/sandbox")) return true;
   return false;
 }
 
@@ -521,7 +526,7 @@ function neuralDetailHtml(item) {
     <p>${escapeHtml(tone)}</p>
     ${item.unmet?.length ? `<ul class="neural-unmet">${item.unmet.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>` : ""}
     ${item.evidenceNote ? `<p class="subtle">${escapeHtml(item.evidenceNote)}</p>` : ""}
-    <p class="btn-row"><a class="btn secondary" href="#/library">Practise from the library</a></p>
+    <p class="btn-row"><a class="btn secondary" href="#/library">Practise SevA Scenarios</a></p>
   `;
 }
 

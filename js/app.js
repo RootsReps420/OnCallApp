@@ -2,15 +2,16 @@
 // and the onClick / onSubmit handlers are the only place that writes saved work.
 // The address after #/ decides which screen route() returns.
 
-import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js";
-import * as storage from "./storage.js?v=57";
-import { loadConfig, loadLibrary, loadReading } from "./content.js?v=57";
-import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=57";
-import * as views from "./views.js?v=57";
-import * as auth from "./auth.js?v=57";
-import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
-import { runVerification } from "./tests.js?v=57";
+import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=58";
+import * as storage from "./storage.js?v=58";
+import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=58";
+import { validateScenario, formatValidationErrors } from "./validation.js?v=58";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=58";
+import * as views from "./views.js?v=58";
+import * as auth from "./auth.js?v=58";
+import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=58";
+import { runVerification } from "./tests.js?v=58";
+import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=58";
 
 const appRoot = document.getElementById("app");
 // Live page data. It is rebuilt from localStorage on every render.
@@ -28,7 +29,10 @@ const state = {
   entraEnabled: false,      // Microsoft sign-in is configured in config.json
   authError: "",            // last Entra error shown on the sign-in page
   reading: null,            // data/reading.json catalog
-  readingProgress: {}       // opened / read ticks for Reading
+  readingProgress: {},      // opened / read ticks for Reading
+  sandbox: null,            // data/sandbox.json practice tickets
+  sandboxRuns: [],          // sandbox practice runs in this browser
+  activeSandboxRunId: ""    // the ticket currently open in the sandbox form
 };
 
 // Match the saved session id to a colleague. A stale id is cleared.
@@ -56,6 +60,8 @@ async function refreshLibrary() {
   state.readinessConfig = storage.getReadinessConfig(state.config.readinessCriteria);
   state.reading = await loadReading();
   state.readingProgress = storage.getReadingProgress();
+  state.sandbox = await loadSandbox();
+  state.sandboxRuns = storage.getSandboxRuns();
   state.attempts
     .filter((item) => item.status === "in-progress")
     .forEach((item) => ensureWrittenAttempt(item));
@@ -75,12 +81,18 @@ async function boot() {
     }
     await refreshLibrary();
     if (!location.hash) location.hash = "#/dashboard";
-    window.addEventListener("hashchange", render);
+    window.addEventListener("hashchange", () => {
+      persistOpenSandboxDrafts();
+      render();
+    });
     document.addEventListener("click", onClick);
     document.addEventListener("change", onChange);
     document.addEventListener("input", onInput);
     document.addEventListener("submit", onSubmit);
-    window.addEventListener("beforeunload", pauseOpenTimer);
+    window.addEventListener("beforeunload", () => {
+      pauseOpenTimer();
+      persistOpenSandboxDrafts();
+    });
     render();
     if (authResult.fromRedirect && authResult.person) {
       navigate(homeFor(authResult.person.role));
@@ -109,6 +121,7 @@ function render() {
   state.proposals = storage.getProposals();
   state.readinessConfig = storage.getReadinessConfig(state.config.readinessCriteria);
   state.readingProgress = storage.getReadingProgress();
+  state.sandboxRuns = storage.getSandboxRuns();
   const { parts, path } = parseHash();
   const body = state.person ? route(parts) : views.signInView(state);
   state.flash = "";
@@ -146,6 +159,12 @@ function route(parts) {
   }
   if (area === "library" && id === "spoke") return views.librarySpokeView(state, extra);
   if (area === "library") return views.libraryView(state);
+  if (area === "sandbox" && (!id || id === "")) return views.sandboxListView(state);
+  if (area === "sandbox" && id === "ticket") {
+    ensureSandboxRun(extra);
+    return views.sandboxTicketView(state, extra);
+  }
+  if (area === "sandbox" && id === "feedback") return views.sandboxFeedbackView(state, extra);
   if (area === "reading" && (!id || id === "")) return views.readingView(state);
   if (area === "reading" && id === "shelf") return views.readingShelfView(state, extra);
   if (area === "reading" && id === "page") {
@@ -207,7 +226,7 @@ function deny(area, id) {
   if (area === "assess" || area === "review" || area === "submitted" || area === "feedback") {
     const attempt = storage.getAttempt(id);
     if (attempt && role === "engineer" && attempt.engineerId !== state.person.id) {
-      return errorPage("That attempt belongs to another colleague", "Open a scenario from your library, or wait for feedback on your own submission.");
+      return errorPage("That attempt belongs to another colleague", "Open a scenario from SevA Scenarios, or wait for feedback on your own submission.");
     }
   }
   return null;
@@ -223,6 +242,85 @@ function cloneScenario(scenario) {
   return typeof structuredClone === "function"
     ? structuredClone(scenario)
     : JSON.parse(JSON.stringify(scenario));
+}
+
+// Keep the work-note draft and resolution text if the page redraws.
+function persistSandboxDrafts(runId) {
+  const run = storage.getSandboxRun(runId);
+  if (!run || run.status !== "in-progress") return run;
+  const draft = document.querySelector("[data-sandbox-draft]");
+  const resolution = document.querySelector("[data-sandbox-resolution]");
+  if (draft) run.draftNote = draft.value;
+  if (resolution) run.resolution = resolution.value;
+  run.updatedAt = nowIso();
+  storage.saveSandboxRun(run);
+  return run;
+}
+
+function persistOpenSandboxDrafts() {
+  const runId = document.querySelector("[data-sandbox-run]")?.getAttribute("data-sandbox-run");
+  if (runId) persistSandboxDrafts(runId);
+}
+
+// Open a new practice run on a ticket. Always starts a fresh record, even if one was completed.
+function startSandboxRun(ticketId) {
+  const ticket = findSandboxTicket(state.sandbox, ticketId);
+  if (!ticket || !state.person) return null;
+  const startState = ticket.form.state === "New" ? "In Progress" : ticket.form.state;
+  const trail = [];
+  if (ticket.form.state && ticket.form.state !== startState) trail.push(ticket.form.state);
+  trail.push(startState);
+  const run = {
+    id: createId("sandbox"),
+    ticketId: ticket.id,
+    engineerId: state.person.id,
+    engineerName: state.person.name,
+    status: "in-progress",
+    state: startState,
+    form: {
+      ...ticket.form,
+      assignedTo: state.person.name,
+      state: startState
+    },
+    stateTrail: trail,
+    notes: [{
+      at: nowIso(),
+      who: state.person.name,
+      kind: "field",
+      source: "engineer",
+      text: `Assigned to ${state.person.name}. State is ${startState}.`
+    }],
+    draftNote: "",
+    resolution: "",
+    uiTab: "notes",
+    elapsedMs: 0,
+    startedAt: nowIso(),
+    updatedAt: nowIso(),
+    timerRunningSince: nowIso()
+  };
+  storage.saveSandboxRun(run);
+  state.activeSandboxRunId = run.id;
+  state.sandboxRuns = storage.getSandboxRuns();
+  return run;
+}
+
+// Resume an open run, show a completed one, or start the first visit.
+function ensureSandboxRun(ticketId) {
+  if (!ticketId || !state.person) return null;
+  const mine = storage.getSandboxRuns().filter((item) => item.engineerId === state.person.id && item.ticketId === ticketId);
+  const open = mine.find((item) => item.status === "in-progress");
+  if (open) {
+    state.activeSandboxRunId = open.id;
+    return open;
+  }
+  const latest = mine
+    .slice()
+    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0];
+  if (latest?.status === "completed") {
+    state.activeSandboxRunId = latest.id;
+    return latest;
+  }
+  return startSandboxRun(ticketId);
 }
 
 // Handle data-action buttons: theme, sign-in, sign-out, attempt flow, and admin actions.
@@ -318,6 +416,90 @@ function onClick(event) {
     render();
     return;
   }
+  if (action === "sandbox-start") {
+    const ticketId = button.getAttribute("data-ticket-id");
+    const run = startSandboxRun(ticketId);
+    if (!run) return;
+    const dest = `#/sandbox/ticket/${encodeURIComponent(ticketId)}`;
+    if (location.hash === dest) render();
+    else navigate(dest);
+    return;
+  }
+  if (action === "sandbox-state") {
+    const runId = button.getAttribute("data-run-id");
+    persistSandboxDrafts(runId);
+    const run = storage.getSandboxRun(runId);
+    if (!run || run.status !== "in-progress") return;
+    const next = button.getAttribute("data-state") || "";
+    if (!next || next === run.state) return;
+    const prev = run.state;
+    run.state = next;
+    run.form = { ...(run.form || {}), state: next };
+    run.stateTrail = [...(run.stateTrail || []), next];
+    run.notes = [...(run.notes || []), {
+      at: nowIso(),
+      who: state.person.name,
+      kind: "field",
+      source: "engineer",
+      text: `State was ${prev} now ${next}.`
+    }];
+    run.updatedAt = nowIso();
+    storage.saveSandboxRun(run);
+    render();
+    return;
+  }
+  if (action === "sandbox-tab") {
+    const runId = button.getAttribute("data-run-id");
+    persistSandboxDrafts(runId);
+    const run = storage.getSandboxRun(runId);
+    if (!run || run.status !== "in-progress") return;
+    run.uiTab = button.getAttribute("data-tab") || "notes";
+    run.updatedAt = nowIso();
+    storage.saveSandboxRun(run);
+    render();
+    return;
+  }
+  if (action === "sandbox-post") {
+    const runId = button.getAttribute("data-run-id");
+    persistSandboxDrafts(runId);
+    const run = storage.getSandboxRun(runId);
+    if (!run || run.status !== "in-progress") return;
+    const text = String(run.draftNote || "").trim();
+    if (!text) return;
+    const visible = Boolean(document.querySelector("[data-sandbox-visible]")?.checked);
+    run.notes = [...(run.notes || []), {
+      at: nowIso(),
+      who: state.person.name,
+      kind: visible ? "customer" : "work",
+      source: "engineer",
+      customerVisible: visible,
+      text
+    }];
+    run.draftNote = "";
+    run.updatedAt = nowIso();
+    storage.saveSandboxRun(run);
+    render();
+    return;
+  }
+  if (action === "sandbox-complete") {
+    const runId = button.getAttribute("data-run-id");
+    persistSandboxDrafts(runId);
+    const run = storage.getSandboxRun(runId);
+    if (!run || run.status !== "in-progress") return;
+    const ticket = findSandboxTicket(state.sandbox, run.ticketId);
+    if (!ticket) return;
+    const started = Date.parse(run.startedAt);
+    run.elapsedMs = Number.isFinite(started) ? Math.max(0, Date.now() - started) : Number(run.elapsedMs) || 0;
+    run.status = "completed";
+    run.completedAt = nowIso();
+    run.updatedAt = nowIso();
+    run.timerRunningSince = null;
+    run.feedback = scoreSandboxRun(ticket, run);
+    storage.saveSandboxRun(run);
+    state.activeSandboxRunId = run.id;
+    navigate(`#/sandbox/feedback/${encodeURIComponent(run.id)}`);
+    return;
+  }
   if (action === "dash-range") {
     document.querySelectorAll("[data-action='dash-range']").forEach((item) => {
       item.setAttribute("aria-pressed", item === button ? "true" : "false");
@@ -368,7 +550,7 @@ function onClick(event) {
     return;
   }
   if (action === "reset-demo") {
-    if (confirm("Clear attempts, workplace tickets, proposals, custom scenarios, and readiness edits stored in this browser?")) {
+    if (confirm("Clear attempts, sandbox runs, workplace tickets, proposals, custom scenarios, and readiness edits stored in this browser?")) {
       storage.resetDemoData();
       refreshLibrary().then(() => navigate("#/admin"));
     }
@@ -432,6 +614,11 @@ function onChange(event) {
 function onInput(event) {
   const input = event.target.closest("[data-question-id]");
   if (input) persistAnswerInput(input, true);
+  const sandboxField = event.target.closest("[data-sandbox-draft], [data-sandbox-resolution]");
+  if (sandboxField) {
+    const runId = document.querySelector("[data-sandbox-run]")?.getAttribute("data-sandbox-run");
+    if (runId) persistSandboxDrafts(runId);
+  }
 }
 
 // Read the current answer from the page and store the attempt.
@@ -743,7 +930,7 @@ function verificationView() {
   let results = [];
   let crashed = "";
   try {
-    results = runVerification(state.reading);
+    results = runVerification(state.reading, state.sandbox);
   } catch (error) {
     crashed = String(error?.message || error);
   }

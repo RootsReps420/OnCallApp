@@ -2,7 +2,7 @@
 // Written answers are never keyword-scored. They stay pending until a person marks them.
 // A missing answer is "unanswered", not zero.
 
-import { clamp, percent, round1 } from "./util.js";
+import { clamp, percent, round1 } from "./util.js?v=58";
 
 // 0 is not yet demonstrated. 2 is the "Demonstrated" line used by the areas-to-improve chart.
 export const SCORE_SCALE = [

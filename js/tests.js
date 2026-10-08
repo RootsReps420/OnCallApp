@@ -1,10 +1,11 @@
 // Scoring and catalog checks. Not shown in the administrator menu.
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
-import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js";
-import { validateScenario, validateReadingCatalog } from "./validation.js";
-import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js";
-import * as storage from "./storage.js?v=57";
+import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=58";
+import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=58";
+import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=58";
+import { scoreSandboxRun } from "./sandbox.js?v=58";
+import * as storage from "./storage.js?v=58";
 
 // A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {
@@ -119,7 +120,7 @@ function fixtureScenario() {
 }
 
 // Run the checks and return { name, ok, detail } rows for the Verification page.
-export function runVerification(readingCatalog) {
+export function runVerification(readingCatalog, sandboxCatalog) {
   const results = [];
   const check = (name, condition, detail = "") => {
     results.push({ name, ok: Boolean(condition), detail });
@@ -314,6 +315,47 @@ export function runVerification(readingCatalog) {
   }
 
   check("Development actions split on new lines", splitActions("Read the runbook\nShadow a SevA").length === 2);
+
+  const sandboxFixture = {
+    disclaimer: "Practice records only. Names in this fixture are fictional placeholders.",
+    tickets: [{
+      id: "sbx-fixture",
+      number: "INC14000000",
+      title: "Fixture personal AVD sign-in",
+      summary: "Cannot sign in to a personal live desktop.",
+      suggestedMinutes: 15,
+      form: {
+        caller: "Jane Doe",
+        state: "New",
+        assignmentGroup: "IT.ISD.CLIENT INFRASTRUCTURE",
+        shortDescription: "AVD - unable to sign in",
+        description: "Personal live desktop will not start. User asked for a restart."
+      },
+      signals: ["personal", "restart", "sign in"],
+      history: []
+    }]
+  };
+  const sandboxOk = validateSandboxCatalog(sandboxFixture);
+  check("Sandbox catalog fixture validates", sandboxOk.ok, sandboxOk.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));
+  const emptyNotes = scoreSandboxRun(sandboxFixture.tickets[0], { notes: [], resolution: "", state: "New", stateTrail: ["New"], elapsedMs: 1000 });
+  check("Sandbox comms is 0 with no work notes", emptyNotes.rows.find((item) => item.id === "comms")?.score === 0);
+  const practised = scoreSandboxRun(sandboxFixture.tickets[0], {
+    notes: [
+      { source: "engineer", kind: "work", text: "Checked the personal live desktop. Asked the caller to confirm they still need a restart, then advised them I would update the record." },
+      { source: "engineer", kind: "customer", customerVisible: true, text: "We are looking at a restart of the personal desktop. I will update you on Teams." }
+    ],
+    resolution: "Restarted the personal desktop and confirmed the user could sign in.",
+    state: "Resolved",
+    stateTrail: ["New", "In Progress", "Resolved"],
+    elapsedMs: 12 * 60 * 1000
+  });
+  check("Sandbox scores comms when notes name the caller", practised.rows.find((item) => item.id === "comms")?.score >= 4);
+  check("Sandbox troubleshooting uses ticket facts", practised.rows.find((item) => item.id === "troubleshooting")?.score >= 3);
+  check("Sandbox hygiene rewards In Progress then Resolved", practised.rows.find((item) => item.id === "hygiene")?.score >= 4);
+  if (sandboxCatalog) {
+    const liveSandbox = validateSandboxCatalog(sandboxCatalog);
+    check("Bundled sandbox catalog validates", liveSandbox.ok, liveSandbox.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));
+  }
 
   const key = "incident-lab:attempts";
   const previous = localStorage.getItem(key);

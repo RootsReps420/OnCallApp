@@ -243,6 +243,49 @@ export function validateReadingCatalog(catalog) {
   return { ok: errors.length === 0, errors };
 }
 
+// Practice tickets for the Incident Sandbox. Each one needs a form, a timeline, and scoring signals taken from that form.
+export function validateSandboxCatalog(catalog) {
+  const errors = [];
+  if (!catalog || typeof catalog !== "object" || Array.isArray(catalog)) {
+    return { ok: false, errors: [{ path: "$", message: "Sandbox catalog must be a JSON object." }] };
+  }
+  requireString(errors, "disclaimer", catalog.disclaimer, 20);
+  if (!requireArray(errors, "tickets", catalog.tickets)) return { ok: false, errors };
+  if (!catalog.tickets.length) fail(errors, "tickets", "Provide at least one practice ticket.");
+  const ids = new Set();
+  catalog.tickets.forEach((ticket, index) => {
+    const path = `tickets[${index}]`;
+    requireString(errors, `${path}.id`, ticket?.id);
+    if (ticket?.id) {
+      if (ids.has(ticket.id)) fail(errors, `${path}.id`, "Ticket ids must be unique.");
+      ids.add(ticket.id);
+    }
+    requireString(errors, `${path}.number`, ticket?.number);
+    requireString(errors, `${path}.title`, ticket?.title, 8);
+    requireString(errors, `${path}.summary`, ticket?.summary, 12);
+    if (typeof ticket?.suggestedMinutes !== "number" || ticket.suggestedMinutes < 5) {
+      fail(errors, `${path}.suggestedMinutes`, "suggestedMinutes must be a number of at least 5.");
+    }
+    const form = ticket?.form;
+    if (!form || typeof form !== "object") {
+      fail(errors, `${path}.form`, "form is required.");
+    } else {
+      requireString(errors, `${path}.form.shortDescription`, form.shortDescription);
+      requireString(errors, `${path}.form.description`, form.description, 12);
+      requireString(errors, `${path}.form.assignmentGroup`, form.assignmentGroup);
+      requireString(errors, `${path}.form.caller`, form.caller);
+      requireString(errors, `${path}.form.state`, form.state);
+    }
+    if (!requireArray(errors, `${path}.signals`, ticket?.signals) || !ticket.signals.length) {
+      fail(errors, `${path}.signals`, "List the ticket facts the practice score should look for.");
+    }
+    if (ticket?.history != null && !Array.isArray(ticket.history)) {
+      fail(errors, `${path}.history`, "history must be an array.");
+    }
+  });
+  return { ok: errors.length === 0, errors };
+}
+
 // Join path and message into one block of text for the import form.
 export function formatValidationErrors(errors) {
   return errors.map((error) => `${error.path}: ${error.message}`).join("\n");

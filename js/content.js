@@ -1,8 +1,8 @@
 // Loads config.json and the scenario files, then merges any scenarios
 // an administrator has saved in this browser on top of the bundled ones.
 
-import { validateScenario, validateReadingCatalog } from "./validation.js?v=57";
-import { getCustomScenarios } from "./storage.js?v=57";
+import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=58";
+import { getCustomScenarios } from "./storage.js?v=58";
 
 // Fetch data/config.json. cache: no-store so a refresh sees file edits.
 export async function loadConfig() {
@@ -163,4 +163,24 @@ export function continueReading(catalog, progress = {}) {
   return articles
     .slice()
     .sort((a, b) => String(progress[b.id]?.openedAt || "").localeCompare(String(progress[a.id]?.openedAt || "")))[0] || null;
+}
+
+const EMPTY_SANDBOX = {
+  disclaimer: "Sandbox catalog could not be loaded. Serve data/sandbox.json over HTTP.",
+  tickets: []
+};
+
+// Fetch the Incident Sandbox tickets. A broken file still returns an object so the app can boot.
+export async function loadSandbox() {
+  try {
+    const response = await fetch("data/sandbox.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Unable to load sandbox catalog.");
+    const catalog = await response.json();
+    const check = validateSandboxCatalog(catalog);
+    if (!check.ok) console.warn("Sandbox catalog failed validation", check.errors);
+    return { ...catalog, validation: check };
+  } catch (error) {
+    console.warn(error);
+    return { ...EMPTY_SANDBOX, validation: { ok: false, errors: [{ path: "sandbox.json", message: String(error.message || error) }] } };
+  }
 }

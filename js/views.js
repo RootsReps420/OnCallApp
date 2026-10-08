@@ -1,7 +1,7 @@
 // One function per screen. Each function returns an HTML string.
 // Clicks are handled in app.js by looking for data-action on the element.
 
-import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js";
+import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=58";
 import {
   pillsForScenario,
   snowCard,
@@ -19,9 +19,10 @@ import {
   errorPage,
   formatAttemptMeta,
   roleLabel
-} from "./render.js";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js";
-import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=57";
+} from "./render.js?v=58";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js?v=58";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=58";
+import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=58";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -107,7 +108,8 @@ export function dashboardView(state) {
         <p class="lede">Track your SevA practice and readiness for ${escapeHtml(config.serviceName)} in real time.</p>
       </div>
       <div class="btn-row">
-        <a class="btn" href="#/library">Open scenario library</a>
+        <a class="btn" href="#/library">Open SevA Scenarios</a>
+        <a class="btn secondary" href="#/sandbox">Incident Sandbox</a>
         <a class="btn secondary" href="#/reading">Reading · WIP</a>
       </div>
     </section>
@@ -195,7 +197,7 @@ export function dashboardView(state) {
                   <td>${escapeHtml(item.scenarioVersion)}</td>
                   <td><a class="btn ghost" href="${href}">${action}</a></td>
                 </tr>`;
-            }).join("") : `<tr><td colspan="5" class="muted">No attempts yet. Open the library to start a scenario.</td></tr>`}
+            }).join("") : `<tr><td colspan="5" class="muted">No attempts yet. Open SevA Scenarios to start.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -219,7 +221,7 @@ export function dashboardView(state) {
   `;
 }
 
-// Short tab labels and colours for the Scenario Library. The full spoke name sits on the tiles.
+// Short tab labels and colours for SevA Scenarios. The full spoke name sits on the tiles.
 const LIBRARY_SPOKE_META = {
   "avd-infrastructure": { spine: "AVD", folio: "01", tone: "platform" },
   "networking": { spine: "Network", folio: "02", tone: "path" },
@@ -351,7 +353,7 @@ export function libraryView(state) {
     <section class="library-hero">
       <div>
         <p class="eyebrow">Practice incidents · Seven spokes</p>
-        <h1>Scenario library</h1>
+        <h1>SevA Scenarios</h1>
         <p class="lede">Prior SevA cases arranged by readiness spoke. Open a spoke, then a case. Ready needs one satisfactory scenario per spoke — not a named file. Docs sit under <a href="#/reading">Reading</a>.</p>
         ${libraryMeter(done, visible.length)}
         ${continueCopy ? `<p class="reading-continue">${continueCopy}.</p>` : ""}
@@ -378,7 +380,7 @@ export function librarySpokeView(state, spokeId) {
   const mine = attemptsFor(state.attempts, state.person.id);
   const done = spoke.items.filter((scenario) => isAttemptSatisfactory(latestAttempt(mine, scenario.id))).length;
   return `
-    <p class="crumb"><a href="#/library">Scenario library</a> / ${escapeHtml(spoke.name)}</p>
+    <p class="crumb"><a href="#/library">SevA Scenarios</a> / ${escapeHtml(spoke.name)}</p>
     <section class="library-hero is-spoke" data-tone="${escapeHtml(spoke.tone)}">
       <div>
         <p class="eyebrow">Spoke ${escapeHtml(spoke.folio)}</p>
@@ -404,7 +406,7 @@ export function scenarioIntroView(state, scenario) {
   const active = mine.find((item) => item.status === "in-progress");
   const spoke = (state.config.capabilityDomains || []).find((item) => item.id === scenario.spokeId);
   return `
-    <p class="crumb"><a href="#/library">Scenario library</a>${spoke ? ` / <a href="#/library/spoke/${encodeURIComponent(spoke.id)}">${escapeHtml(spoke.name)}</a>` : ""} / ${escapeHtml(scenario.title)}</p>
+    <p class="crumb"><a href="#/library">SevA Scenarios</a>${spoke ? ` / <a href="#/library/spoke/${encodeURIComponent(spoke.id)}">${escapeHtml(spoke.name)}</a>` : ""} / ${escapeHtml(scenario.title)}</p>
     <div class="page-header">
       ${pillsForScenario(scenario, active)}
       <h1>${escapeHtml(scenario.title)}</h1>
@@ -581,7 +583,7 @@ export function submittedView(attempt) {
       <p>Submitted ${formatDateTime(attempt.submittedAt)} · Scenario version ${escapeHtml(attempt.scenarioVersion)}</p>
       <div class="btn-row">
         <a class="btn" href="#/dashboard">Return to dashboard</a>
-        <a class="btn secondary" href="#/library">Scenario library</a>
+        <a class="btn secondary" href="#/library">SevA Scenarios</a>
       </div>
     </div>
   `;
@@ -2093,6 +2095,232 @@ export function readingPageView(state, articleId) {
         </div>
       </div>
     </article>
+  `;
+}
+
+function sandboxRunsFor(state) {
+  return (state.sandboxRuns || []).filter((item) => item.engineerId === state.person.id);
+}
+
+function snowField(label, value, { required = false, span = false } = {}) {
+  return `
+    <label class="snow-field ${span ? "is-wide" : ""}">
+      <span>${required ? "* " : ""}${escapeHtml(label)}</span>
+      <input type="text" value="${escapeHtml(value || "")}" readonly>
+    </label>
+  `;
+}
+
+function snowStateBar(current, runId) {
+  return `
+    <ol class="snow-states" aria-label="Incident state">
+      ${SANDBOX_STATES.map((stateName) => {
+        const active = stateName === current;
+        const passed = SANDBOX_STATES.indexOf(stateName) <= SANDBOX_STATES.indexOf(current);
+        return `<li><button type="button" class="${active ? "is-active" : ""} ${passed ? "is-passed" : ""}" data-action="sandbox-state" data-run-id="${escapeHtml(runId)}" data-state="${escapeHtml(stateName)}">${escapeHtml(stateName)}</button></li>`;
+      }).join("")}
+    </ol>
+  `;
+}
+
+function snowActivity(item) {
+  const kind = item.kind === "work" ? "Work notes" : item.kind === "email" ? "Email sent" : item.kind === "customer" ? "Customer visible" : "Field changes";
+  return `
+    <article class="snow-activity">
+      <header>
+        <strong>${escapeHtml(item.who || "System")}</strong>
+        <span>${escapeHtml(kind)} · ${formatDateTime(item.at)}</span>
+      </header>
+      <p>${nl(item.text || "")}</p>
+    </article>
+  `;
+}
+
+function sandboxElapsedLabel(run) {
+  const started = Date.parse(run?.startedAt);
+  if (!Number.isFinite(started)) return "";
+  const mins = Math.max(0, Math.floor((Date.now() - started) / 60000));
+  return `${mins} min on this record`;
+}
+
+function snowTabButton(runId, tab, id, label) {
+  return `<button type="button" class="${tab === id ? "is-active" : ""}" data-action="sandbox-tab" data-run-id="${escapeHtml(runId)}" data-tab="${escapeHtml(id)}">${escapeHtml(label)}</button>`;
+}
+
+// Queue of illustrative ServiceNow records. Completing one scores in this browser, with no assessor.
+export function sandboxListView(state) {
+  const catalog = state.sandbox || { tickets: [] };
+  const mine = sandboxRunsFor(state);
+  return `
+    <section class="library-hero">
+      <div>
+        <p class="eyebrow">Run Engineer · Practice records</p>
+        <h1>Run Engineer Incident Sandbox</h1>
+        <p class="lede">Work these as you would a live ServiceNow incident: pick it up, write work notes, talk to the caller, then close it. Feedback is instant and out of 5. It is not an assessor mark and it does not count on the Ready gate.</p>
+      </div>
+    </section>
+    <p class="reading-disclaimer">${escapeHtml(catalog.disclaimer || "")}</p>
+    <div class="sandbox-queue">
+      ${(catalog.tickets || []).map((ticket) => {
+        const latest = latestSandboxRun(mine, ticket.id, state.person.id);
+        const status = !latest ? "Not started" : latest.status === "completed" ? `${latest.feedback?.average ?? "—"} / 5` : "In progress";
+        const href = `#/sandbox/ticket/${encodeURIComponent(ticket.id)}`;
+        return `
+          <a class="sandbox-card" href="${href}" data-search="${escapeHtml(`${ticket.number} ${ticket.title} ${ticket.summary}`)}">
+            <span class="eyebrow">${escapeHtml(ticket.number)}</span>
+            <h2>${escapeHtml(ticket.title)}</h2>
+            <p>${escapeHtml(ticket.summary)}</p>
+            <span class="sandbox-card-foot">
+              <span class="pill">${escapeHtml(ticket.form.priority)}</span>
+              <span class="pill">${escapeHtml(ticket.form.channel)}</span>
+              <span>${escapeHtml(status)}</span>
+            </span>
+          </a>`;
+      }).join("") || `<div class="empty-state">No practice tickets loaded.</div>`}
+    </div>
+  `;
+}
+
+// Interactive ServiceNow-style form for one practice ticket.
+export function sandboxTicketView(state, ticketId) {
+  const ticket = findSandboxTicket(state.sandbox, ticketId);
+  if (!ticket) return errorPage("Ticket not found", "That practice record is not in the sandbox.");
+  const run = (state.sandboxRuns || []).find((item) => item.id === state.activeSandboxRunId && item.ticketId === ticket.id)
+    || latestSandboxRun(state.sandboxRuns, ticketId, state.person.id);
+  if (!run || run.ticketId !== ticket.id) {
+    return `
+      <p class="crumb"><a href="#/sandbox">Incident Sandbox</a> / ${escapeHtml(ticket.number)}</p>
+      <div class="page-header">
+        <h1>${escapeHtml(ticket.title)}</h1>
+        <p class="lede">${escapeHtml(ticket.summary)}</p>
+      </div>
+      <p class="btn-row"><button class="btn" type="button" data-action="sandbox-start" data-ticket-id="${escapeHtml(ticket.id)}">Open this ticket</button></p>
+    `;
+  }
+  if (run.status === "completed") {
+    return sandboxFeedbackView(state, run.id);
+  }
+  const form = { ...ticket.form, ...run.form };
+  const tab = run.uiTab || "notes";
+  const timeline = [...(ticket.history || []), ...(run.notes || [])]
+    .slice()
+    .sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
+  const elapsed = sandboxElapsedLabel(run);
+  return `
+    <p class="crumb"><a href="#/sandbox">Incident Sandbox</a> / ${escapeHtml(ticket.number)}</p>
+    <p class="sandbox-practice-banner">Practice record · names and contact details are fictional · suggested ${ticket.suggestedMinutes} minutes${elapsed ? ` · ${escapeHtml(elapsed)}` : ""}</p>
+    <div class="snow-shell" data-sandbox-run="${escapeHtml(run.id)}" data-ticket-id="${escapeHtml(ticket.id)}">
+      ${snowStateBar(form.state, run.id)}
+      <div class="snow-form">
+        <div class="snow-grid">
+          ${snowField("Number", ticket.number)}
+          ${snowField("Channel", form.channel)}
+          ${snowField("Caller", form.caller, { required: true })}
+          ${snowField("State", form.state)}
+          ${snowField("On behalf of", form.onBehalfOf)}
+          ${snowField("Impact", form.impact)}
+          ${snowField("Location", form.location)}
+          ${snowField("Urgency", form.urgency)}
+          ${snowField("Phone", form.phone)}
+          ${snowField("Priority", form.priority)}
+          ${snowField("Category", form.category)}
+          ${snowField("Escalation", form.escalation)}
+          ${snowField("Subcategory", form.subcategory)}
+          ${snowField("Assignment group", form.assignmentGroup, { required: true })}
+          ${snowField("Asset", form.asset)}
+          ${snowField("Assigned to", form.assignedTo || state.person.name)}
+          ${snowField("Ops agent", form.opsAgent)}
+          ${snowField("Business service", form.businessService)}
+          ${snowField("Service offering", form.serviceOffering)}
+          ${snowField("Configuration Item", form.configurationItem)}
+          ${snowField("Short description", form.shortDescription, { required: true, span: true })}
+        </div>
+        <label class="snow-check snow-csd"><input type="checkbox" disabled ${form.customerSensitive ? "checked" : ""}> Customer Sensitive Data</label>
+        <label class="snow-field is-wide">
+          <span>Description</span>
+          <textarea readonly rows="12">${escapeHtml(form.description)}</textarea>
+        </label>
+        <label class="snow-field is-wide">
+          <span>Business impact</span>
+          <textarea readonly rows="2">${escapeHtml(form.businessImpact)}</textarea>
+        </label>
+        <p class="snow-related"><button type="button" disabled>Related Search Results</button></p>
+        <div class="snow-template"><span>Template</span></div>
+      </div>
+      <div class="snow-lower">
+        <div class="snow-tabs" role="tablist">
+          ${snowTabButton(run.id, tab, "notes", "Notes")}
+          ${snowTabButton(run.id, tab, "related", "Related Records")}
+          ${snowTabButton(run.id, tab, "csdata", "Customer Sensitive Data")}
+          ${snowTabButton(run.id, tab, "resolution", "Resolution Information")}
+        </div>
+        ${tab === "notes" ? `
+          <div class="snow-notes-tools">
+            <span>Watch list</span>
+            <span>Work notes list</span>
+          </div>
+          <div class="snow-composer">
+            <label class="snow-field is-wide">
+              <span>Work notes</span>
+              <textarea data-sandbox-draft rows="4" placeholder="What you checked, who you told, what you will not change.">${escapeHtml(run.draftNote || "")}</textarea>
+            </label>
+            <div class="snow-composer-row">
+              <label class="snow-check"><input type="checkbox" data-sandbox-visible> Additional comments (Customer visible)</label>
+              <button class="btn snow-post" type="button" data-action="sandbox-post" data-run-id="${escapeHtml(run.id)}">Post</button>
+            </div>
+          </div>
+          <div class="snow-timeline">
+            <p class="snow-activity-count">Activities: ${timeline.length}</p>
+            ${timeline.map(snowActivity).join("") || `<p class="muted">No activities yet.</p>`}
+          </div>
+        ` : ""}
+        ${tab === "related" ? `<p class="snow-empty">No related records on this practice ticket.</p>` : ""}
+        ${tab === "csdata" ? `<p class="snow-empty">No customer sensitive data attached. Do not paste account numbers, sort codes, or addresses here.</p>` : ""}
+        ${tab === "resolution" ? `
+          <label class="snow-field is-wide">
+            <span>Resolution notes</span>
+            <textarea data-sandbox-resolution rows="6" placeholder="How you confirmed recovery, and what you told the caller.">${escapeHtml(run.resolution || "")}</textarea>
+          </label>
+          <p class="snow-hint">Set the state bar to Resolved when you are ready, then complete the practice. Feedback is generated here — nobody else marks this ticket.</p>
+        ` : ""}
+        <p class="btn-row snow-actions">
+          <button class="btn" type="button" data-action="sandbox-complete" data-run-id="${escapeHtml(run.id)}">Complete practice</button>
+          <a class="btn ghost" href="#/sandbox">Back to queue</a>
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+// Instant 0–5 feedback after a sandbox ticket is completed.
+export function sandboxFeedbackView(state, runId) {
+  const run = (state.sandboxRuns || []).find((item) => item.id === runId) || null;
+  if (!run) return errorPage("Practice run not found", "Open the Incident Sandbox and pick a ticket.");
+  const ticket = findSandboxTicket(state.sandbox, run.ticketId);
+  const feedback = run.feedback || (ticket ? scoreSandboxRun(ticket, run) : null);
+  if (!feedback) return errorPage("No feedback yet", "Complete the practice ticket first.");
+  return `
+    <p class="crumb"><a href="#/sandbox">Incident Sandbox</a> / ${escapeHtml(ticket?.number || run.ticketId)} / Feedback</p>
+    <div class="page-header">
+      <p class="eyebrow">Practice score · not an assessor mark</p>
+      <h1>${escapeHtml(ticket?.title || "Sandbox ticket")}</h1>
+      <p class="lede">${escapeHtml(feedback.summary)}</p>
+    </div>
+    <p class="sandbox-score-hero"><strong>${escapeHtml(String(feedback.average))}</strong><span>average out of 5</span></p>
+    <div class="sandbox-score-grid">
+      ${feedback.rows.map((row) => `
+        <section class="card">
+          <p class="eyebrow">${row.score} / 5</p>
+          <h2>${escapeHtml(row.label)}</h2>
+          <p class="subtle">${escapeHtml(row.hint)}</p>
+          <p>${escapeHtml(row.why)}</p>
+        </section>
+      `).join("")}
+    </div>
+    <p class="btn-row">
+      <button class="btn" type="button" data-action="sandbox-start" data-ticket-id="${escapeHtml(run.ticketId)}">Practise this ticket again</button>
+      <a class="btn secondary" href="#/sandbox">All sandbox tickets</a>
+    </p>
   `;
 }
 

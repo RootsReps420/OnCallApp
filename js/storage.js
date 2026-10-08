@@ -13,7 +13,8 @@ const KEYS = {
   directory: `${ROOT}:directory`,
   session: `${ROOT}:session`,
   evidence: `${ROOT}:evidence`,
-  reading: `${ROOT}:reading`
+  reading: `${ROOT}:reading`,
+  sandbox: `${ROOT}:sandbox`
 };
 
 // Parse a JSON value from localStorage. A corrupt value falls back instead of breaking the page.
@@ -226,9 +227,27 @@ export function markReadingRead(id) {
   return all;
 }
 
-// Clear attempts, imports, proposals, ticket write-ups, readiness edits, and reading ticks. The colleague directory and the signed-in person stay.
+// Every sandbox practice run in this browser.
+export function getSandboxRuns() {
+  return read(KEYS.sandbox, []);
+}
+
+export function saveSandboxRun(run) {
+  const list = getSandboxRuns();
+  const index = list.findIndex((item) => item.id === run.id);
+  if (index >= 0) list[index] = run;
+  else list.push(run);
+  write(KEYS.sandbox, list);
+  return run;
+}
+
+export function getSandboxRun(id) {
+  return getSandboxRuns().find((item) => item.id === id) || null;
+}
+
+// Clear attempts, imports, proposals, ticket write-ups, readiness edits, reading ticks, and sandbox runs. The colleague directory and the signed-in person stay.
 export function resetDemoData() {
-  [KEYS.attempts, KEYS.customScenarios, KEYS.proposals, KEYS.readinessConfig, KEYS.reviews, KEYS.evidence, KEYS.reading].forEach((key) => {
+  [KEYS.attempts, KEYS.customScenarios, KEYS.proposals, KEYS.readinessConfig, KEYS.reviews, KEYS.evidence, KEYS.reading, KEYS.sandbox].forEach((key) => {
     localStorage.removeItem(key);
   });
 }
@@ -242,6 +261,7 @@ export function exportStore() {
     proposals: getProposals(),
     readinessConfig: getReadinessConfig(null),
     readingProgress: getReadingProgress(),
+    sandboxRuns: getSandboxRuns(),
     exportedAt: new Date().toISOString()
   };
 }

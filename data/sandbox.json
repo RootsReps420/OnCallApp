@@ -1,0 +1,322 @@
+{
+  "disclaimer": "Practice records only. Names, phones, emails, Global IDs, and asset tags are fictional. These are not live ServiceNow incidents and they are not bank policy.",
+  "tickets": [
+    {
+      "id": "sbx-portal-assigned-vm",
+      "number": "INC14001001",
+      "title": "CompanyPortal — unable to access company portal",
+      "summary": "New starter cannot see apps on a personal AVD. The VM looks already assigned.",
+      "suggestedMinutes": 20,
+      "form": {
+        "channel": "Self-service",
+        "state": "In Progress",
+        "impact": "2 - Medium",
+        "urgency": "2 - Medium",
+        "priority": "3 - Moderate",
+        "escalation": "Normal",
+        "assignmentGroup": "IT.ISD.CLIENT INFRASTRUCTURE",
+        "assignedTo": "",
+        "caller": "Jane Doe",
+        "onBehalfOf": "Alex Rivera",
+        "location": "Manila hub",
+        "phone": "",
+        "category": "Software",
+        "subcategory": "Unexpected behaviour",
+        "asset": "0000-0000-0000-0000-0000-0001",
+        "opsAgent": "",
+        "businessService": "",
+        "serviceOffering": "",
+        "configurationItem": "",
+        "shortDescription": "CompanyPortal - Unable to access company portal",
+        "description": "#CITSDNewStarter\nPlease summarise your issue. Do not type any Customer Sensitive Data in this field such as account numbers, sort codes, roll numbers, names or addresses.\nNo available apps showing Virtual Machine: MMD00AA0001 in Company Portal - Single Session (Live Desktop)\nCSD Warning:\nfalse\nDid you find the form you were looking for?:\nNo\nI've been unable to find my fault in the list. I understand I may be asked to raise a new fault if a specific form for my issue already exists.\nYes\nDoes your issue relate to a customer account where you may need to provide us sort code and account details?:\nNo\nPlease provide more information regarding the issue you are facing including any error messages:\nGlobal ID user 10001001 Rivera Alex - No available apps showing Virtual Machine: MMD00AA0001 \"This device is already assigned to someone in your organization. Contact company support about becoming the primary user. You can continue to use Company Portal but functionality will be limited.\"\nAsset req for:\nREQ0000001",
+        "businessImpact": "",
+        "customerSensitive": false
+      },
+      "history": [
+        {
+          "at": "2026-10-08T09:36:55.000Z",
+          "who": "A. Colleague",
+          "kind": "field",
+          "text": "Assigned to was empty. Assignment group set to IT.ISD.CLIENT INFRASTRUCTURE."
+        },
+        {
+          "at": "2026-10-08T09:36:55.000Z",
+          "who": "A. Colleague",
+          "kind": "work",
+          "text": "Hi team,\nThe VM that Alex is assigned is assigned to someone else.\nPlease see the screenshot attached, hence unable to log on to Company Portal.\nDevice name — MMD00AA0001\nPlease assign them a new VM (AVD)."
+        }
+      ],
+      "signals": ["company portal", "assigned", "virtual machine", "mmd00aa0001", "new starter", "primary user", "work note"]
+    },
+    {
+      "id": "sbx-msh-not-connected",
+      "number": "INC14001002",
+      "title": "Multi-session host — cannot connect",
+      "summary": "Shared desktop will not connect. Edge reports that the device is not connected.",
+      "suggestedMinutes": 20,
+      "form": {
+        "channel": "Self-service",
+        "state": "New",
+        "impact": "2 - Medium",
+        "urgency": "2 - Medium",
+        "priority": "3 - Moderate",
+        "escalation": "Normal",
+        "assignmentGroup": "IT.ISD.CLIENT INFRASTRUCTURE",
+        "assignedTo": "",
+        "caller": "John Doe",
+        "onBehalfOf": "",
+        "location": "India — non-LBG site",
+        "phone": "NA",
+        "category": "-- None --",
+        "subcategory": "-- None --",
+        "asset": "",
+        "opsAgent": "",
+        "businessService": "",
+        "serviceOffering": "",
+        "configurationItem": "Virtual Desktop Service",
+        "shortDescription": "VIRTUAL MACHINE - FAULT NOT LISTED",
+        "description": "Please select your device type\nMulti session Host (Shared Desktops)\nPlease enter the Host pool name (e.g. Group Functions (008-02))\n001-03\nPlease provide your contact number and an external email address which you have access to without the need of your Virtual Machine in case we need to contact you.\njohndoe@lloydsbanking.com\nPlease confirm if you are normally available via Teams.\nYes\nPlease select from the following.\nIf your fault does not fit into one of the questions above, then please explain your issue here?\nUnable to connect to this network, need AVD restart. Connection interruption while using Edge; the error message appears as \"You are not connected.\"\nRequested for\nJohn Doe\nEmail address\njohndoe@lloydsbanking.com",
+        "businessImpact": "",
+        "customerSensitive": false
+      },
+      "history": [
+        {
+          "at": "2026-10-08T08:20:10.000Z",
+          "who": "System",
+          "kind": "email",
+          "text": "IT@LBG: Your new fault reference is INC14001002. Sent to johndoe@lloydsbanking.com."
+        }
+      ],
+      "signals": ["multi session", "host pool", "001-03", "not connected", "restart", "edge", "virtual desktop"]
+    },
+    {
+      "id": "sbx-msh-missing-icons",
+      "number": "INC14001003",
+      "title": "Multi-session — missing desktop icons",
+      "summary": "Shared desktop opens but live/shared icons are missing in Windows App.",
+      "suggestedMinutes": 20,
+      "form": {
+        "channel": "Self-service",
+        "state": "New",
+        "impact": "2 - Medium",
+        "urgency": "2 - Medium",
+        "priority": "3 - Moderate",
+        "escalation": "Normal",
+        "assignmentGroup": "IT.ISD.CLIENT INFRASTRUCTURE",
+        "assignedTo": "",
+        "caller": "Priya Sharma",
+        "onBehalfOf": "Sam Taylor",
+        "location": "Bangalore hub",
+        "phone": "00000",
+        "category": "Virtual",
+        "subcategory": "Virtual Machine",
+        "asset": "",
+        "opsAgent": "",
+        "businessService": "Azure Virtual Machines",
+        "serviceOffering": "",
+        "configurationItem": "",
+        "shortDescription": "VIRTUAL MACHINE - MMD - OTHER FAULT",
+        "description": "Please select your device type\nMulti-session Host (Shared Desktops)\nPlease enter the Host pool name (e.g. Group Functions (008-02))\n008-02\nPlease provide your contact number and an external email address which you have access to without the need of your Virtual Machine in case we need to contact you.\n000000\nPlease confirm if you are normally available via Teams.\nYes\nPlease select from the following.\nAzure Virtual Desktop launch issue\nPlease select your device type\nMulti-session Host (Shared Desktops)\nPlease select from the following Multi session issue:\nI can't see the live/shared desktop icons on your remote desktop tool / windows app",
+        "businessImpact": "",
+        "customerSensitive": false
+      },
+      "history": [
+        {
+          "at": "2026-10-08T08:42:56.000Z",
+          "who": "System",
+          "kind": "email",
+          "text": "IT@LBG: Your new fault reference is INC14001003. Sent to colleague@lloydsbanking.com."
+        }
+      ],
+      "signals": ["multi-session", "008-02", "host pool", "icons", "windows app", "shared desktop"]
+    },
+    {
+      "id": "sbx-personal-prisma",
+      "number": "INC14001004",
+      "title": "Personal AVD — apps failing on Prisma",
+      "summary": "Personal live desktop. Several applications fail and the user points at Prisma.",
+      "suggestedMinutes": 20,
+      "form": {
+        "channel": "Self-service",
+        "state": "New",
+        "impact": "2 - Medium",
+        "urgency": "2 - Medium",
+        "priority": "3 - Moderate",
+        "escalation": "Normal",
+        "assignmentGroup": "IT.ISD.CLIENT INFRASTRUCTURE",
+        "assignedTo": "",
+        "caller": "Jordan Lee",
+        "onBehalfOf": "Casey Nguyen",
+        "location": "Bangalore hub",
+        "phone": "na",
+        "category": "-- None --",
+        "subcategory": "-- None --",
+        "asset": "",
+        "opsAgent": "",
+        "businessService": "",
+        "serviceOffering": "",
+        "configurationItem": "Virtual Desktop Service",
+        "shortDescription": "VIRTUAL MACHINE - FAULT NOT LISTED",
+        "description": "Please select your device type\nPersonal (Live Desktops)\nPlease enter the full name of the Virtual Machine you are using if known. This should start MMD.\nna\nPlease provide your contact number and an external email address which you have access to without the need of your Virtual Machine in case we need to contact you.\nna\nPlease confirm if you are normally available via Teams.\nYes\nPlease select from the following.\nIf your fault does not fit into one of the questions above, then please explain your issue here?\nMultiple applications are not working due to Prisma issue\nOn behalf of\nCasey Nguyen",
+        "businessImpact": "",
+        "customerSensitive": false
+      },
+      "history": [
+        {
+          "at": "2026-10-08T09:04:29.000Z",
+          "who": "System",
+          "kind": "email",
+          "text": "IT@LBG: Your new fault reference is INC14001004. Sent to colleague@lloydsbanking.com."
+        }
+      ],
+      "signals": ["personal", "live desktop", "prisma", "applications", "virtual desktop"]
+    },
+    {
+      "id": "sbx-outlook-teams",
+      "number": "INC14001005",
+      "title": "Personal AVD — Outlook and Teams not responding",
+      "summary": "Personal VM. Outlook and Teams are not responding. Fault-not-listed form.",
+      "suggestedMinutes": 15,
+      "form": {
+        "channel": "Self-service",
+        "state": "New",
+        "impact": "2 - Medium",
+        "urgency": "2 - Medium",
+        "priority": "3 - Moderate",
+        "escalation": "Normal",
+        "assignmentGroup": "IT.ISD.CLIENT INFRASTRUCTURE",
+        "assignedTo": "",
+        "caller": "Morgan Ellis",
+        "onBehalfOf": "Riley Chen",
+        "location": "Manila hub",
+        "phone": "00000",
+        "category": "-- None --",
+        "subcategory": "-- None --",
+        "asset": "",
+        "opsAgent": "",
+        "businessService": "",
+        "serviceOffering": "",
+        "configurationItem": "Virtual Desktop Service",
+        "shortDescription": "VIRTUAL MACHINE - FAULT NOT LISTED",
+        "description": "Account\nGLOBAL\\10001002\nOffice Location\nManila hub\nvip\nfalse\nit_vip\nfalse\nForm loading\nfalse\nDomain\nGLOBAL\nPlease summarise your issue. Do not type any Customer Sensitive Data into this field such as account numbers, sort codes, roll numbers, names or addresses.\nMicrosoft Outlook and Teams Issue, Not responding\ntemplate_to_use\nOLF_R_VM_NOTLISTED_FAULT",
+        "businessImpact": "",
+        "customerSensitive": false
+      },
+      "history": [
+        {
+          "at": "2026-10-08T09:08:03.000Z",
+          "who": "System",
+          "kind": "email",
+          "text": "IT@LBG: Your new fault reference is INC14001005. Sent to colleague@lloydsbanking.com."
+        }
+      ],
+      "signals": ["outlook", "teams", "not responding", "personal", "virtual machine"]
+    },
+    {
+      "id": "sbx-personal-signin",
+      "number": "INC14001006",
+      "title": "Personal AVD — cannot sign in",
+      "summary": "User cannot access the personal live desktop and has asked for a restart.",
+      "suggestedMinutes": 15,
+      "form": {
+        "channel": "Self-service",
+        "state": "In Progress",
+        "impact": "2 - Medium",
+        "urgency": "2 - Medium",
+        "priority": "3 - Moderate",
+        "escalation": "Normal",
+        "assignmentGroup": "IT.ISD.CLIENT INFRASTRUCTURE",
+        "assignedTo": "",
+        "caller": "Chris Patel",
+        "onBehalfOf": "Taylor Brooks",
+        "location": "Bangalore (partner site)",
+        "phone": "+44000000000",
+        "category": "Virtual",
+        "subcategory": "Virtual Machine",
+        "asset": "",
+        "opsAgent": "",
+        "businessService": "",
+        "serviceOffering": "",
+        "configurationItem": "Virtual Desktop Service",
+        "shortDescription": "AVD - unable to access/sign in",
+        "description": "#CITSOAVD\nPlease select your device type\nPersonal (Live-Desktops)\nPlease provide your contact number and an external email address which you have access to without the need of your Virtual Machine in case we need to contact you.\ncolleague@lloydsbanking.com\nPlease confirm if you are normally available via Teams.\nYes\nPlease select from the following.\nI can't access my Virtual Desktop\nPlease select one of the following.\nI can't access my virtual desktop and require it restarting\nOn behalf of\nTaylor Brooks\nRequested for\nTaylor Brooks\nEmail address\ncolleague@lloydsbanking.com",
+        "businessImpact": "",
+        "customerSensitive": false
+      },
+      "history": [
+        {
+          "at": "2026-10-08T10:19:08.000Z",
+          "who": "System",
+          "kind": "email",
+          "text": "IT@LBG: Your incident has been updated. Reference INC14001006."
+        },
+        {
+          "at": "2026-10-08T10:18:59.000Z",
+          "who": "B. Colleague",
+          "kind": "field",
+          "text": "Assigned to was empty. Assignment group remains IT.ISD.CLIENT INFRASTRUCTURE."
+        }
+      ],
+      "signals": ["sign in", "personal", "restart", "virtual desktop", "access"]
+    },
+    {
+      "id": "sbx-connect-core",
+      "number": "INC14001007",
+      "title": "Unable to access Connect Core",
+      "summary": "Sparse Service Desk ticket. Reassigned onto Client Infrastructure with little detail.",
+      "suggestedMinutes": 15,
+      "form": {
+        "channel": "Service Desk",
+        "state": "New",
+        "impact": "2 - Medium",
+        "urgency": "2 - Medium",
+        "priority": "3 - Moderate",
+        "escalation": "Normal",
+        "assignmentGroup": "IT.ISD.CLIENT INFRASTRUCTURE",
+        "assignedTo": "",
+        "caller": "Pat Murphy",
+        "onBehalfOf": "",
+        "location": "Manchester office",
+        "phone": "07000000000",
+        "category": "-- None --",
+        "subcategory": "-- None --",
+        "asset": "ABC0000001",
+        "opsAgent": "",
+        "businessService": "",
+        "serviceOffering": "",
+        "configurationItem": "",
+        "shortDescription": "Unable to access Connect Core",
+        "description": "#CITSOAVD\n(No further description was supplied on the record.)",
+        "businessImpact": "",
+        "customerSensitive": false
+      },
+      "history": [
+        {
+          "at": "2026-10-08T10:24:10.000Z",
+          "who": "System",
+          "kind": "email",
+          "text": "IT@LBG: Your incident has been updated. Reference INC14001007."
+        },
+        {
+          "at": "2026-10-08T10:24:04.000Z",
+          "who": "C. Colleague",
+          "kind": "work",
+          "text": "Hi,\nYour incident requires further investigation so I've assigned your incident to the relevant IT support area to do this.\nPlease refer to the article below for further information on the IT SLA that apply to your incident.\nKind regards,\nColleague, IT Service Desk"
+        },
+        {
+          "at": "2026-10-08T10:23:57.000Z",
+          "who": "C. Colleague",
+          "kind": "field",
+          "text": "Assignment group IT.ISD.CLIENT INFRASTRUCTURE was SD.CITSO."
+        },
+        {
+          "at": "2026-10-08T10:23:56.000Z",
+          "who": "C. Colleague",
+          "kind": "work",
+          "text": "Customer update: working from home today but has worked when working from home in the past. Is a member of the usual office-based group."
+        }
+      ],
+      "signals": ["connect core", "service desk", "working from home", "contact", "detail", "citso"]
+    }
+  ]
+}
