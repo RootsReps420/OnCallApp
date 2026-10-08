@@ -125,7 +125,7 @@ function navFor(role, path) {
       + navSection("Practice", [
         ["#/library", "SevA Scenarios", "library"],
         ["#/sandbox", "Incident Sandbox", "sandbox"],
-        ["#/reading", "Reading", "reading", "WIP"],
+        ["#/reading", "Reading", "reading"],
         ["#/readiness", "Readiness", "readiness"]
       ], path);
   }
@@ -140,14 +140,14 @@ function navFor(role, path) {
       + navSection("Practice", [
         ["#/library", "SevA Scenarios", "library"],
         ["#/sandbox", "Incident Sandbox", "sandbox"],
-        ["#/reading", "Reading", "reading", "WIP"]
+        ["#/reading", "Reading", "reading"]
       ], path);
   }
   return navSection("Practice", [
     ["#/dashboard", "Overview", "overview"],
     ["#/library", "SevA Scenarios", "library"],
     ["#/sandbox", "Incident Sandbox", "sandbox"],
-    ["#/reading", "Reading", "reading", "WIP"],
+    ["#/reading", "Reading", "reading"],
     ["#/evidence", "Evidence", "evidence"],
     ["#/readiness", "Readiness", "readiness"]
   ], path)

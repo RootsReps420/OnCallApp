@@ -88,7 +88,7 @@ const EMPTY_READING = {
 // Fetch the Reading room catalog. A broken file still returns an object so the app can boot.
 export async function loadReading() {
   try {
-    const response = await fetch("data/reading.json", { cache: "no-store" });
+    const response = await fetch("data/reading.json?v=61", { cache: "no-store" });
     if (!response.ok) throw new Error("Unable to load reading catalog.");
     const catalog = await response.json();
     const check = validateReadingCatalog(catalog);
@@ -173,7 +173,7 @@ const EMPTY_SANDBOX = {
 // Fetch the Incident Sandbox tickets. A broken file still returns an object so the app can boot.
 export async function loadSandbox() {
   try {
-    const response = await fetch("data/sandbox.json", { cache: "no-store" });
+    const response = await fetch("data/sandbox.json?v=60", { cache: "no-store" });
     if (!response.ok) throw new Error("Unable to load sandbox catalog.");
     const catalog = await response.json();
     const check = validateSandboxCatalog(catalog);

@@ -3,7 +3,7 @@
 
 import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=58";
 import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=58";
-import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=58";
+import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=61";
 import { scoreSandboxRun } from "./sandbox.js?v=58";
 import * as storage from "./storage.js?v=58";
 

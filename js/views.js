@@ -19,9 +19,9 @@ import {
   errorPage,
   formatAttemptMeta,
   roleLabel
-} from "./render.js?v=58";
+} from "./render.js?v=62";
 import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js?v=58";
-import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=58";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=61";
 import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=58";
 
 // Newest attempt for one scenario, by start time.
@@ -110,7 +110,7 @@ export function dashboardView(state) {
       <div class="btn-row">
         <a class="btn" href="#/library">Open SevA Scenarios</a>
         <a class="btn secondary" href="#/sandbox">Incident Sandbox</a>
-        <a class="btn secondary" href="#/reading">Reading · WIP</a>
+        <a class="btn secondary" href="#/reading">Reading</a>
       </div>
     </section>
     <div class="filter-row">
@@ -1875,21 +1875,15 @@ function readingMeter(read, total) {
   `;
 }
 
-// Catalog reminder that cards open the live wiki, they do not copy it.
-function readingDisclaimer(catalog) {
-  return `<p class="reading-disclaimer">${escapeHtml(catalog?.disclaimer || "")}</p>`;
-}
-
 // Small WIP stamp used on unfinished shelves and cards.
 function readingWipChip() {
   return `<span class="reading-wip-chip">WIP</span>`;
 }
 
-// Yellow banner when a shelf still needs pages.
-function readingWipBanner(message) {
+function readingWipBanner() {
   return `
     <div class="callout warn reading-wip" role="status">
-      <p><strong>Work in progress.</strong> ${escapeHtml(message)}</p>
+      <p>Work in progress. Documentation will continually be added and updated where required</p>
     </div>
   `;
 }
@@ -1904,17 +1898,10 @@ function readingLinkKind(href) {
   return { kind: "web", venue: "Web", mark: "Open" };
 }
 
-// Destination buttons on a Reading card. WIP cards show an awaiting note instead.
+// Destination buttons on a Reading card. WIP cards rely on the banner instead of extra copy.
 function readingOpenButtons(article) {
   const links = articleLinks(article);
-  if (!links.length) {
-    return `
-      <div class="reading-awaiting">
-        <p class="reading-wip-stamp">WIP</p>
-        <p>This page is still to be added.</p>
-      </div>
-    `;
-  }
+  if (!links.length) return "";
   return `
     <div class="reading-open-stack">
       <p class="eyebrow">Open</p>
@@ -1935,11 +1922,8 @@ function articleSearchText(article, collection) {
 // One shelf card on the Reading home.
 function collectionTile(collection, articles, progress) {
   const read = articles.filter((item) => progress[item.id]?.readAt).length;
-  const live = articles.filter((item) => !articleIsWip(item)).length;
   const incomplete = collectionIsIncomplete(collection, articles);
-  const foot = incomplete
-    ? (live ? `${live} live · rest to add` : "Awaiting pages")
-    : (read ? `${read} read` : "Not started");
+  const foot = read ? `${read} read` : "Not started";
   return `
     <a class="reading-tile ${incomplete ? "is-wip" : ""}" data-tone="${escapeHtml(collection.tone)}" href="#/reading/shelf/${encodeURIComponent(collection.id)}" data-search="${escapeHtml(`${collection.title} ${collection.summary} ${articles.map((item) => item.title).join(" ")}`)}">
       <span class="reading-folio" aria-hidden="true">${escapeHtml(collection.folio)}</span>
@@ -1967,7 +1951,7 @@ function articleCard(article, collection, progress, { compact = false } = {}) {
       <p>${escapeHtml(article.lede)}</p>
       <span class="reading-issue-meta">
         ${wip
-          ? `<span class="pill develop">Awaiting URL</span>`
+          ? ""
           : `${venues.map((venue) => `<span class="pill">${escapeHtml(venue)}</span>`).join("")}${links.length > 1 ? `<span class="pill">${links.length} pages</span>` : ""}<span class="pill">${article.minutes} min</span>`}
         <span class="pill ${status.cls}">${escapeHtml(status.label)}</span>
       </span>
@@ -1989,10 +1973,9 @@ export function readingView(state) {
   return `
     <section class="reading-hero">
       <div>
-        <p class="eyebrow">Approved pages · ${catalogIncomplete ? "Still filling" : "Live"}</p>
+        <p class="eyebrow">Approved pages</p>
         <h1>Reading</h1>
-        ${catalogIncomplete ? `<p class="reading-wip-stamp" aria-hidden="true">WORK IN PROGRESS</p>` : ""}
-        <p class="lede">Platform, troubleshooting, and on-call pages arranged as a shelf. Open a card, then use the buttons on the rail — not a list of URLs.</p>
+        <p class="lede">Platform, troubleshooting, and on-call pages arranged as a shelf. Open a card, then use the buttons on the rail.</p>
         ${readingMeter(read, liveArticles.length)}
         ${next ? `<p class="reading-continue">Continue with <a href="#/reading/page/${encodeURIComponent(next.id)}">${escapeHtml(next.title)}</a> in ${escapeHtml(nextCollection?.title || "the shelf")}.</p>` : ""}
       </div>
@@ -2005,8 +1988,7 @@ export function readingView(state) {
         }).join("")}
       </div>
     </section>
-    ${catalogIncomplete ? readingWipBanner("Some shelves still need pages. Live cards open the approved wiki, SharePoint, ServiceNow, or Azure page from the rail.") : ""}
-    ${readingDisclaimer(catalog)}
+    ${catalogIncomplete ? readingWipBanner() : ""}
     <div class="reading-grid">
       ${collections.map((collection) => collectionTile(collection, articlesForCollection(catalog, collection.id), progress)).join("") || `<div class="empty-state">No reading collections loaded.</div>`}
     </div>
@@ -2034,17 +2016,15 @@ export function readingShelfView(state, collectionId) {
   const incomplete = collectionIsIncomplete(collection, articles);
   return `
     <p class="crumb"><a href="#/reading">Reading</a> / ${escapeHtml(collection.title)}</p>
-    ${incomplete ? readingWipBanner("This shelf still needs pages. Add the approved URLs when you have them.") : ""}
+    ${incomplete ? readingWipBanner() : ""}
     <section class="reading-hero is-shelf" data-tone="${escapeHtml(collection.tone)}">
       <div>
         <p class="eyebrow">Volume ${escapeHtml(collection.folio)}${incomplete ? ` ${readingWipChip()}` : ""}</p>
         <h1>${escapeHtml(collection.title)}</h1>
-        ${incomplete ? `<p class="reading-wip-stamp" aria-hidden="true">WORK IN PROGRESS</p>` : ""}
         <p class="lede">${escapeHtml(collection.summary)}</p>
         ${readingMeter(read, liveArticles.length)}
       </div>
     </section>
-    ${readingDisclaimer(catalog)}
     <div class="reading-shelf">
       ${articles.map((article) => articleCard(article, collection, progress)).join("") || `<div class="empty-state">No notes in this shelf yet.</div>`}
     </div>
@@ -2070,7 +2050,7 @@ export function readingPageView(state, articleId) {
   const wip = articleIsWip(article);
   return `
     <p class="crumb"><a href="#/reading">Reading</a> / <a href="${shelfHref}">${escapeHtml(collection?.title || "Shelf")}</a> / ${escapeHtml(article.title)}</p>
-    ${wip ? readingWipBanner("This card is waiting for an approved URL.") : ""}
+    ${wip ? readingWipBanner() : ""}
     <article class="reading-page" data-tone="${escapeHtml(collection?.tone || "ops")}">
       <div class="reading-sheet">
         <p class="eyebrow">${escapeHtml(collection?.spine || "Note")} · Volume ${escapeHtml(collection?.folio || "—")}${wip ? readingWipChip() : ""}</p>

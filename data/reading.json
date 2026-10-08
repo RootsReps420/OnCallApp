@@ -468,6 +468,31 @@
       ]
     },
     {
+      "id": "ven-ms-engage",
+      "collectionId": "vendors",
+      "title": "MS official engagement documentation (aka.ms)",
+      "lede": "Microsoft Learn page for opening a support request in Engage Center, including the Support AI Assistant.",
+      "source": "Microsoft Learn",
+      "sourceLabel": "Engage Center · Open a support request",
+      "minutes": 8,
+      "spokeIds": ["vendor-management"],
+      "href": "https://learn.microsoft.com/en-us/services-hub/microsoft-engage-center/support/create-new-support-case",
+      "links": [
+        {
+          "label": "Open a new Support request",
+          "href": "https://learn.microsoft.com/en-us/services-hub/microsoft-engage-center/support/create-new-support-case"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "On the rail",
+          "paragraphs": [
+            "Use the button on the rail to open the live Microsoft Learn page. Incident Lab does not copy the body."
+          ]
+        }
+      ]
+    },
+    {
       "id": "id-support-overview",
       "collectionId": "identity",
       "title": "Support documentation Overview",

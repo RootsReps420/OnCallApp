@@ -4,10 +4,10 @@
 
 import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=58";
 import * as storage from "./storage.js?v=58";
-import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=58";
+import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=61";
 import { validateScenario, formatValidationErrors } from "./validation.js?v=58";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=58";
-import * as views from "./views.js?v=58";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=62";
+import * as views from "./views.js?v=62";
 import * as auth from "./auth.js?v=58";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=58";
 import { runVerification } from "./tests.js?v=58";
