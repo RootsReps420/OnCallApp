@@ -4,7 +4,7 @@
 import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js";
 import { validateScenario, validateReadingCatalog } from "./validation.js";
 import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js";
-import * as storage from "./storage.js?v=55";
+import * as storage from "./storage.js?v=57";
 
 // A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {

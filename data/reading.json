@@ -23,7 +23,7 @@
       "spine": "Troubleshoot",
       "folio": "03",
       "tone": "fix",
-      "summary": "Azure workbooks and the ENGTR break-fix pages. TSA is still to add."
+      "summary": "Azure workbooks and the ENGTR break-fix pages for PAA and TSA."
     },
     {
       "id": "identity",
@@ -31,8 +31,7 @@
       "spine": "Identity",
       "folio": "04",
       "tone": "identity",
-      "wip": true,
-      "summary": "No pages in this drop yet. Add the approved identity and M365 URLs here."
+      "summary": "Support documentation overview for identity and M365 on ENGTR."
     },
     {
       "id": "networking",
@@ -40,8 +39,7 @@
       "spine": "Network",
       "folio": "05",
       "tone": "path",
-      "wip": true,
-      "summary": "No pages in this drop yet. Add the approved networking and proxy URLs here."
+      "summary": "Azure 2.0 AVD, hub, and landing-zone design pages."
     },
     {
       "id": "vendors",
@@ -49,7 +47,8 @@
       "spine": "Vendors",
       "folio": "06",
       "tone": "vendor",
-      "summary": "Palo Alto is in. The Microsoft CritSit guide still needs a URL."
+      "wip": true,
+      "summary": "Palo Alto is in. Microsoft still uses the support-model overview until the dedicated CritSit page is confirmed."
     }
   ],
   "articles": [
@@ -372,18 +371,23 @@
       "id": "ts-tsa",
       "collectionId": "troubleshooting",
       "title": "Platform Troubleshooting - Terminal Server Agent (TSA - AVD MSH)",
-      "lede": "No live page on this card yet. Add the TSA break-fix URL when you have it.",
+      "lede": "Quick-start break-fix for Terminal Server Agent on multi-session AVD.",
       "source": "Confluence",
-      "sourceLabel": "ENGTR · TSA · awaiting URL",
-      "minutes": 1,
+      "sourceLabel": "ENGTR · TSA",
+      "minutes": 6,
       "spokeIds": ["platform-troubleshooting"],
-      "wip": true,
-      "href": "",
+      "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/1035230357/TSA+-+Quick-start+Troubleshooting+Guide",
+      "links": [
+        {
+          "label": "TSA · Quick-start Troubleshooting Guide",
+          "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/1035230357/TSA+-+Quick-start+Troubleshooting+Guide"
+        }
+      ],
       "sections": [
         {
-          "heading": "Still to add",
+          "heading": "On the rail",
           "paragraphs": [
-            "This card is a placeholder. Add the approved https URL when you have it so the WIP mark can come off."
+            "Use the button on the rail to open the live Confluence page. Incident Lab does not copy the wiki body."
           ]
         }
       ]
@@ -442,58 +446,148 @@
       "id": "ven-microsoft",
       "collectionId": "vendors",
       "title": "MS (Microsoft) Engagement Guide (+ CritSit engagement)",
-      "lede": "No live page on this card yet. Add the Microsoft engagement and CritSit URL when you have it.",
+      "lede": "Support-model overview on ENGTR, held here until the dedicated Microsoft CritSit page is confirmed.",
       "source": "Confluence",
-      "sourceLabel": "Microsoft engagement · awaiting URL",
-      "minutes": 1,
+      "sourceLabel": "ENGTR · Microsoft engagement",
+      "minutes": 6,
       "spokeIds": ["vendor-management"],
-      "wip": true,
-      "href": "",
+      "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/547494398/Support+Model+Troubleshooting+Overview",
+      "links": [
+        {
+          "label": "Support Model Troubleshooting Overview",
+          "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/547494398/Support+Model+Troubleshooting+Overview"
+        }
+      ],
       "sections": [
         {
-          "heading": "Still to add",
+          "heading": "On the rail",
           "paragraphs": [
-            "This card is a placeholder. Add the approved https URL when you have it so the WIP mark can come off."
+            "Use the button on the rail to open the live Confluence page you have today. The dedicated Microsoft CritSit guide can replace this URL when it is confirmed."
           ]
         }
       ]
     },
     {
-      "id": "id-awaiting",
+      "id": "id-support-overview",
       "collectionId": "identity",
-      "title": "Identity & M365 pages",
-      "lede": "Nothing on this shelf yet. Add the approved identity and Microsoft 365 URLs when you have them.",
+      "title": "Support documentation Overview",
+      "lede": "Support-model troubleshooting overview on ENGTR for identity and M365.",
       "source": "Confluence",
-      "sourceLabel": "Identity · awaiting pages",
-      "minutes": 1,
+      "sourceLabel": "ENGTR · Support documentation",
+      "minutes": 6,
       "spokeIds": ["m365-stack"],
-      "wip": true,
-      "href": "",
+      "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/547494398/Support+Model+Troubleshooting+Overview",
+      "links": [
+        {
+          "label": "Support Model Troubleshooting Overview",
+          "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/547494398/Support+Model+Troubleshooting+Overview"
+        }
+      ],
       "sections": [
         {
-          "heading": "Still to add",
+          "heading": "On the rail",
           "paragraphs": [
-            "This shelf is a placeholder. Add the approved https URLs when you have them so the WIP mark can come off."
+            "Use the button on the rail to open the live Confluence page. Incident Lab does not copy the wiki body."
           ]
         }
       ]
     },
     {
-      "id": "net-awaiting",
+      "id": "net-az20-avd-mvd",
       "collectionId": "networking",
-      "title": "Networking & proxy pages",
-      "lede": "Nothing on this shelf yet. Add the approved networking and proxy URLs when you have them.",
+      "title": "AZ 2.0 - AVD (MVD)",
+      "lede": "Minimum viable design for AVD on the MWPT space.",
       "source": "Confluence",
-      "sourceLabel": "Networking · awaiting pages",
-      "minutes": 1,
-      "spokeIds": ["networking"],
-      "wip": true,
-      "href": "",
+      "sourceLabel": "MWPT · AVD MVD",
+      "minutes": 6,
+      "spokeIds": ["networking", "avd-infrastructure"],
+      "href": "https://lbg.atlassian.net/wiki/spaces/MWPT/pages/912665981/VDI+-+AVD+-+Minimum+Viable+Design+MVD",
+      "links": [
+        {
+          "label": "VDI · AVD · Minimum Viable Design",
+          "href": "https://lbg.atlassian.net/wiki/spaces/MWPT/pages/912665981/VDI+-+AVD+-+Minimum+Viable+Design+MVD"
+        }
+      ],
       "sections": [
         {
-          "heading": "Still to add",
+          "heading": "On the rail",
           "paragraphs": [
-            "This shelf is a placeholder. Add the approved https URLs when you have them so the WIP mark can come off."
+            "Use the button on the rail to open the live Confluence page. Incident Lab does not copy the wiki body."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "net-az20-hub-locations",
+      "collectionId": "networking",
+      "title": "AZ 2.0 - Hub Locations",
+      "lede": "Azure 2.0 hub and lab locations on ENGTR.",
+      "source": "Confluence",
+      "sourceLabel": "ENGTR · Hub lab locations",
+      "minutes": 6,
+      "spokeIds": ["networking"],
+      "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/841714154/2.0+Hub+Lab+Locations",
+      "links": [
+        {
+          "label": "2.0 Hub Lab Locations",
+          "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/841714154/2.0+Hub+Lab+Locations"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "On the rail",
+          "paragraphs": [
+            "Use the button on the rail to open the live Confluence page. Incident Lab does not copy the wiki body."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "net-az20-lz-platformdev-lld",
+      "collectionId": "networking",
+      "title": "AZ 2.0 - Landing Zone PlatformDev LLD",
+      "lede": "Landing-zone LLD for PlatformDev on ENGTR.",
+      "source": "Confluence",
+      "sourceLabel": "ENGTR · Landing Zone LLD",
+      "minutes": 6,
+      "spokeIds": ["networking", "avd-infrastructure"],
+      "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/791660920/VDI+-+Landing+Zone+LLD+-+PlatformDev",
+      "links": [
+        {
+          "label": "VDI · Landing Zone LLD · PlatformDev",
+          "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/791660920/VDI+-+Landing+Zone+LLD+-+PlatformDev"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "On the rail",
+          "paragraphs": [
+            "Use the button on the rail to open the live Confluence page. Incident Lab does not copy the wiki body."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "net-az20-platformdev-resource-lld",
+      "collectionId": "networking",
+      "title": "AZ 2.0 - PlatformDev Resource LLD",
+      "lede": "Landing-zone resource configuration LLD for PlatformDev on ENGTR.",
+      "source": "Confluence",
+      "sourceLabel": "ENGTR · PlatformDev resource LLD",
+      "minutes": 6,
+      "spokeIds": ["networking", "avd-infrastructure"],
+      "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/892393985/VDI+-+Landing+Zone+LLD+Resource+Config+-+PlatformDev",
+      "links": [
+        {
+          "label": "VDI · Landing Zone LLD Resource Config · PlatformDev",
+          "href": "https://lbg.atlassian.net/wiki/spaces/ENGTR/pages/892393985/VDI+-+Landing+Zone+LLD+Resource+Config+-+PlatformDev"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "On the rail",
+          "paragraphs": [
+            "Use the button on the rail to open the live Confluence page. Incident Lab does not copy the wiki body."
           ]
         }
       ]

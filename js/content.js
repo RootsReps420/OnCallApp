@@ -1,8 +1,8 @@
 // Loads config.json and the scenario files, then merges any scenarios
 // an administrator has saved in this browser on top of the bundled ones.
 
-import { validateScenario, validateReadingCatalog } from "./validation.js?v=55";
-import { getCustomScenarios } from "./storage.js?v=55";
+import { validateScenario, validateReadingCatalog } from "./validation.js?v=57";
+import { getCustomScenarios } from "./storage.js?v=57";
 
 // Fetch data/config.json. cache: no-store so a refresh sees file edits.
 export async function loadConfig() {
