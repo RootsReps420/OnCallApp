@@ -40,7 +40,7 @@ A local practice session is labelled **Local** in the sidebar. Sign in with Micr
 
 The shell is a dashboard: Lloyds horse on a white tile, **Virtual Team / Incident Lab**, Grove green on carbon black (dark) or a pale canvas (light). Theme is a moon/sun slider under the signed-in name.
 
-Users see Overview, Library, Reading, Evidence, Readiness, and Propose. Assessors see the review queue, a person page, and Reading. Administrators see scenario management, the authoring form, proposals, criteria, access, and Reading.
+Users see Overview, Scenario Library, Reading, Evidence, Readiness, and Propose. Assessors see the review queue, a person page, and Reading. Administrators see scenario management, the authoring form, proposals, criteria, access, and Reading.
 
 ## A practice attempt
 

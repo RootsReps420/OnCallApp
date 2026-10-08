@@ -122,7 +122,7 @@ function navFor(role, path) {
       ["#/assessor/people", "People", "people"]
     ], path)
       + navSection("Practice", [
-        ["#/library", "Library", "library"],
+        ["#/library", "Scenario Library", "library"],
         ["#/reading", "Reading", "reading", "WIP"],
         ["#/readiness", "Readiness", "readiness"]
       ], path);
@@ -136,13 +136,13 @@ function navFor(role, path) {
       ["#/admin/access", "Role Access", "access"]
     ], path)
       + navSection("Library", [
-        ["#/library", "Scenarios", "library"],
+        ["#/library", "Scenario Library", "library"],
         ["#/reading", "Reading", "reading", "WIP"]
       ], path);
   }
   return navSection("Practice", [
     ["#/dashboard", "Overview", "overview"],
-    ["#/library", "Library", "library"],
+    ["#/library", "Scenario Library", "library"],
     ["#/reading", "Reading", "reading", "WIP"],
     ["#/evidence", "Evidence", "evidence"],
     ["#/readiness", "Readiness", "readiness"]
@@ -160,6 +160,7 @@ function isCurrentNav(hrefPath, path) {
   if (hrefPath === "/admin/author" && path.startsWith("/admin/author")) return true;
   if (hrefPath === "/admin/access" && path.startsWith("/admin/access")) return true;
   if (hrefPath === "/reading" && path.startsWith("/reading")) return true;
+  if (hrefPath === "/library" && path.startsWith("/library")) return true;
   return false;
 }
 

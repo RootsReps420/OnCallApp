@@ -3,9 +3,8 @@
 
 import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js";
 import { validateScenario, validateReadingCatalog } from "./validation.js";
-import { continueReading } from "./content.js";
-import { isNewerVersion, mergeScenarios, sortScenarios } from "./content.js";
-import * as storage from "./storage.js?v=50";
+import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js";
+import * as storage from "./storage.js?v=55";
 
 // A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {
@@ -126,6 +125,7 @@ export function runVerification(readingCatalog) {
     results.push({ name, ok: Boolean(condition), detail });
   };
 
+  // Choice questions use the credit written on each option.
   const singleGood = scoreObjectiveQuestion(fixtureQuestionSingle(), "good");
   check("Single-choice full credit uses option mapping", singleGood.credit === 1, singleGood.detail);
 
@@ -144,6 +144,7 @@ export function runVerification(readingCatalog) {
   const missingRequired = scoreObjectiveQuestion(fixtureQuestionMulti(), ["b"]);
   check("Missing required option caps credit", missingRequired.credit === 0.4);
 
+  // Written text must stay pending. Never treat a blank as a zero.
   const writtenEmpty = scoreObjectiveQuestion(fixtureQuestionWritten(), "  ");
   check("Empty written remains unanswered, not zero", writtenEmpty.status === "unanswered");
 
@@ -182,6 +183,7 @@ export function runVerification(readingCatalog) {
   );
   check("High average cannot hide unmet mandatory criterion", unmet.averageCannotHideMandatory === true && unmet.suggestedBand === "not-yet-ready");
 
+  // Catalog and merge checks: a thin fixture must pass; incomplete JSON must fail.
   const valid = validateScenario(scenario);
   check("Fixture scenario validates", valid.ok, valid.errors?.map((e) => `${e.path}: ${e.message}`).join("; "));
 
@@ -268,6 +270,7 @@ export function runVerification(readingCatalog) {
   const bothMet = spokeGateStatus(gateDomains, [avdOne, avdTwo, netOne], [goodAttempt(avdTwo), goodAttempt(netOne)]);
   check("One satisfactory scenario per spoke meets the Ready gate", allSpokesSatisfied(bothMet) === true);
 
+  // Reading catalog: live cards, WIP cards, and continue-reading order.
   const readingFixture = {
     disclaimer: "Illustrative reading catalog used only by verification.",
     collections: [{ id: "on-call", title: "On-call", spine: "On-call", folio: "01", tone: "ops", summary: "Rota and first-hour pages." }],

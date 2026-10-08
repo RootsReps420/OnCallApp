@@ -1,6 +1,7 @@
 // Checks a scenario JSON document before it can be saved or published.
 // It reports every problem it finds. It does not score answers.
 
+// Allowed values. Anything else is reported as a validation error.
 const QUESTION_TYPES = new Set(["single", "multiple", "written"]);
 const DIFFICULTIES = new Set(["foundation", "intermediate", "advanced"]);
 const STATUSES = new Set(["draft", "published"]);

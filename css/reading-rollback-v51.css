@@ -1,0 +1,81 @@
+/*
+  Reading look as shipped at v=51.
+  Not loaded by the app. To roll back the slight Reading restyle,
+  copy these rules over the matching selectors in styles.css.
+*/
+
+.reading-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.85fr);
+  gap: 1.2rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+  padding: 1.35rem 1.4rem 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(900px 240px at 0% -20%, rgba(0, 106, 77, 0.32), transparent 58%),
+    linear-gradient(180deg, var(--surface) 0%, var(--surface-alt) 100%);
+  overflow: hidden;
+}
+
+.reading-spines {
+  display: flex;
+  align-items: stretch;
+  gap: 0.38rem;
+  min-height: 15rem;
+}
+
+.reading-spine {
+  flex: 1 1 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.05rem 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  transition: flex var(--pop), background var(--ease), border-color var(--ease), color var(--ease);
+}
+
+.reading-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 13.8rem;
+  padding: 1.15rem 1.15rem 1.05rem;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  transition: transform var(--pop), border-color var(--ease), box-shadow var(--ease);
+}
+
+.reading-tile::before { content: none; }
+
+.reading-issue {
+  display: flex;
+  flex-direction: column;
+  min-height: 12.5rem;
+  padding: 1.1rem 1.15rem 1rem;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, transparent 0 1.7rem, var(--surface) 1.7rem),
+    repeating-linear-gradient(90deg, var(--surface-alt) 0 8px, var(--surface) 8px 16px);
+  background-color: var(--surface);
+  transition: transform var(--pop), border-color var(--ease), box-shadow var(--ease);
+}

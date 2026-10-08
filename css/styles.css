@@ -110,12 +110,14 @@ html[data-theme="light"] {
   --band-c: #dedede;
 }
 
+/* Include padding in width so cards and the sidebar line up. */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+/* Page canvas. Colour tokens above switch with data-theme; these rules stay the same. */
 html {
   scroll-behavior: smooth;
 }
@@ -132,6 +134,7 @@ body {
   transition: background-color var(--ease), color var(--ease);
 }
 
+/* Soft circles behind the dashboard. They do not catch clicks. */
 .brand-banding {
   position: fixed;
   inset: 0;
@@ -173,6 +176,7 @@ html[data-theme="light"] .brand-banding::after {
   outline-offset: 2px;
 }
 
+/* Stop a green outline around the whole page when JS focuses #main after a refresh. */
 .app-main:focus,
 .app-main:focus-visible {
   outline: none;
@@ -183,6 +187,7 @@ html[data-theme="light"] .brand-banding::after {
   z-index: 1;
 }
 
+/* Keyboard-only jump link. Hidden until Tab reaches it. */
 .skip-link {
   position: absolute;
   left: 0.75rem;
@@ -205,6 +210,7 @@ html[data-theme="light"] .brand-banding::after {
   color: var(--ink-muted);
 }
 
+/* Two columns: left sidebar, main dashboard. */
 .app-shell {
   position: relative;
   z-index: 1;
@@ -420,6 +426,7 @@ html[data-theme="light"] .brand-banding::after {
   border-radius: 10px;
 }
 
+/* Moon / sun slider under the signed-in name. */
 .theme-switch {
   display: inline-flex;
   align-items: center;
@@ -649,6 +656,7 @@ a { color: var(--link); }
   margin-bottom: 1.15rem;
 }
 
+/* Welcome strip on Overview. */
 .dash-hero {
   display: flex;
   align-items: flex-start;
@@ -898,6 +906,7 @@ a { color: var(--link); }
 .grid-2 { grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
 .grid-3 { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
 
+/* White / carbon panel used on most pages. */
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -939,6 +948,7 @@ a { color: var(--link); }
 .pill.critical,
 .pill.not-ready { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
 
+/* Grove-green action. Ghost and secondary sit beside it. */
 .btn,
 button.btn,
 a.btn {
@@ -1045,6 +1055,7 @@ th {
   font-size: 0.86rem;
 }
 
+/* Dark ticket-style panel used on scenario intros. */
 .evidence-panel {
   background: var(--evidence-bg);
   color: var(--evidence-fg);
@@ -1135,6 +1146,7 @@ th {
   border-left-color: var(--danger);
 }
 
+/* Write-up on the left, incident report on the right. */
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(17rem, 0.85fr);
@@ -1142,6 +1154,7 @@ th {
   align-items: start;
 }
 
+/* Suggested-time clock. Turns warning colour in overtime. */
 .attempt-timer {
   display: flex;
   flex-wrap: wrap;
@@ -1402,6 +1415,7 @@ th {
 
 .local-practice .lede { margin-top: 0.75rem; }
 
+/* Readiness hub-and-spoke map. Gaps on the ring pulse. */
 .neural-shell {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(16rem, 0.85fr);
@@ -1671,15 +1685,18 @@ kbd {
 
 .crumb a { text-decoration: none; }
 
+/* Reading room: book spines, shelf tiles, magazine cards.
+   Previous tile/hero/spine/issue rules: css/reading-rollback-v51.css (not loaded). */
 .reading-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.85fr);
   gap: 1.2rem;
   align-items: stretch;
   margin-bottom: 1rem;
-  padding: 1.35rem 1.4rem 1.4rem;
+  padding: 1.35rem 1.4rem 1.4rem 1.5rem;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px 16px 16px 4px;
   background:
     radial-gradient(900px 240px at 0% -20%, rgba(0, 106, 77, 0.32), transparent 58%),
     linear-gradient(180deg, var(--surface) 0%, var(--surface-alt) 100%);
@@ -1785,8 +1802,8 @@ kbd {
 .reading-spines {
   display: flex;
   align-items: stretch;
-  gap: 0.38rem;
-  min-height: 15rem;
+  gap: 0.28rem;
+  min-height: 16.5rem;
 }
 
 .reading-spine {
@@ -1799,11 +1816,11 @@ kbd {
   text-decoration: none;
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 1.05rem 0.15rem;
-  font-size: 0.7rem;
+  border-radius: 6px;
+  padding: 1.15rem 0.12rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   background: var(--surface);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
@@ -1841,15 +1858,30 @@ kbd {
   display: flex;
   flex-direction: column;
   min-height: 13.8rem;
-  padding: 1.15rem 1.15rem 1.05rem;
+  padding: 1.15rem 1.15rem 1.05rem 1.4rem;
   text-decoration: none;
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 12px;
   background: var(--surface);
   overflow: hidden;
   transition: transform var(--pop), border-color var(--ease), box-shadow var(--ease);
 }
+
+.reading-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--accent);
+}
+
+.reading-tile[data-tone="ops"]::before { background: #3dbe8a; }
+.reading-tile[data-tone="platform"]::before { background: #7dcea0; }
+.reading-tile[data-tone="fix"]::before { background: #e6c27a; }
+.reading-tile[data-tone="identity"]::before { background: #9ee0c4; }
+.reading-tile[data-tone="path"]::before { background: #b8b8b8; }
+.reading-tile[data-tone="vendor"]::before { background: #d4a574; }
 
 .reading-tile::after {
   content: "";
@@ -1949,7 +1981,7 @@ kbd {
   text-decoration: none;
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 18px;
   background:
     linear-gradient(180deg, transparent 0 1.7rem, var(--surface) 1.7rem),
     repeating-linear-gradient(90deg, var(--surface-alt) 0 8px, var(--surface) 8px 16px);
@@ -2151,10 +2183,252 @@ button.btn.reading-open {
   color: var(--ink-muted);
 }
 
+/* Scenario Library: folder tabs and case-file tiles. Glow sits on the right so it differs from Reading. */
+.library-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.85fr);
+  gap: 1.2rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+  padding: 1.35rem 1.4rem 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(820px 260px at 100% -18%, rgba(0, 106, 77, 0.28), transparent 56%),
+    linear-gradient(180deg, var(--surface-alt) 0%, var(--surface) 100%);
+  overflow: hidden;
+}
+
+.library-hero.is-spoke {
+  grid-template-columns: 1fr;
+}
+
+.library-hero h1 {
+  font-size: clamp(2.3rem, 6vw, 3.8rem);
+  letter-spacing: -0.07em;
+  line-height: 0.92;
+  margin: 0.1rem 0 0.55rem;
+}
+
+.library-hero .lede { max-width: 36rem; }
+
+.library-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+  min-height: 15rem;
+}
+
+.library-tab {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 2.4rem;
+  padding: 0.4rem 0.8rem 0.4rem 0.7rem;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 0 12px 12px 0;
+  background: var(--surface);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background var(--ease), border-color var(--ease), color var(--ease), transform var(--pop);
+}
+
+.library-tab-folio {
+  min-width: 1.4rem;
+  color: var(--ink-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.library-tab[data-tone="ops"] { border-left-color: #3dbe8a; }
+.library-tab[data-tone="platform"] { border-left-color: #7dcea0; }
+.library-tab[data-tone="fix"] { border-left-color: #e6c27a; }
+.library-tab[data-tone="identity"] { border-left-color: #9ee0c4; }
+.library-tab[data-tone="path"] { border-left-color: #b8b8b8; }
+.library-tab[data-tone="vendor"] { border-left-color: #d4a574; }
+
+.library-tab.is-done {
+  background: var(--accent-soft);
+}
+
+.app-main .library-tab:hover,
+.app-main .library-tab:focus-visible {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: translateX(4px);
+}
+
+.app-main .library-tab:hover .library-tab-folio,
+.app-main .library-tab:focus-visible .library-tab-folio {
+  color: var(--on-accent);
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.4rem;
+}
+
+.library-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 13.8rem;
+  padding: 1.35rem 1.15rem 1.05rem;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px 16px 16px 16px;
+  background: var(--surface);
+  overflow: hidden;
+  transition: transform var(--pop), border-color var(--ease), box-shadow var(--ease);
+}
+
+.library-tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2.6rem;
+  height: 0.48rem;
+  border-radius: 0 0 8px 0;
+  background: var(--accent);
+}
+
+.library-tile[data-tone="ops"]::before { background: #3dbe8a; }
+.library-tile[data-tone="platform"]::before { background: #7dcea0; }
+.library-tile[data-tone="fix"]::before { background: #e6c27a; }
+.library-tile[data-tone="identity"]::before { background: #9ee0c4; }
+.library-tile[data-tone="path"]::before { background: #b8b8b8; }
+.library-tile[data-tone="vendor"]::before { background: #d4a574; }
+
+.library-folio {
+  position: absolute;
+  top: 0.85rem;
+  right: 1rem;
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  color: var(--ink);
+  opacity: 0.1;
+  line-height: 1;
+}
+
+.app-main .library-tile:hover,
+.app-main .library-tile:focus-visible {
+  color: var(--ink);
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: var(--hover-shadow);
+}
+
+.library-tile h2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+  margin: 0.15rem 0 0.45rem;
+}
+
+.library-tile p {
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.library-tile-foot {
+  margin-top: auto;
+  padding-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--ink-subtle);
+}
+
+.library-shelf {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.library-case {
+  display: flex;
+  flex-direction: column;
+  min-height: 12.5rem;
+  padding: 1.1rem 1.15rem 1rem;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top-width: 3px;
+  border-radius: 4px 14px 14px 14px;
+  background: var(--surface);
+  transition: transform var(--pop), border-color var(--ease), box-shadow var(--ease);
+}
+
+.library-case[data-tone="ops"] { border-top-color: #3dbe8a; }
+.library-case[data-tone="platform"] { border-top-color: #7dcea0; }
+.library-case[data-tone="fix"] { border-top-color: #e6c27a; }
+.library-case[data-tone="identity"] { border-top-color: #9ee0c4; }
+.library-case[data-tone="path"] { border-top-color: #b8b8b8; }
+.library-case[data-tone="vendor"] { border-top-color: #d4a574; }
+
+.library-case.is-compact { min-height: 11.5rem; }
+
+.library-case-mark {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mark);
+  margin-bottom: 0.7rem;
+}
+
+.library-case h3 {
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.4rem;
+}
+
+.library-case p {
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+  margin: 0 0 0.8rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.library-case-meta {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.app-main .library-case:hover,
+.app-main .library-case:focus-visible {
+  color: var(--ink);
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: var(--hover-shadow);
+}
 
 html[data-theme="light"] .reading-hero {
   background:
     radial-gradient(900px 240px at 0% -20%, rgba(0, 106, 77, 0.1), transparent 58%),
+    var(--surface);
+}
+
+html[data-theme="light"] .library-hero {
+  background:
+    radial-gradient(820px 260px at 100% -18%, rgba(0, 106, 77, 0.1), transparent 56%),
     var(--surface);
 }
 
@@ -2167,6 +2441,7 @@ html[data-theme="light"] .reading-spine {
   to { opacity: 1; transform: none; }
 }
 
+/* Respect reduced-motion, then stack the dashboard on smaller screens. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -2191,9 +2466,20 @@ html[data-theme="light"] .reading-spine {
   .reflection,
   .neural-shell,
   .donut-wrap,
-  .reading-hero { grid-template-columns: 1fr; }
-  .reading-grid { grid-template-columns: 1fr 1fr; }
+  .reading-hero,
+  .library-hero { grid-template-columns: 1fr; }
+  .reading-grid,
+  .library-grid { grid-template-columns: 1fr 1fr; }
   .reading-spines { min-height: 10rem; }
+  .library-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-height: 0;
+  }
+  .library-tab {
+    flex: 1 1 28%;
+    border-radius: 10px;
+  }
   .sidebar {
     position: fixed;
     left: 0;
@@ -2215,7 +2501,8 @@ html[data-theme="light"] .reading-spine {
 @media (max-width: 640px) {
   .kpi-grid,
   .stat-row,
-  .reading-grid { grid-template-columns: 1fr; }
+  .reading-grid,
+  .library-grid { grid-template-columns: 1fr; }
   .app-main { padding: 0.7rem 1rem 2rem; }
   .topbar { padding: 0.8rem 1rem 0.2rem; }
   .app-footnote { padding-left: 1rem; padding-right: 1rem; }

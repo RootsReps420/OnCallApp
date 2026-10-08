@@ -3,14 +3,14 @@
 // The address after #/ decides which screen route() returns.
 
 import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js";
-import * as storage from "./storage.js?v=50";
-import { loadConfig, loadLibrary, loadReading } from "./content.js?v=50";
+import * as storage from "./storage.js?v=55";
+import { loadConfig, loadLibrary, loadReading } from "./content.js?v=55";
 import { validateScenario, formatValidationErrors } from "./validation.js";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=50";
-import * as views from "./views.js?v=50";
-import * as auth from "./auth.js?v=50";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=55";
+import * as views from "./views.js?v=55";
+import * as auth from "./auth.js?v=55";
 import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js";
-import { runVerification } from "./tests.js?v=50";
+import { runVerification } from "./tests.js?v=55";
 
 const appRoot = document.getElementById("app");
 // Live page data. It is rebuilt from localStorage on every render.
@@ -144,6 +144,7 @@ function route(parts) {
     if (state.role === "administrator") return views.adminScenariosView(state);
     return views.dashboardView(state);
   }
+  if (area === "library" && id === "spoke") return views.librarySpokeView(state, extra);
   if (area === "library") return views.libraryView(state);
   if (area === "reading" && (!id || id === "")) return views.readingView(state);
   if (area === "reading" && id === "shelf") return views.readingShelfView(state, extra);
@@ -809,6 +810,7 @@ function elapsedMs(attempt) {
   return base + Math.max(0, Date.now() - started);
 }
 
+// Stop the ticking clock and store elapsed time before the page redraws or unloads.
 function pauseOpenTimer() {
   if (timerHandle) {
     clearInterval(timerHandle);
@@ -864,6 +866,7 @@ function bindAttemptTimer() {
   timerHandle = setInterval(tick, 1000);
 }
 
+// Add another question or criterion row on Create Scenario, up to the max.
 function appendAuthorBlock(hostSel, templateId, itemSel, max) {
   const host = document.querySelector(hostSel);
   const tpl = document.getElementById(templateId);
@@ -874,6 +877,7 @@ function appendAuthorBlock(hostSel, templateId, itemSel, max) {
   host.insertAdjacentHTML("beforeend", html);
 }
 
+// Save a workplace ticket as a draft or submit it for assessor review.
 function saveEvidenceForm(form) {
   if (state.role !== "engineer") return;
   const data = new FormData(form);
@@ -911,6 +915,7 @@ function saveEvidenceForm(form) {
   navigate(`#/evidence/${entry.id}`);
 }
 
+// Save or release an assessor score on a workplace ticket.
 function saveEvidenceReview(form) {
   if (state.role !== "assessor") return;
   const entry = storage.getEvidenceEntry(form.getAttribute("data-evidence-id"));
@@ -939,6 +944,7 @@ function saveEvidenceReview(form) {
   navigate(mode === "release" ? "#/assessor" : `#/assessor/evidence/${entry.id}`);
 }
 
+// Build scenario JSON from the Create Scenario form, validate it, then save and download it.
 function authorScenario(form) {
   if (state.role !== "administrator") return;
   const status = form.querySelector("[data-form-status]");

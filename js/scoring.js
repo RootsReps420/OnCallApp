@@ -280,10 +280,12 @@ export function spokeGateStatus(domains, scenarios, attempts, minScore = 2, requ
   });
 }
 
+// True when every readiness spoke has a satisfactory attempt.
 export function allSpokesSatisfied(spokeStatus) {
   return Array.isArray(spokeStatus) && spokeStatus.length > 0 && spokeStatus.every((item) => item.met);
 }
 
+// Ready-gate check. Administrators can switch the one-per-spoke rule off.
 export function spokeGateComplete(readinessConfig, spokeStatus) {
   if (readinessConfig?.oneScenarioPerSpoke === false) return true;
   return allSpokesSatisfied(spokeStatus);

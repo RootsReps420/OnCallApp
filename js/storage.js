@@ -8,7 +8,7 @@ const KEYS = {
   customScenarios: `${ROOT}:custom-scenarios`,
   proposals: `${ROOT}:proposals`,
   readinessConfig: `${ROOT}:readiness-config`,
-  reviews: `${ROOT}:reviews`,
+  reviews: `${ROOT}:reviews`, // leftover key; still cleared on reset so old browsers drop it
   theme: `${ROOT}:theme`,
   directory: `${ROOT}:directory`,
   session: `${ROOT}:session`,
@@ -204,6 +204,7 @@ export function getReadingProgress() {
   return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
 }
 
+// First time a card is opened, stamp openedAt. Later opens keep the original time.
 export function markReadingOpened(id) {
   if (!id) return getReadingProgress();
   const all = getReadingProgress();
@@ -214,6 +215,7 @@ export function markReadingOpened(id) {
   return all;
 }
 
+// Mark a card as finished. Also sets openedAt if that was missing.
 export function markReadingRead(id) {
   if (!id) return getReadingProgress();
   const all = getReadingProgress();

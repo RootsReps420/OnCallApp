@@ -1,8 +1,8 @@
 // Loads config.json and the scenario files, then merges any scenarios
 // an administrator has saved in this browser on top of the bundled ones.
 
-import { validateScenario, validateReadingCatalog } from "./validation.js?v=45";
-import { getCustomScenarios } from "./storage.js?v=50";
+import { validateScenario, validateReadingCatalog } from "./validation.js?v=55";
+import { getCustomScenarios } from "./storage.js?v=55";
 
 // Fetch data/config.json. cache: no-store so a refresh sees file edits.
 export async function loadConfig() {
@@ -30,6 +30,7 @@ export async function loadBundledScenarios(config) {
 
 // Custom scenarios with the same id replace the bundled file in this browser only,
 // unless the bundled file is a newer version.
+// Compare version strings like 1.2.0. True when a is higher than b.
 export function isNewerVersion(a, b) {
   const left = String(a || "0").split(".").map((part) => Number(part) || 0);
   const right = String(b || "0").split(".").map((part) => Number(part) || 0);
@@ -40,6 +41,7 @@ export function isNewerVersion(a, b) {
   return false;
 }
 
+// Put custom copies on top of bundled files, unless the bundled file is a newer version.
 export function mergeScenarios(bundled, custom) {
   const map = new Map();
   bundled.forEach((scenario) => map.set(scenario.id, scenario));
@@ -65,21 +67,6 @@ export function sortScenarios(scenarios, domains = []) {
   });
 }
 
-// One group per spoke so the library can grow without a flat pile of incident titles.
-export function groupScenariosBySpoke(scenarios, domains = []) {
-  const known = new Set(domains.map((domain) => domain.id));
-  const groups = domains
-    .map((domain) => ({
-      id: domain.id,
-      name: domain.name,
-      items: scenarios.filter((item) => item.spokeId === domain.id)
-    }))
-    .filter((group) => group.items.length);
-  const other = scenarios.filter((item) => !known.has(item.spokeId));
-  if (other.length) groups.push({ id: "other", name: "Ungrouped", items: other });
-  return groups;
-}
-
 // Bundled files first, then anything saved locally.
 export async function loadLibrary(config) {
   const bundled = await loadBundledScenarios(config);
@@ -91,6 +78,7 @@ export function publishedScenarios(scenarios) {
   return scenarios.filter((scenario) => scenario.status === "published");
 }
 
+// Fallback catalog if reading.json cannot be fetched (for example file:// instead of HTTP).
 const EMPTY_READING = {
   disclaimer: "Reading catalog could not be loaded. Serve data/reading.json over HTTP.",
   collections: [],
@@ -112,22 +100,27 @@ export async function loadReading() {
   }
 }
 
+// Shelf list from the Reading catalog.
 export function readingCollections(catalog) {
   return catalog?.collections || [];
 }
 
+// Every Reading card, across all shelves.
 export function readingArticles(catalog) {
   return catalog?.articles || [];
 }
 
+// One shelf by id, or null.
 export function findReadingCollection(catalog, id) {
   return readingCollections(catalog).find((item) => item.id === id) || null;
 }
 
+// One Reading card by id, or null.
 export function findReadingArticle(catalog, id) {
   return readingArticles(catalog).find((item) => item.id === id) || null;
 }
 
+// Cards that belong on one shelf.
 export function articlesForCollection(catalog, collectionId) {
   return readingArticles(catalog).filter((item) => item.collectionId === collectionId);
 }
@@ -149,10 +142,12 @@ export function articleLinks(article) {
   return [];
 }
 
+// True when the card has no live URL yet, or is marked work-in-progress.
 export function articleIsWip(article) {
   return Boolean(article?.wip) || articleLinks(article).length === 0;
 }
 
+// True when the shelf itself is WIP, empty, or still has a card without a URL.
 export function collectionIsIncomplete(collection, articles) {
   return Boolean(collection?.wip) || !articles.length || articles.some(articleIsWip);
 }

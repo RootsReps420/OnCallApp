@@ -20,8 +20,8 @@ import {
   formatAttemptMeta,
   roleLabel
 } from "./render.js";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete } from "./scoring.js";
-import { publishedScenarios, groupScenariosBySpoke, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=45";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=55";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -35,16 +35,19 @@ function attemptsFor(attempts, engineerId) {
   return attempts.filter((item) => item.engineerId === engineerId);
 }
 
+// Demonstrated line from administrator criteria (usually 2).
 function readinessMinScore(state) {
   return gateMinScore(state.readinessConfig);
 }
 
+// One row per spoke for the Ready gate list on Overview and Readiness.
 function spokeRowsFor(state, attempts) {
   const min = readinessMinScore(state);
   const requireSatisfactory = state.readinessConfig?.allRequiredReviewed !== false;
   return spokeGateStatus(state.config.capabilityDomains, publishedScenarios(state.scenarios), attempts, min, requireSatisfactory);
 }
 
+// Where a spoke row should go: the counted case, a start case, or the library.
 function spokeHref(row, attempts, { assessor = false } = {}) {
   const scenarioId = row.countedId || row.startId;
   if (!scenarioId) return "#/library";
@@ -59,6 +62,7 @@ function spokeHref(row, attempts, { assessor = false } = {}) {
   return `#/scenario/${encodeURIComponent(scenarioId)}`;
 }
 
+// HTML list of the seven spokes with a status pill on each.
 function spokeGateListHtml(rows, attempts, { assessor = false } = {}) {
   return rows.map((row) => {
     const extra = row.met && row.countedTitle ? ` · ${escapeHtml(row.countedTitle)}` : "";
@@ -66,6 +70,7 @@ function spokeGateListHtml(rows, attempts, { assessor = false } = {}) {
   }).join("");
 }
 
+// One-line reminder under the Ready gate.
 function spokeGateNote(complete) {
   return complete
     ? "One scenario in each spoke has been released at Demonstrated or above."
@@ -102,7 +107,7 @@ export function dashboardView(state) {
         <p class="lede">Track your SevA practice and readiness for ${escapeHtml(config.serviceName)} in real time.</p>
       </div>
       <div class="btn-row">
-        <a class="btn" href="#/library">Open library</a>
+        <a class="btn" href="#/library">Open scenario library</a>
         <a class="btn secondary" href="#/reading">Reading · WIP</a>
       </div>
     </section>
@@ -214,40 +219,177 @@ export function dashboardView(state) {
   `;
 }
 
-// Published scenarios. Administrators also see drafts.
-export function libraryView(state) {
-  const published = state.role === "administrator" ? state.scenarios : publishedScenarios(state.scenarios);
-  const mine = attemptsFor(state.attempts, state.person.id);
-  const groups = groupScenariosBySpoke(published, state.config.capabilityDomains);
+// Short tab labels and colours for the Scenario Library. The full spoke name sits on the tiles.
+const LIBRARY_SPOKE_META = {
+  "avd-infrastructure": { spine: "AVD", folio: "01", tone: "platform" },
+  "networking": { spine: "Network", folio: "02", tone: "path" },
+  "trm-escalation-ops": { spine: "TRM", folio: "03", tone: "ops" },
+  "proxy-solution": { spine: "Proxy", folio: "04", tone: "identity" },
+  "vendor-management": { spine: "Vendors", folio: "05", tone: "vendor" },
+  "platform-troubleshooting": { spine: "Platform", folio: "06", tone: "fix" },
+  "m365-stack": { spine: "M365", folio: "07", tone: "ops" },
+  "other": { spine: "Other", folio: "—", tone: "path" }
+};
+
+// Published cases (or all, for an administrator) grouped into the seven spokes.
+function libraryCatalog(state) {
+  const visible = state.role === "administrator" ? state.scenarios : publishedScenarios(state.scenarios);
+  const domains = state.config.capabilityDomains || [];
+  const spokes = domains.map((domain) => {
+    const meta = LIBRARY_SPOKE_META[domain.id] || { spine: domain.name, folio: "—", tone: "ops" };
+    return {
+      id: domain.id,
+      name: domain.name,
+      summary: domain.summary || "",
+      items: visible.filter((item) => item.spokeId === domain.id),
+      ...meta
+    };
+  });
+  const known = new Set(domains.map((domain) => domain.id));
+  const other = visible.filter((item) => !known.has(item.spokeId));
+  if (other.length) {
+    spokes.push({
+      id: "other",
+      name: "Ungrouped",
+      summary: "Scenarios that are not on a readiness spoke yet.",
+      items: other,
+      ...LIBRARY_SPOKE_META.other
+    });
+  }
+  return { visible, spokes };
+}
+
+// Progress bar: how many cases in this list already have a satisfactory attempt.
+function libraryMeter(done, total) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
   return `
-    <div class="page-header">
-      <h1>Scenario library</h1>
-      <p class="lede">Collection of prior SevA incidents to practice and test your experience against. Grouped by readiness spoke. Ready needs one scenario per spoke at Demonstrated; any numbered scenario in that spoke can count. Platform and on-call pages live under <a href="#/reading">Reading</a>.</p>
+    <div class="reading-meter" role="img" aria-label="${total ? `${done} of ${total} scenarios with a satisfactory attempt` : "No scenarios in this spoke yet"}">
+      <span class="reading-meter-track"><span class="reading-meter-fill" style="width:${pct}%"></span></span>
+      <strong>${total ? `${done} of ${total}` : "—"}</strong>
+      <span>${total ? "satisfactory" : "no scenarios yet"}</span>
     </div>
-    <div class="stack">
-      ${groups.map((group) => `
-        <section class="spoke-block" data-search="${escapeHtml(`${group.name} ${group.items.map((item) => `${item.title} ${item.description}`).join(" ")}`)}">
-          <h2>${escapeHtml(group.name)}</h2>
-          <p class="subtle">Any of these can satisfy this spoke on the Ready gate.</p>
-          <div class="stack">
-            ${group.items.map((scenario) => {
-              const attempt = latestAttempt(mine, scenario.id);
-              return `
-                <article class="card" data-search="${escapeHtml(scenario.title)} ${escapeHtml(scenario.description)} ${escapeHtml(scenario.scope || "")}">
-                  ${pillsForScenario(scenario, attempt, { difficulty: false })}
-                  <h2>${escapeHtml(scenario.title)}</h2>
-                  <p class="summary">${escapeHtml(scenario.description)}</p>
-                  <p class="subtle">${escapeHtml(scenario.scope)} · Version ${escapeHtml(scenario.version)}</p>
-                  <div class="btn-row">
-                    <a class="btn" href="#/scenario/${encodeURIComponent(scenario.id)}">View scenario</a>
-                    ${attempt?.status === "in-progress" ? `<a class="btn secondary" href="#/assess/${attempt.id}">Resume</a>` : ""}
-                  </div>
-                </article>
-              `;
-            }).join("")}
-          </div>
-        </section>
-      `).join("") || `<div class="empty-state">No scenarios available.</div>`}
+  `;
+}
+
+// Next case to point at: resume an open attempt, else the first not yet satisfactory.
+function continueLibrary(scenarios, mine) {
+  const inProgress = mine.find((item) => item.status === "in-progress" && scenarios.some((scenario) => scenario.id === item.scenarioId));
+  if (inProgress) {
+    const scenario = scenarios.find((item) => item.id === inProgress.scenarioId);
+    if (scenario) return { scenario, kind: "resume" };
+  }
+  const next = scenarios.find((scenario) => {
+    const attempt = latestAttempt(mine, scenario.id);
+    return !attempt || !isAttemptSatisfactory(attempt);
+  });
+  if (next) return { scenario: next, kind: "next" };
+  return scenarios[0] ? { scenario: scenarios[0], kind: "open" } : null;
+}
+
+// Short status for a case card (not started, in progress, satisfactory, and so on).
+function libraryCaseStatus(attempt) {
+  if (!attempt) return { label: "Not started", cls: "" };
+  if (attempt.status === "in-progress") return { label: "In progress", cls: "progress" };
+  if (attempt.status === "submitted") return { label: "Awaiting review", cls: "review" };
+  if (isAttemptSatisfactory(attempt)) return { label: "Satisfactory", cls: "released" };
+  if (attempt.status === "released") return { label: "Feedback released", cls: "released" };
+  return { label: statusLabel(attempt.status), cls: statusClass(attempt.status) };
+}
+
+// One spoke card on the library home. Opens that spoke's case list.
+function librarySpokeTile(spoke, mine) {
+  const done = spoke.items.filter((scenario) => isAttemptSatisfactory(latestAttempt(mine, scenario.id))).length;
+  return `
+    <a class="library-tile" data-tone="${escapeHtml(spoke.tone)}" href="#/library/spoke/${encodeURIComponent(spoke.id)}" data-search="${escapeHtml(`${spoke.name} ${spoke.summary} ${spoke.items.map((item) => item.title).join(" ")}`)}">
+      <span class="library-folio" aria-hidden="true">${escapeHtml(spoke.folio)}</span>
+      <p class="eyebrow">${spoke.items.length} case${spoke.items.length === 1 ? "" : "s"}</p>
+      <h2>${escapeHtml(spoke.name)}</h2>
+      <p>${escapeHtml(spoke.summary)}</p>
+      <span class="library-tile-foot">
+        <span class="reading-dots" aria-hidden="true">${spoke.items.map((item) => {
+          const attempt = latestAttempt(mine, item.id);
+          const cls = isAttemptSatisfactory(attempt) ? "is-read" : attempt?.status === "in-progress" ? "is-open" : "";
+          return `<i class="${cls}"></i>`;
+        }).join("")}</span>
+        <span>${spoke.items.length ? (done ? `${done} satisfactory` : "Not started") : "Empty spoke"}</span>
+      </span>
+    </a>
+  `;
+}
+
+// One practice case. Opens the scenario intro.
+function libraryCaseCard(scenario, spoke, attempt, { compact = false } = {}) {
+  const status = libraryCaseStatus(attempt);
+  const mark = scenario.spokeNumber ? `${spoke?.spine || "Case"} ${scenario.spokeNumber}` : (spoke?.spine || "Case");
+  return `
+    <a class="library-case ${compact ? "is-compact" : ""}" data-tone="${escapeHtml(spoke?.tone || "ops")}" href="#/scenario/${encodeURIComponent(scenario.id)}" data-search="${escapeHtml(`${scenario.title} ${scenario.description} ${scenario.scope || ""} ${spoke?.name || ""}`)}">
+      <span class="library-case-mark">${escapeHtml(mark)}</span>
+      <h3>${escapeHtml(scenario.title)}</h3>
+      <p>${escapeHtml(scenario.description)}</p>
+      <span class="library-case-meta">
+        ${scenario.status === "draft" ? `<span class="pill draft">Draft</span>` : ""}
+        <span class="pill">${scenario.estimatedMinutes} min</span>
+        ${attempt?.status === "in-progress" ? `<span class="pill progress">Resume</span>` : `<span class="pill ${status.cls}">${escapeHtml(status.label)}</span>`}
+      </span>
+    </a>
+  `;
+}
+
+// Published scenarios as case files, grouped by readiness spoke. Administrators also see drafts.
+export function libraryView(state) {
+  const { visible, spokes } = libraryCatalog(state);
+  const mine = attemptsFor(state.attempts, state.person.id);
+  const done = visible.filter((scenario) => isAttemptSatisfactory(latestAttempt(mine, scenario.id))).length;
+  const next = continueLibrary(visible, mine);
+  const nextSpoke = next ? spokes.find((spoke) => spoke.id === next.scenario.spokeId) : null;
+  const continueCopy = next?.kind === "resume"
+    ? `Resume <a href="#/scenario/${encodeURIComponent(next.scenario.id)}">${escapeHtml(next.scenario.title)}</a>`
+    : next
+      ? `Continue with <a href="#/scenario/${encodeURIComponent(next.scenario.id)}">${escapeHtml(next.scenario.title)}</a> in ${escapeHtml(nextSpoke?.name || "the library")}`
+      : "";
+  return `
+    <section class="library-hero">
+      <div>
+        <p class="eyebrow">Practice incidents · Seven spokes</p>
+        <h1>Scenario library</h1>
+        <p class="lede">Prior SevA cases arranged by readiness spoke. Open a spoke, then a case. Ready needs one satisfactory scenario per spoke — not a named file. Docs sit under <a href="#/reading">Reading</a>.</p>
+        ${libraryMeter(done, visible.length)}
+        ${continueCopy ? `<p class="reading-continue">${continueCopy}.</p>` : ""}
+      </div>
+      <div class="library-tabs" role="navigation" aria-label="Spokes">
+        ${spokes.map((spoke) => {
+          const complete = spoke.items.length && spoke.items.every((item) => isAttemptSatisfactory(latestAttempt(mine, item.id)));
+          return `<a class="library-tab ${complete ? "is-done" : ""}" data-tone="${escapeHtml(spoke.tone)}" href="#/library/spoke/${encodeURIComponent(spoke.id)}" data-search="${escapeHtml(spoke.name)}"><span class="library-tab-folio">${escapeHtml(spoke.folio)}</span><span>${escapeHtml(spoke.spine)}</span></a>`;
+        }).join("")}
+      </div>
+    </section>
+    <p class="reading-disclaimer">Any numbered scenario in a spoke can count on the Ready gate. Workplace tickets cannot replace a spoke.</p>
+    <div class="library-grid">
+      ${spokes.map((spoke) => librarySpokeTile(spoke, mine)).join("") || `<div class="empty-state">No scenarios available.</div>`}
+    </div>
+  `;
+}
+
+// Cases inside one readiness spoke.
+export function librarySpokeView(state, spokeId) {
+  const { spokes } = libraryCatalog(state);
+  const spoke = spokes.find((item) => item.id === spokeId);
+  if (!spoke) return errorPage("Spoke not found", "That readiness spoke is not in the library.");
+  const mine = attemptsFor(state.attempts, state.person.id);
+  const done = spoke.items.filter((scenario) => isAttemptSatisfactory(latestAttempt(mine, scenario.id))).length;
+  return `
+    <p class="crumb"><a href="#/library">Scenario library</a> / ${escapeHtml(spoke.name)}</p>
+    <section class="library-hero is-spoke" data-tone="${escapeHtml(spoke.tone)}">
+      <div>
+        <p class="eyebrow">Spoke ${escapeHtml(spoke.folio)}</p>
+        <h1>${escapeHtml(spoke.name)}</h1>
+        <p class="lede">${escapeHtml(spoke.summary)}</p>
+        ${libraryMeter(done, spoke.items.length)}
+      </div>
+    </section>
+    <p class="reading-disclaimer">Any of these can satisfy this spoke on the Ready gate.</p>
+    <div class="library-shelf">
+      ${spoke.items.map((scenario) => libraryCaseCard(scenario, spoke, latestAttempt(mine, scenario.id))).join("") || `<div class="empty-state">No scenarios in this spoke yet.</div>`}
     </div>
   `;
 }
@@ -260,7 +402,9 @@ export function scenarioIntroView(state, scenario) {
   }
   const mine = attemptsFor(state.attempts, state.person.id).filter((item) => item.scenarioId === scenario.id);
   const active = mine.find((item) => item.status === "in-progress");
+  const spoke = (state.config.capabilityDomains || []).find((item) => item.id === scenario.spokeId);
   return `
+    <p class="crumb"><a href="#/library">Scenario library</a>${spoke ? ` / <a href="#/library/spoke/${encodeURIComponent(spoke.id)}">${escapeHtml(spoke.name)}</a>` : ""} / ${escapeHtml(scenario.title)}</p>
     <div class="page-header">
       ${pillsForScenario(scenario, active)}
       <h1>${escapeHtml(scenario.title)}</h1>
@@ -785,6 +929,7 @@ export function signInView(state) {
   `;
 }
 
+// Local practice profile button on the sign-in page.
 function personCard(person) {
   return `
     <button type="button" class="person-card" data-action="sign-in" data-person-id="${escapeHtml(person.id)}">
@@ -1190,6 +1335,7 @@ function peopleForAssessor(state) {
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// Role-on-call choices for a workplace ticket write-up.
 const ROLE_ON_CALL = [
   ["primary", "Primary"],
   ["shadow", "Shadow"],
@@ -1504,6 +1650,7 @@ export function assessorPersonView(state, personId) {
   `;
 }
 
+// Default write-up prompt used when an administrator adds a question on Create Scenario.
 const AUTHOR_QUESTION_PROMPTS = [
   "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words."
 ];
@@ -1647,6 +1794,7 @@ export function adminAuthorView(state) {
   `;
 }
 
+// One question block on the Create Scenario form.
 function authorQuestionBlock(domains, index, prompt) {
   return `
     <fieldset class="author-block" data-author-question data-index="${index}">
@@ -1671,6 +1819,7 @@ function authorQuestionBlock(domains, index, prompt) {
   `;
 }
 
+// One scoring-criterion block on the Create Scenario form.
 function authorCriterionBlock(domains, index, values) {
   return `
     <fieldset class="author-block" data-author-criterion data-index="${index}">
@@ -1699,10 +1848,12 @@ function authorCriterionBlock(domains, index, values) {
   `;
 }
 
+// Opened / read ticks for Reading, stored in this browser.
 function readingProgressFor(state) {
   return state.readingProgress || {};
 }
 
+// Unread, opened, or read for one Reading card.
 function articleStatus(progress, id) {
   const entry = progress[id] || {};
   if (entry.readAt) return { label: "Read", cls: "released" };
@@ -1710,6 +1861,7 @@ function articleStatus(progress, id) {
   return { label: "Unread", cls: "" };
 }
 
+// Progress bar for how many live Reading pages are marked read.
 function readingMeter(read, total) {
   const pct = total ? Math.round((read / total) * 100) : 0;
   return `
@@ -1721,14 +1873,17 @@ function readingMeter(read, total) {
   `;
 }
 
+// Catalog reminder that cards open the live wiki, they do not copy it.
 function readingDisclaimer(catalog) {
   return `<p class="reading-disclaimer">${escapeHtml(catalog?.disclaimer || "")}</p>`;
 }
 
+// Small WIP stamp used on unfinished shelves and cards.
 function readingWipChip() {
   return `<span class="reading-wip-chip">WIP</span>`;
 }
 
+// Yellow banner when a shelf still needs pages.
 function readingWipBanner(message) {
   return `
     <div class="callout warn reading-wip" role="status">
@@ -1737,6 +1892,7 @@ function readingWipBanner(message) {
   `;
 }
 
+// Pick a short venue label (Wiki, Files, Now, Azure) from the URL.
 function readingLinkKind(href) {
   const url = String(href || "");
   if (/atlassian\.net/i.test(url)) return { kind: "confluence", venue: "Confluence", mark: "Wiki" };
@@ -1746,6 +1902,7 @@ function readingLinkKind(href) {
   return { kind: "web", venue: "Web", mark: "Open" };
 }
 
+// Destination buttons on a Reading card. WIP cards show an awaiting note instead.
 function readingOpenButtons(article) {
   const links = articleLinks(article);
   if (!links.length) {
@@ -1768,10 +1925,12 @@ function readingOpenButtons(article) {
   `;
 }
 
+// Haystack for the sidebar search box on Reading.
 function articleSearchText(article, collection) {
   return [article.title, article.lede, article.source, article.sourceLabel, collection?.title, collection?.spine, ...(article.spokeIds || [])].join(" ");
 }
 
+// One shelf card on the Reading home.
 function collectionTile(collection, articles, progress) {
   const read = articles.filter((item) => progress[item.id]?.readAt).length;
   const live = articles.filter((item) => !articleIsWip(item)).length;
@@ -1793,6 +1952,7 @@ function collectionTile(collection, articles, progress) {
   `;
 }
 
+// One magazine-style card that opens a Reading page.
 function articleCard(article, collection, progress, { compact = false } = {}) {
   const status = articleStatus(progress, article.id);
   const wip = articleIsWip(article);
