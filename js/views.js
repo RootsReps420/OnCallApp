@@ -1,7 +1,7 @@
 // One function per screen. Each function returns an HTML string.
 // Clicks are handled in app.js by looking for data-action on the element.
 
-import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=64";
+import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=65";
 import {
   pillsForScenario,
   snowCard,
@@ -13,16 +13,15 @@ import {
   readinessBanner,
   readinessNetwork,
   criterionTable,
-  docsList,
   statusLabel,
   statusClass,
   errorPage,
   formatAttemptMeta,
   roleLabel
-} from "./render.js?v=64";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js?v=64";
-import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=64";
-import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=64";
+} from "./render.js?v=65";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js?v=65";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=65";
+import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=65";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -426,30 +425,27 @@ export function scenarioIntroView(state, scenario) {
         ${snowCard(scenario.initialIncident.serviceNow)}
       </div>
     </div>
-    <div class="grid grid-2 scenario-intro-docs">
-      ${docsList(scenario.documentationReferences)}
-      <section class="card">
-        <h2>How this assessment works</h2>
-        <ul>
-          <li>One written response covering the whole incident. Answer in your own words.</li>
-          <li>The initial report stays beside your answer.</li>
-          <li>You can save and resume. Review before submitting.</li>
-          <li>An assessor scores the write-up. Nothing is marked by keyword matching.</li>
-          <li>Retries create a new attempt and keep earlier ones.</li>
-        </ul>
-        <div class="btn-row">
-          ${state.role === "engineer"
-            ? `${active
-              ? `<button class="btn" data-action="resume-attempt" data-attempt-id="${active.id}">Resume saved attempt</button>`
-              : `<button class="btn" data-action="start-scenario" data-scenario-id="${escapeHtml(scenario.id)}">${mine.length ? "Start a new attempt" : "Start assessment"}</button>`}
-            ${active
-              ? `<button class="btn secondary" data-action="start-scenario" data-scenario-id="${escapeHtml(scenario.id)}">Start a separate attempt</button>`
-              : ""}`
-            : `<p class="muted">Starting an attempt is for users. Assessors review submitted work, and administrators publish scenarios.</p>`}
-        </div>
-        ${mine.length ? `<h3>Previous attempts</h3><ul>${mine.map((item) => `<li>${statusLabel(item.status)} · ${formatAttemptMeta(item)} · version ${escapeHtml(item.scenarioVersion)}</li>`).join("")}</ul>` : ""}
-      </section>
-    </div>
+    <section class="card scenario-intro-start">
+      <h2>How this assessment works</h2>
+      <ul>
+        <li>One written response covering the whole incident. Answer in your own words.</li>
+        <li>The initial report stays beside your answer.</li>
+        <li>You can save and resume. Review before submitting.</li>
+        <li>An assessor scores the write-up. Nothing is marked by keyword matching.</li>
+        <li>Retries create a new attempt and keep earlier ones.</li>
+      </ul>
+      <div class="btn-row">
+        ${state.role === "engineer"
+          ? `${active
+            ? `<button class="btn" data-action="resume-attempt" data-attempt-id="${active.id}">Resume saved attempt</button>`
+            : `<button class="btn" data-action="start-scenario" data-scenario-id="${escapeHtml(scenario.id)}">${mine.length ? "Start a new attempt" : "Start assessment"}</button>`}
+          ${active
+            ? `<button class="btn secondary" data-action="start-scenario" data-scenario-id="${escapeHtml(scenario.id)}">Start a separate attempt</button>`
+            : ""}`
+          : `<p class="muted">Starting an attempt is for users. Assessors review submitted work, and administrators publish scenarios.</p>`}
+      </div>
+      ${mine.length ? `<h3>Previous attempts</h3><ul class="scenario-intro-history">${mine.map((item) => `<li>${statusLabel(item.status)} · ${formatAttemptMeta(item)} · version ${escapeHtml(item.scenarioVersion)}</li>`).join("")}</ul>` : ""}
+    </section>
   `;
 }
 

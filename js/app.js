@@ -2,16 +2,16 @@
 // and the onClick / onSubmit handlers are the only place that writes saved work.
 // The address after #/ decides which screen route() returns.
 
-import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=64";
-import * as storage from "./storage.js?v=64";
-import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=64";
-import { validateScenario, formatValidationErrors } from "./validation.js?v=64";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=64";
-import * as views from "./views.js?v=64";
-import * as auth from "./auth.js?v=64";
-import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=64";
-import { runVerification } from "./tests.js?v=64";
-import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=64";
+import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=65";
+import * as storage from "./storage.js?v=65";
+import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=65";
+import { validateScenario, formatValidationErrors } from "./validation.js?v=65";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=65";
+import * as views from "./views.js?v=65";
+import * as auth from "./auth.js?v=65";
+import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=65";
+import { runVerification } from "./tests.js?v=65";
+import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=65";
 
 const appRoot = document.getElementById("app");
 // Live page data. It is rebuilt from localStorage on every render.

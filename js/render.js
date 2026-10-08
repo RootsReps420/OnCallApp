@@ -1,8 +1,8 @@
 // Shared pieces of HTML: the sidebar, top bar, status pills, evidence, and charts.
 // Page-specific screens live in views.js. This file does not change stored data.
 
-import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=64";
-import { readinessCopy, scoreLabel } from "./scoring.js?v=64";
+import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=65";
+import { readinessCopy, scoreLabel } from "./scoring.js?v=65";
 
 // Screen name for a stored role. engineer is shown as User.
 export function roleLabel(role) {
@@ -595,19 +595,6 @@ function statusForCriterion(item) {
   if (item.status === "auto-scored") return "Auto-scored from configured mapping";
   if (item.status === "reviewed") return "Assessor reviewed";
   return "Unreviewed";
-}
-
-// Runbook titles on a scenario intro. They are names only, not live links.
-export function docsList(refs = []) {
-  if (!refs.length) return "";
-  return `
-    <div class="card">
-      <h3>Documentation references</h3>
-      <ul>
-        ${refs.map((ref) => `<li>${escapeHtml(ref.title)}</li>`).join("")}
-      </ul>
-    </div>
-  `;
 }
 
 // Simple title and message when a route or id cannot be opened.

@@ -1,12 +1,12 @@
 // Loads config.json and the scenario files, then merges any scenarios
 // an administrator has saved in this browser on top of the bundled ones.
 
-import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=64";
-import { getCustomScenarios } from "./storage.js?v=64";
+import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=65";
+import { getCustomScenarios } from "./storage.js?v=65";
 
 // Fetch data/config.json. cache: no-store so a refresh sees file edits.
 export async function loadConfig() {
-  const response = await fetch("data/config.json?v=64", { cache: "no-store" });
+  const response = await fetch("data/config.json?v=65", { cache: "no-store" });
   if (!response.ok) throw new Error("Unable to load application configuration.");
   return response.json();
 }
@@ -88,7 +88,7 @@ const EMPTY_READING = {
 // Fetch the Reading room catalog. A broken file still returns an object so the app can boot.
 export async function loadReading() {
   try {
-    const response = await fetch("data/reading.json?v=64", { cache: "no-store" });
+    const response = await fetch("data/reading.json?v=65", { cache: "no-store" });
     if (!response.ok) throw new Error("Unable to load reading catalog.");
     const catalog = await response.json();
     const check = validateReadingCatalog(catalog);
@@ -173,7 +173,7 @@ const EMPTY_SANDBOX = {
 // Fetch the Incident Sandbox tickets. A broken file still returns an object so the app can boot.
 export async function loadSandbox() {
   try {
-    const response = await fetch("data/sandbox.json?v=64", { cache: "no-store" });
+    const response = await fetch("data/sandbox.json?v=65", { cache: "no-store" });
     if (!response.ok) throw new Error("Unable to load sandbox catalog.");
     const catalog = await response.json();
     const check = validateSandboxCatalog(catalog);

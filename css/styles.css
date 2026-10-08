@@ -893,8 +893,37 @@ a { color: var(--link); }
 .work-list a span:first-child { min-width: 0; }
 .work-list .pill { flex-shrink: 0; }
 
-.dash-lower,
-.scenario-intro-docs { margin-top: 1rem; }
+.dash-lower { margin-top: 1rem; }
+
+.scenario-intro-start {
+  margin-top: 1rem;
+}
+
+.scenario-intro-start > ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 1.5rem;
+}
+
+.scenario-intro-start .btn-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.55rem;
+}
+
+.scenario-intro-start .btn-row .btn {
+  width: 100%;
+}
+
+.scenario-intro-history {
+  margin: 0.85rem 0 0;
+}
+
+@media (max-width: 720px) {
+  .scenario-intro-start > ul {
+    grid-template-columns: 1fr;
+  }
+}
 
 .summary {
   display: -webkit-box;

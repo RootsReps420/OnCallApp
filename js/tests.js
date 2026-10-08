@@ -1,11 +1,11 @@
 // Scoring and catalog checks. Not shown in the administrator menu.
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
-import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=64";
-import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=64";
-import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=64";
-import { scoreSandboxRun } from "./sandbox.js?v=64";
-import * as storage from "./storage.js?v=64";
+import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=65";
+import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=65";
+import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=65";
+import { scoreSandboxRun } from "./sandbox.js?v=65";
+import * as storage from "./storage.js?v=65";
 
 // A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {
