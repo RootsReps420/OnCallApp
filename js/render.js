@@ -1,8 +1,8 @@
 // Shared pieces of HTML: the sidebar, top bar, status pills, evidence, and charts.
 // Page-specific screens live in views.js. This file does not change stored data.
 
-import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=65";
-import { readinessCopy, scoreLabel } from "./scoring.js?v=65";
+import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=75";
+import { readinessCopy, scoreLabel } from "./scoring.js?v=75";
 
 // Screen name for a stored role. engineer is shown as User.
 export function roleLabel(role) {
@@ -49,6 +49,18 @@ function icon(name, size = 18) {
   return `<svg ${common}>${shapes[name] || ""}</svg>`;
 }
 
+export function themeSwitch(light) {
+  return `
+    <button type="button" class="theme-switch" data-action="toggle-theme" role="switch" aria-checked="${light}" aria-label="${light ? "Switch to dark mode" : "Switch to light mode"}">
+      <span class="theme-switch-track">
+        <span class="theme-switch-thumb"></span>
+        <span class="theme-switch-icon theme-switch-moon">${icon("moon", 13)}</span>
+        <span class="theme-switch-icon theme-switch-sun">${icon("sun", 13)}</span>
+      </span>
+    </button>
+  `;
+}
+
 // Wrap a page in the sidebar dashboard chrome, top bar, and main column.
 export function layout({ config, role, path, body, theme = "dark", person = null, entraEnabled = false }) {
   const nav = person ? navFor(role, path) : `<p class="nav-empty">Sign in to open practice, review, and admin tools.</p>`;
@@ -80,13 +92,7 @@ export function layout({ config, role, path, body, theme = "dark", person = null
             </div>
           ` : ""}
           <div class="sidebar-user-actions">
-            <button type="button" class="theme-switch" data-action="toggle-theme" role="switch" aria-checked="${light}" aria-label="${light ? "Switch to dark mode" : "Switch to light mode"}">
-              <span class="theme-switch-track">
-                <span class="theme-switch-thumb"></span>
-                <span class="theme-switch-icon theme-switch-moon">${icon("moon", 13)}</span>
-                <span class="theme-switch-icon theme-switch-sun">${icon("sun", 13)}</span>
-              </span>
-            </button>
+            ${themeSwitch(light)}
             ${showMicrosoft ? `<button type="button" class="theme-toggle header-entra" data-action="entra-sign-in">Sign in with Microsoft</button>` : ""}
             ${person ? `<button type="button" class="theme-toggle" data-action="sign-out">Sign out</button>` : ""}
           </div>
@@ -132,16 +138,23 @@ function navFor(role, path) {
   if (role === "administrator") {
     return navSection("Manage", [
       ["#/admin", "Overview", "manage"],
-      ["#/admin/author", "Create Scenario", "author"],
       ["#/admin/proposals", "Proposals", "proposals"],
       ["#/admin/criteria", "On-Call Criteria", "criteria"],
       ["#/admin/access", "Role Access", "access"]
     ], path)
+      + navSection("Review", [
+        ["#/assessor", "Overview", "queue"],
+        ["#/assessor/people", "People", "people"]
+      ], path)
       + navSection("Practice", [
+        ["#/dashboard", "Overview", "overview"],
         ["#/library", "SevA Scenarios", "library"],
         ["#/sandbox", "Incident Sandbox", "sandbox"],
-        ["#/reading", "Reading", "reading"]
-      ], path);
+        ["#/reading", "Reading", "reading"],
+        ["#/evidence", "Evidence", "evidence"],
+        ["#/readiness", "Readiness", "readiness"]
+      ], path)
+      + navSection("Contribute", [["#/propose", "Propose", "propose"]], path);
   }
   return navSection("Practice", [
     ["#/dashboard", "Overview", "overview"],
@@ -160,8 +173,7 @@ function isCurrentNav(hrefPath, path) {
   if (hrefPath === "/assessor" && (path.startsWith("/assessor/review/") || path.startsWith("/assessor/evidence/"))) return true;
   if (hrefPath === "/assessor/people" && path.startsWith("/assessor/person/")) return true;
   if (hrefPath === "/evidence" && path.startsWith("/evidence")) return true;
-  if (hrefPath === "/admin" && (path.startsWith("/admin/import") || path.startsWith("/admin/scenario/"))) return true;
-  if (hrefPath === "/admin/author" && path.startsWith("/admin/author")) return true;
+  if (hrefPath === "/admin" && path.startsWith("/admin/scenario/")) return true;
   if (hrefPath === "/admin/access" && path.startsWith("/admin/access")) return true;
   if (hrefPath === "/reading" && path.startsWith("/reading")) return true;
   if (hrefPath === "/library" && path.startsWith("/library")) return true;
@@ -442,23 +454,32 @@ function polarPoint(cx, cy, radius, index, total) {
 }
 
 // Interactive map of capability areas. Each area is one spoke into the hub. Gaps glow.
-export function readinessNetwork(domains, { personName = "You" } = {}) {
+export function readinessNetwork(domains, { personName = "You", spokeRows = [] } = {}) {
   const width = 920;
   const height = 680;
   const hub = { x: 460, y: 340 };
   const ring = 240;
   const points = Object.fromEntries(domains.map((domain, index) => [domain.id, polarPoint(hub.x, hub.y, ring, index, domains.length)]));
-  const payload = domains.map((domain) => ({
-    id: domain.id,
-    name: domain.name,
-    summary: domain.summary,
-    percentage: domain.percentage,
-    coverageLabel: domain.coverageLabel,
-    state: domainState(domain),
-    unmet: (domain.mandatoryUnmet || []).map((item) => item.label),
-    evidenceNote: domain.evidenceNote || ""
-  }));
-  const firstGap = payload.find((item) => item.state === "gap") || payload[0];
+  const rows = Object.fromEntries((spokeRows || []).map((row) => [row.id, row]));
+  const payload = domains.map((domain) => {
+    const row = rows[domain.id] || {};
+    return {
+      id: domain.id,
+      name: domain.name,
+      summary: domain.summary,
+      percentage: domain.percentage,
+      coverageLabel: domain.coverageLabel,
+      state: domainState(domain),
+      unmet: (domain.mandatoryUnmet || []).map((item) => item.label),
+      evidenceNote: domain.evidenceNote || "",
+      progressLabel: row.progressLabel || "",
+      progressStatus: row.progressStatus || "",
+      met: Boolean(row.met),
+      href: row.href || `#/library/spoke/${encodeURIComponent(domain.id)}`,
+      countedTitle: row.countedTitle || ""
+    };
+  });
+  const firstGap = payload.find((item) => item.state === "gap") || payload.find((item) => !item.met) || payload[0];
 
   const spokes = domains.map((domain) => {
     const point = points[domain.id];
@@ -474,7 +495,7 @@ export function readinessNetwork(domains, { personName = "You" } = {}) {
       `<text class="neural-label" x="${point.x}" y="${point.y + score + 16 + index * 13}" text-anchor="middle">${escapeHtml(line)}</text>`
     ).join("");
     return `
-      <g class="neural-node" data-node-id="${escapeHtml(domain.id)}" data-state="${state}" data-action="neural-focus" tabindex="0" role="button" aria-label="${escapeHtml(domain.name)}">
+      <g class="neural-node${firstGap?.id === domain.id ? " is-selected" : ""}" data-node-id="${escapeHtml(domain.id)}" data-state="${state}" data-action="neural-focus" tabindex="0" role="button" aria-label="${escapeHtml(domain.name)}">
         <circle class="neural-core" cx="${point.x}" cy="${point.y}" r="${score}" />
         <circle class="neural-halo" cx="${point.x}" cy="${point.y}" r="${score + 10}" />
         ${labels}
@@ -482,50 +503,60 @@ export function readinessNetwork(domains, { personName = "You" } = {}) {
     `;
   }).join("");
 
+  const track = payload.map((item) => `
+    <button type="button" class="readiness-chip${firstGap?.id === item.id ? " is-selected" : ""}" data-node-id="${escapeHtml(item.id)}" data-state="${item.state}"${item.met ? " data-met=\"true\"" : ""}">
+      <span class="readiness-chip-dot"></span>
+      <span>${escapeHtml(DOMAIN_SHORT[item.id] || item.name)}</span>
+    </button>
+  `).join("");
+
   return `
-    <div class="neural-shell" data-neural-shell>
-      <svg class="neural-map" viewBox="0 0 ${width} ${height}" role="img" aria-label="Interactive capability map">
-        <defs>
-          <radialGradient id="neural-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="var(--mark)" stop-opacity="0.28" />
-            <stop offset="70%" stop-color="var(--paper)" stop-opacity="0.08" />
-            <stop offset="100%" stop-color="var(--paper)" stop-opacity="0" />
-          </radialGradient>
-        </defs>
-        <circle class="neural-field" cx="${hub.x}" cy="${hub.y}" r="300" fill="url(#neural-glow)" />
-        <g class="neural-edges">${spokes}</g>
-        <g class="neural-hub">
-          <circle cx="${hub.x}" cy="${hub.y}" r="42" />
-          <text x="${hub.x}" y="${hub.y - 4}" text-anchor="middle">${escapeHtml(personName.split(" ")[0] || "You")}</text>
-          <text class="neural-hub-sub" x="${hub.x}" y="${hub.y + 16}" text-anchor="middle">Readiness</text>
-        </g>
-        ${nodes}
-      </svg>
-      <aside class="neural-detail" data-neural-detail>
-        ${neuralDetailHtml(firstGap)}
-      </aside>
-      <pre class="sr-only" data-neural-json>${escapeHtml(JSON.stringify(payload))}</pre>
-    </div>
+    <section class="readiness-stage">
+      <div class="neural-shell" data-neural-shell>
+        <svg class="neural-map" viewBox="0 0 ${width} ${height}" role="img" aria-label="Interactive capability map">
+          <defs>
+            <radialGradient id="neural-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="var(--mark)" stop-opacity="0.28" />
+              <stop offset="70%" stop-color="var(--paper)" stop-opacity="0.08" />
+              <stop offset="100%" stop-color="var(--paper)" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <circle class="neural-field" cx="${hub.x}" cy="${hub.y}" r="300" fill="url(#neural-glow)" />
+          <g class="neural-edges">${spokes}</g>
+          <g class="neural-hub">
+            <circle cx="${hub.x}" cy="${hub.y}" r="42" />
+            <text x="${hub.x}" y="${hub.y - 4}" text-anchor="middle">${escapeHtml(personName.split(" ")[0] || "You")}</text>
+            <text class="neural-hub-sub" x="${hub.x}" y="${hub.y + 16}" text-anchor="middle">Readiness</text>
+          </g>
+          ${nodes}
+        </svg>
+        <aside class="neural-detail" data-neural-detail>
+          ${neuralDetailHtml(firstGap)}
+        </aside>
+        <div class="readiness-track">${track}</div>
+        <pre class="sr-only" data-neural-json>${escapeHtml(JSON.stringify(payload))}</pre>
+      </div>
+    </section>
   `;
 }
 
 // Copy in the readiness aside for the selected capability node.
 function neuralDetailHtml(item) {
   if (!item) {
-    return `<p class="muted">Hover or select a capability node to see where evidence is thin.</p>`;
+    return `<p class="muted">Select a spoke to inspect it.</p>`;
   }
-  const score = item.percentage == null ? "Not scored yet" : `${item.percentage}%`;
-  const tone = item.state === "gap" ? "This is a gap. Released feedback is still below Demonstrated, or a mandatory criterion is unmet." : item.state === "empty" ? "No released score yet. A blank node is incomplete evidence, not a pass." : "On track from released feedback. Keep using this area in later scenarios.";
+  const score = item.percentage == null ? "—" : `${item.percentage}%`;
+  const eyebrow = item.met ? "Spoke met" : item.state === "gap" ? "Gap" : item.state === "empty" ? "Not started" : "Covered";
+  const cta = item.met ? "View counted case" : "Open this spoke";
   return `
-    <p class="eyebrow">${item.state === "gap" ? "Gap" : item.state === "empty" ? "Unscored" : "Covered"}</p>
+    <p class="eyebrow">${eyebrow}</p>
     <h3>${escapeHtml(item.name)}</h3>
+    ${item.progressLabel ? `<span class="pill ${escapeHtml(item.progressStatus || "")}">${escapeHtml(item.progressLabel)}</span>` : ""}
     <p class="neural-score">${escapeHtml(score)}</p>
-    <p>${escapeHtml(item.summary || "")}</p>
-    <p class="subtle">${escapeHtml(item.coverageLabel || "")}</p>
-    <p>${escapeHtml(tone)}</p>
+    <p class="subtle">${escapeHtml(item.summary || "")}</p>
+    ${item.countedTitle ? `<p class="subtle">${escapeHtml(item.countedTitle)}</p>` : ""}
     ${item.unmet?.length ? `<ul class="neural-unmet">${item.unmet.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>` : ""}
-    ${item.evidenceNote ? `<p class="subtle">${escapeHtml(item.evidenceNote)}</p>` : ""}
-    <p class="btn-row"><a class="btn secondary" href="#/library">Practise SevA Scenarios</a></p>
+    <p class="btn-row"><a class="btn" href="${escapeHtml(item.href || "#/library")}">${cta}</a></p>
   `;
 }
 
@@ -544,7 +575,7 @@ export function bindReadinessGraph() {
 
   const select = (id) => {
     const item = payload.find((entry) => entry.id === id) || payload[0];
-    shell.querySelectorAll(".neural-node").forEach((node) => {
+    shell.querySelectorAll("[data-node-id]").forEach((node) => {
       node.classList.toggle("is-selected", node.getAttribute("data-node-id") === item?.id);
     });
     if (detail) detail.innerHTML = neuralDetailHtml(item);

@@ -178,7 +178,9 @@ html[data-theme="light"] .brand-banding::after {
 
 /* Stop a green outline around the whole page when JS focuses #main after a refresh. */
 .app-main:focus,
-.app-main:focus-visible {
+.app-main:focus-visible,
+.login-screen:focus,
+.login-screen:focus-visible {
   outline: none;
 }
 
@@ -208,6 +210,167 @@ html[data-theme="light"] .brand-banding::after {
   margin: 4rem auto;
   padding: 1.25rem 0;
   color: var(--ink-muted);
+}
+
+/* Full-page logon before the dashboard chrome. */
+html.is-signed-out .brand-banding::after {
+  left: 50%;
+  top: 16%;
+  transform: translateX(-50%);
+  width: 7.5rem;
+  height: 5.8rem;
+  opacity: 0.07;
+}
+
+html[data-theme="light"].is-signed-out .brand-banding::after {
+  opacity: 0.08;
+  filter: none;
+}
+
+.login-screen {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 4.5rem 1.25rem 2.5rem;
+}
+
+.login-theme {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.login-theme .theme-switch {
+  margin: 0;
+  align-self: auto;
+}
+
+.login-card {
+  width: min(26.5rem, 100%);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 2.55rem 2.15rem 1.45rem;
+  text-align: center;
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="light"] .login-card {
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.08);
+}
+
+.login-mark {
+  display: block;
+  width: 3.4rem;
+  height: 3.4rem;
+  margin: 0 auto 1.25rem;
+}
+
+.login-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+html[data-theme="dark"] .login-mark img {
+  filter: invert(1);
+}
+
+.login-eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+
+.login-card h1 {
+  margin: 0.35rem 0 0;
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.login-kicker {
+  margin: 0.45rem 0 0;
+  font-size: 0.86rem;
+  color: var(--ink-muted);
+}
+
+.login-lede {
+  margin: 0.85rem 0 1.35rem;
+  font-size: 0.94rem;
+  color: var(--ink-muted);
+}
+
+.btn.login-microsoft {
+  width: 100%;
+  border-radius: 999px;
+  padding: 0.82rem 1.2rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  gap: 0.55rem;
+}
+
+.login-card .error-msg {
+  margin: 0.85rem 0 0;
+}
+
+.login-practice {
+  margin: 1.15rem 0 0;
+  padding: 0;
+  border: 0;
+  text-align: center;
+}
+
+.login-practice summary {
+  cursor: pointer;
+  color: var(--ink-subtle);
+  font-size: 0.8rem;
+  list-style: none;
+}
+
+.login-practice summary::-webkit-details-marker {
+  display: none;
+}
+
+.login-practice summary:hover {
+  color: var(--ink);
+}
+
+.login-card .people-grid {
+  grid-template-columns: 1fr;
+  margin-top: 0.7rem;
+  text-align: left;
+}
+
+.login-card .person-card {
+  background: var(--surface-alt);
+  border-radius: 12px;
+  padding: 0.8rem 0.95rem;
+}
+
+.login-card .person-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+
+.login-footnote {
+  margin: 1.45rem 0 0;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+  color: var(--ink-subtle);
+}
+
+@media (max-width: 640px) {
+  .login-screen { padding: 4.25rem 1rem 1.75rem; }
+  .login-card { padding: 2.1rem 1.35rem 1.25rem; }
 }
 
 /* Two columns: left sidebar, main dashboard. */
@@ -1445,22 +1608,99 @@ th {
 
 .local-practice .lede { margin-top: 0.75rem; }
 
+.readiness-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.readiness-hero h1 {
+  margin: 0.15rem 0 0.35rem;
+  font-size: 1.7rem;
+  color: var(--hero);
+}
+
+.readiness-hero .lede {
+  margin: 0;
+  max-width: 36rem;
+}
+
+.readiness-hero-aside {
+  text-align: right;
+}
+
+.readiness-count {
+  margin: 0;
+  line-height: 1;
+}
+
+.readiness-count strong {
+  font-size: 2.35rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+
+.readiness-count span {
+  font-size: 1.15rem;
+  color: var(--ink-subtle);
+}
+
+.readiness-count-label {
+  margin: 0.3rem 0 0.55rem;
+  font-size: 0.78rem;
+  color: var(--ink-subtle);
+}
+
+.readiness-meter {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.readiness-meter-seg {
+  height: 0.38rem;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.readiness-meter-seg.is-on {
+  background: var(--accent);
+}
+
+.readiness-gap-note {
+  margin: -0.35rem 0 1rem;
+  font-size: 0.84rem;
+  color: var(--danger);
+}
+
+.readiness-stage {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
 /* Readiness hub-and-spoke map. Gaps on the ring pulse. */
 .neural-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(16rem, 0.85fr);
-  gap: 1rem;
-  margin-top: 0.4rem;
+  grid-template-columns: minmax(0, 1.45fr) minmax(16.5rem, 0.85fr);
+  grid-template-rows: 1fr auto;
+  gap: 0;
+  margin: 0;
 }
 
 .neural-map {
   width: 100%;
-  min-height: 22rem;
+  min-height: 26rem;
   background:
     radial-gradient(ellipse at 50% 48%, rgba(61, 190, 138, 0.16), transparent 58%),
-    var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+    transparent;
+  border: 0;
+  border-radius: 0;
   overflow: visible;
 }
 
@@ -1552,15 +1792,78 @@ html[data-theme="light"] .neural-node[data-state="strong"] .neural-core {
 }
 
 .neural-detail {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: 1.1rem 1.15rem 1.2rem;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  padding: 1.4rem 1.25rem 1.35rem;
   min-height: 16rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .neural-detail .eyebrow { color: var(--mark); }
-.neural-detail h3 { margin: 0 0 0.35rem; font-size: 1.15rem; }
+.neural-detail h3 { margin: 0 0 0.45rem; font-size: 1.2rem; }
+.neural-detail .pill { align-self: flex-start; }
+
+.readiness-track {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.4rem;
+  padding: 0.85rem 1rem 1rem;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-alt) 55%, transparent);
+}
+
+.readiness-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.48rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  text-align: left;
+}
+
+.readiness-chip span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.readiness-chip-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: var(--line-strong);
+  flex-shrink: 0;
+}
+
+.readiness-chip[data-state="strong"] .readiness-chip-dot,
+.readiness-chip[data-met="true"] .readiness-chip-dot {
+  background: var(--mark);
+}
+
+.readiness-chip[data-state="gap"] .readiness-chip-dot {
+  background: var(--danger);
+}
+
+.readiness-chip.is-selected,
+.readiness-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  color: var(--ink);
+}
 
 .neural-score {
   font-size: 1.8rem;
@@ -2811,6 +3114,8 @@ html[data-theme="light"] .reading-spine {
   .donut-wrap,
   .reading-hero,
   .library-hero { grid-template-columns: 1fr; }
+  .neural-detail { border-left: 0; border-top: 1px solid var(--line); }
+  .readiness-track { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .reading-grid,
   .library-grid,
   .sandbox-queue,
@@ -2862,6 +3167,8 @@ html[data-theme="light"] .reading-spine {
     justify-self: stretch;
   }
   .app-main { padding: 0.7rem 1rem 2rem; }
+  .readiness-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .readiness-hero-aside { text-align: left; }
   .topbar { padding: 0.8rem 1rem 0.2rem; }
   .app-footnote { padding-left: 1rem; padding-right: 1rem; }
 }

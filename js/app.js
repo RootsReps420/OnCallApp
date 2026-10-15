@@ -2,16 +2,16 @@
 // and the onClick / onSubmit handlers are the only place that writes saved work.
 // The address after #/ decides which screen route() returns.
 
-import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=65";
-import * as storage from "./storage.js?v=65";
-import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=65";
-import { validateScenario, formatValidationErrors } from "./validation.js?v=65";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=65";
-import * as views from "./views.js?v=65";
-import * as auth from "./auth.js?v=65";
-import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=65";
-import { runVerification } from "./tests.js?v=65";
-import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=65";
+import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=75";
+import * as storage from "./storage.js?v=75";
+import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=75";
+import { validateScenario, formatValidationErrors } from "./validation.js?v=75";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=75";
+import * as views from "./views.js?v=75";
+import * as auth from "./auth.js?v=75";
+import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=75";
+import { runVerification } from "./tests.js?v=75";
+import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=75";
 
 const appRoot = document.getElementById("app");
 // Live page data. It is rebuilt from localStorage on every render.
@@ -49,6 +49,14 @@ function homeFor(role) {
   if (role === "assessor") return "#/assessor";
   if (role === "administrator") return "#/admin";
   return "#/dashboard";
+}
+
+function canPractice(role) {
+  return role === "engineer" || role === "administrator";
+}
+
+function canReviewOthers(role) {
+  return role === "assessor" || role === "administrator";
 }
 
 // Reload scenarios and saved records, then refresh who is signed in.
@@ -123,20 +131,24 @@ function render() {
   state.readingProgress = storage.getReadingProgress();
   state.sandboxRuns = storage.getSandboxRuns();
   const { parts, path } = parseHash();
-  const body = state.person ? route(parts) : views.signInView(state);
   state.flash = "";
-  appRoot.innerHTML = layout({
-    config: state.config,
-    role: state.role,
-    path: state.person ? path : "/sign-in",
-    body,
-    person: state.person,
-    theme: document.documentElement.dataset.theme || storage.getTheme(),
-    entraEnabled: state.entraEnabled
-  });
-  bindReadinessGraph();
-  bindPageFilters();
-  bindAttemptTimer();
+  document.documentElement.classList.toggle("is-signed-out", !state.person);
+  if (!state.person) {
+    appRoot.innerHTML = views.signInView(state);
+  } else {
+    appRoot.innerHTML = layout({
+      config: state.config,
+      role: state.role,
+      path,
+      body: route(parts),
+      person: state.person,
+      theme: document.documentElement.dataset.theme || storage.getTheme(),
+      entraEnabled: state.entraEnabled
+    });
+    bindReadinessGraph();
+    bindPageFilters();
+    bindAttemptTimer();
+  }
   const main = document.getElementById("main");
   if (main && document.activeElement === document.body) {
     main.focus({ preventScroll: true });
@@ -154,7 +166,6 @@ function route(parts) {
   // Home depends on role. The hash can still say /dashboard.
   if (!area || area === "dashboard") {
     if (state.role === "assessor") return views.assessorQueueView(state);
-    if (state.role === "administrator") return views.adminScenariosView(state);
     return views.dashboardView(state);
   }
   if (area === "library" && id === "spoke") return views.librarySpokeView(state, extra);
@@ -188,8 +199,9 @@ function route(parts) {
   if (area === "assessor" && id === "evidence") return views.evidenceReviewView(state, storage.getEvidenceEntry(extra));
   if (area === "assessor" && id === "review") return views.assessorReviewView(state, storage.getAttempt(extra));
   if (area === "admin" && !id) return views.adminScenariosView(state);
-  if (area === "admin" && id === "author") return views.adminAuthorView(state);
-  if (area === "admin" && id === "import") return views.adminImportView(null);
+  if (area === "admin" && (id === "author" || id === "import")) {
+    return errorPage("Add scenarios in the repo", "Create a JSON file under data/scenarios and list it in data/config.json. The live library is those files, not a draft in this browser.");
+  }
   if (area === "admin" && id === "scenario") return views.adminImportView(findScenario(extra));
   if (area === "admin" && id === "proposals") return views.adminProposalsView(state);
   if (area === "admin" && id === "criteria") return views.adminCriteriaView(state);
@@ -206,19 +218,16 @@ function deny(area, id) {
     return errorPage("Administrator access required", "Scenario management, verification, and the colleague directory are limited to administrators.");
   }
   // Only an assessor opens another person's submission.
-  if (area === "assessor" && role !== "assessor") {
+  if (area === "assessor" && !canReviewOthers(role)) {
     return errorPage("Assessor access required", "Reviewing another colleague's submission is an assessor task. Users see their own feedback after it is released.");
   }
-  // Taking a scenario or logging a ticket is a user task.
-  if ((area === "assess" || area === "review" || area === "submitted" || area === "propose" || (area === "evidence" && (id === "new" || !id))) && role !== "engineer") {
-    return errorPage("This page is for a user", "Users take scenarios, log workplace tickets, and propose new ones. Assessors use the review queue. Administrators manage scenarios and access.");
+  // Taking a scenario or logging a ticket is a user task. Administrators can do the same work.
+  if ((area === "assess" || area === "review" || area === "submitted" || area === "propose" || (area === "evidence" && (id === "new" || !id))) && !canPractice(role)) {
+    return errorPage("This page is for a user", "Users take scenarios, log workplace tickets, and propose new ones. Assessors use the review queue.");
   }
   if (area === "evidence" && id && id !== "new") {
     const entry = storage.getEvidenceEntry(id);
-    if (role === "administrator") {
-      return errorPage("Administrator access does not review tickets", "An assessor scores workplace evidence.");
-    }
-    if (entry && role === "engineer" && entry.engineerId !== state.person.id) {
+    if (entry && entry.engineerId !== state.person.id && !canReviewOthers(role)) {
       return errorPage("That write-up belongs to another colleague", "Open Evidence from the sidebar and add your own ticket.");
     }
   }
@@ -508,13 +517,13 @@ function onClick(event) {
     return;
   }
   if (action === "start-scenario") {
-    if (state.role !== "engineer") return;
+    if (!canPractice(state.role)) return;
     const attempt = startAttempt(button.getAttribute("data-scenario-id"));
     navigate(`#/assess/${attempt.id}`);
     return;
   }
   if (action === "resume-attempt") {
-    if (state.role !== "engineer") return;
+    if (!canPractice(state.role)) return;
     navigate(`#/assess/${attemptId}`);
     return;
   }
@@ -1066,7 +1075,7 @@ function appendAuthorBlock(hostSel, templateId, itemSel, max) {
 
 // Save a workplace ticket as a draft or submit it for assessor review.
 function saveEvidenceForm(form) {
-  if (state.role !== "engineer") return;
+  if (!canPractice(state.role)) return;
   const data = new FormData(form);
   const status = form.querySelector("[data-form-status]");
   const id = form.getAttribute("data-evidence-id") || createId("ticket");
@@ -1104,7 +1113,7 @@ function saveEvidenceForm(form) {
 
 // Save or release an assessor score on a workplace ticket.
 function saveEvidenceReview(form) {
-  if (state.role !== "assessor") return;
+  if (!canReviewOthers(state.role)) return;
   const entry = storage.getEvidenceEntry(form.getAttribute("data-evidence-id"));
   if (!entry) return;
   const data = new FormData(form);

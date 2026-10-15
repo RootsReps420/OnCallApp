@@ -882,59 +882,6 @@
       ]
     },
     {
-      "id": "sbx-personal-missing-github",
-      "number": "INC14001017",
-      "title": "Personal AVD — cannot see GitHub Capital",
-      "summary": "Personal live desktop. The named missing application is GitHub Capital.",
-      "suggestedMinutes": 15,
-      "form": {
-        "channel": "Self-service",
-        "state": "In Progress",
-        "impact": "2 - Medium",
-        "urgency": "2 - Medium",
-        "priority": "3 - Moderate",
-        "escalation": "Normal",
-        "assignmentGroup": "IT.ISD.CLIENTINFRASTRUCTURE",
-        "assignedTo": "",
-        "caller": "Marta Rao",
-        "onBehalfOf": "",
-        "location": "Hyderabad hub",
-        "phone": "0000000000",
-        "category": "-- None --",
-        "subcategory": "-- None --",
-        "asset": "",
-        "opsAgent": "",
-        "businessService": "",
-        "serviceOffering": "",
-        "configurationItem": "Virtual Desktop Service",
-        "shortDescription": "VIRTUAL MACHINE - FAULT NOT LISTED",
-        "description": "Please select your device type\nPersonal (Live-Desktops)\nPlease provide your contact number and an external email address which you have access to without the need of your Virtual Machine in case we need to contact you.\njohndoe@lloydsbanking.com\nPlease confirm if you are normally available via Teams.\nYes\nPlease select from the following.\nI can't see application(s) in my device\nPlease Provide Missing Application name(s).\nGit hub capital\nDid this resolve you issue?\nNo\nRequested for\nMarta Rao\nEmail address\njohndoe@lloydsbanking.com",
-        "businessImpact": "",
-        "customerSensitive": false
-      },
-      "history": [
-        {
-          "at": "2026-10-08T10:40:52.000Z",
-          "who": "D. Colleague",
-          "kind": "field",
-          "text": "Assigned to was empty. Incident state In Progress was New. State In Progress was New."
-        },
-        {
-          "at": "2026-10-08T10:14:47.000Z",
-          "who": "System",
-          "kind": "email",
-          "text": "IT@LBG: Your new fault reference is INC14001017. Sent to johndoe@lloydsbanking.com."
-        }
-      ],
-      "signals": [
-        "github",
-        "application",
-        "missing",
-        "personal",
-        "live desktop"
-      ]
-    },
-    {
       "id": "sbx-msh-005-slowness",
       "number": "INC14001018",
       "title": "MSH-005-01 — slowness / screen delay",

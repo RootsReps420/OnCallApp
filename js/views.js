@@ -1,7 +1,7 @@
 // One function per screen. Each function returns an HTML string.
 // Clicks are handled in app.js by looking for data-action on the element.
 
-import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=65";
+import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=75";
 import {
   pillsForScenario,
   snowCard,
@@ -17,11 +17,12 @@ import {
   statusClass,
   errorPage,
   formatAttemptMeta,
-  roleLabel
-} from "./render.js?v=65";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory } from "./scoring.js?v=65";
-import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=65";
-import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=65";
+  roleLabel,
+  themeSwitch
+} from "./render.js?v=75";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory, readinessCopy } from "./scoring.js?v=75";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=75";
+import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=75";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -75,6 +76,37 @@ function spokeGateNote(complete) {
   return complete
     ? "One scenario in each spoke has been released at Demonstrated or above."
     : "Ready needs one scenario per spoke, released at Demonstrated or above. Any numbered scenario in that spoke can count.";
+}
+
+function linkedSpokeRows(state, attempts, opts = {}) {
+  return spokeRowsFor(state, attempts).map((row) => ({
+    ...row,
+    href: spokeHref(row, attempts, opts)
+  }));
+}
+
+function readinessPageHead({ title, lede, latestRec, spokeRows, hints }) {
+  const met = spokeRows.filter((row) => row.met).length;
+  const total = spokeRows.length;
+  const rec = readinessCopy(latestRec || "");
+  const recTone = latestRec === "ready" ? "ready" : latestRec === "ready-with-development" ? "develop" : latestRec === "not-yet-ready" ? "not-ready" : "progress";
+  const gaps = hints?.mandatoryUnmet || [];
+  return `
+    <div class="readiness-hero">
+      <div>
+        <p class="eyebrow">On-Call Ready Gate</p>
+        <h1>${escapeHtml(title)}</h1>
+        <p class="lede">${lede}</p>
+      </div>
+      <div class="readiness-hero-aside">
+        <p class="readiness-count"><strong>${met}</strong><span>/${total}</span></p>
+        <p class="readiness-count-label">spokes met</p>
+        <span class="pill ${recTone}">${escapeHtml(rec.label)}</span>
+      </div>
+    </div>
+    <div class="readiness-meter" role="img" aria-label="${met} of ${total} spokes met">${spokeRows.map((row) => `<span class="readiness-meter-seg${row.met ? " is-on" : ""}" title="${escapeHtml(row.name)}"></span>`).join("")}</div>
+    ${gaps.length ? `<p class="readiness-gap-note">Mandatory gaps: ${gaps.map((item) => escapeHtml(item.label)).join(" · ")}</p>` : ""}
+  `;
 }
 
 // User home: KPI cards, capability charts, recent activity, and the Ready gate.
@@ -204,7 +236,7 @@ export function dashboardView(state) {
     <div class="grid grid-2 dash-lower">
       <section class="card">
         <div class="card-head">
-          <h2>Ready gate</h2>
+          <h2>On-Call Ready Gate</h2>
           <a href="#/library">All scenarios</a>
         </div>
         <ul class="work-list">
@@ -435,7 +467,7 @@ export function scenarioIntroView(state, scenario) {
         <li>Retries create a new attempt and keep earlier ones.</li>
       </ul>
       <div class="btn-row">
-        ${state.role === "engineer"
+        ${state.role === "engineer" || state.role === "administrator"
           ? `${active
             ? `<button class="btn" data-action="resume-attempt" data-attempt-id="${active.id}">Resume saved attempt</button>`
             : `<button class="btn" data-action="start-scenario" data-scenario-id="${escapeHtml(scenario.id)}">${mine.length ? "Start a new attempt" : "Start assessment"}</button>`}
@@ -659,7 +691,7 @@ export function feedbackView(state, attempt) {
 export function readinessView(state) {
   const mine = attemptsFor(state.attempts, state.person.id);
   const min = readinessMinScore(state);
-  const spokeRows = spokeRowsFor(state, mine);
+  const spokeRows = linkedSpokeRows(state, mine);
   const requiredComplete = spokeGateComplete(state.readinessConfig, spokeRows);
   const released = mine.filter((item) => item.status === "released");
   const allResults = released.flatMap((item) => buildCriterionResults(item.scenarioSnapshot, item.answers, item.review));
@@ -682,25 +714,14 @@ export function readinessView(state) {
     .at(-1);
 
   return `
-    <div class="page-header">
-      <h1>Readiness summary</h1>
-      <p class="lede">A live map of your capability areas. Bright nodes are covered. Pulsing nodes are gaps from released feedback. Click a node to inspect it. This is not a certificate — an assessor still makes the recommendation.</p>
-    </div>
-    ${latestRec ? readinessBanner(latestRec) : `<div class="callout warn"><p>No assessor recommendation has been released yet. Incomplete evidence is not the same as a score of zero, and completing scenarios does not by itself mean ready.</p></div>`}
-    ${readinessNetwork(domains, { personName: state.person?.name || "You" })}
-    <div class="card" style="margin-top:1rem">
-      <h2>Ready gate</h2>
-      <ul class="work-list">
-        ${spokeGateListHtml(spokeRows, mine)}
-      </ul>
-      <p class="subtle">${spokeGateNote(requiredComplete)}</p>
-      ${(state.evidence || []).filter((item) => item.engineerId === state.person.id).length
-        ? `<p class="subtle"><a href="#/evidence">Workplace tickets</a> can thicken a spoke. They cannot replace a spoke on the Ready gate or cancel a mandatory gap.</p>`
-        : `<p class="subtle">Add prior tickets on <a href="#/evidence">Evidence</a> if you have workplace examples for a thin spoke.</p>`}
-      ${hints.mandatoryUnmet.length
-        ? `<p class="error-msg">Unmet mandatory criteria stay visible even if some nodes look strong:</p><ul>${hints.mandatoryUnmet.map((item) => `<li>${escapeHtml(item.label)} (${item.score}/${item.maxScore})</li>`).join("")}</ul>`
-        : `<p class="subtle">No scored mandatory criterion is currently below Demonstrated (${min}) on the counting attempts.${hints.hasIncompleteEvidence ? " Incomplete evidence is still present." : ""}</p>`}
-    </div>
+    ${readinessPageHead({
+      title: "Readiness",
+      lede: "Seven spokes. One satisfactory SevA in each. Click a node to inspect it.",
+      latestRec,
+      spokeRows,
+      hints
+    })}
+    ${readinessNetwork(domains, { personName: state.person?.name || "You", spokeRows })}
   `;
 }
 
@@ -890,37 +911,41 @@ export function assessorReviewView(state, attempt) {
   `;
 }
 
-// Microsoft sign-in for ignitemyfire.co.uk, plus a local name list for practice on this browser.
+// Full-page logon before the dashboard. Microsoft first; local profiles stay under Practice.
 export function signInView(state) {
   const people = (state.directory || []).filter((person) => person.source !== "entra");
   const entra = state.entraEnabled;
-  return `
-    <div class="page-header">
-      <h1>Sign in</h1>
-      ${entra ? `
-        <p class="lede">Use your ignitemyfire.co.uk account for authentication.</p>
-      ` : `
-        <p class="lede">Choose your name. This browser keeps a local session in place of Microsoft Entra ID. There is no password here, because a password stored in the browser would not be a real control.</p>
-        <p class="lede">An administrator assigns User, Assessor, or Administrator before you arrive. Signing in does not let you pick a different role.</p>
-      `}
+  const light = (document.documentElement.dataset.theme || "dark") === "light";
+  const localProfiles = `
+    <div class="people-grid">
+      ${people.map((person) => personCard(person)).join("")}
     </div>
-    ${entra ? `
-      <div class="entra-panel">
-        <button type="button" class="btn" data-action="entra-sign-in">Sign in with Microsoft</button>
-        ${state.authError ? `<p class="error-msg">${escapeHtml(state.authError)}</p>` : ""}
-      </div>
-      <details class="local-practice">
-        <summary>Practice on this browser</summary>
-        <p class="lede">These names stay on this machine only. They do not prove an ignitemyfire.co.uk identity.</p>
-        <div class="people-grid">
-          ${people.map((person) => personCard(person)).join("")}
-        </div>
-      </details>
-    ` : `
-      <div class="people-grid">
-        ${people.map((person) => personCard(person)).join("")}
-      </div>
-    `}
+  `;
+  return `
+    <div class="login-screen" id="main" tabindex="-1">
+      <div class="login-theme">${themeSwitch(light)}</div>
+      <section class="login-card" aria-labelledby="login-title">
+        <span class="login-mark"><img src="assets/lloyds-horse.svg" width="48" height="48" alt=""></span>
+        <p class="login-eyebrow">Virtual Team</p>
+        <h1 id="login-title">Incident Lab</h1>
+        <p class="login-kicker">On-call practice for Virtual Desktop Infrastructure</p>
+        <p class="login-lede">${entra
+          ? "Sign in with your Microsoft work account to continue."
+          : "Choose a local practice profile to continue."}</p>
+        ${entra ? `
+          <button type="button" class="btn login-microsoft" data-action="entra-sign-in">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+            Sign in with Microsoft
+          </button>
+          ${state.authError ? `<p class="error-msg">${escapeHtml(state.authError)}</p>` : ""}
+          <details class="login-practice">
+            <summary>Local Practice Account Sign In</summary>
+            ${localProfiles}
+          </details>
+        ` : localProfiles}
+        <p class="login-footnote">Lloyds Banking Group · Virtual Team</p>
+      </section>
+    </div>
   `;
 }
 
@@ -1000,7 +1025,7 @@ function howToAddScenarioHtml() {
   return `
     <section class="card">
       <h2>Add a scenario everyone can see</h2>
-      <p class="subtle">The Create Scenario form and Import page only save in this browser. The live library is the JSON files listed in <code>data/config.json</code>.</p>
+      <p class="subtle">The live library is the JSON files listed in <code>data/config.json</code>. Saving anything only in this browser will not publish it for everyone.</p>
       <ol>
         <li>Copy <code>data/scenarios/_template.json</code> to a new file, for example <code>data/scenarios/pega-bridge.json</code>.</li>
         <li>Give it a unique <code>id</code> (lowercase, hyphens). Leave <code>mandatory</code> as <code>false</code> — Ready is one satisfactory scenario per spoke, not a flag on a file.</li>
@@ -1025,9 +1050,8 @@ export function adminScenariosView(state) {
       <div>
         <p class="eyebrow">Administrator</p>
         <h1>Dashboard Overview</h1>
-        <p class="lede">Create or import JSON, validate, and publish. Bundled sample scenarios can be overridden in this browser without changing the source files until you export.</p>
+        <p class="lede">The shared library is the scenario files in the repo. Add JSON under <code>data/scenarios</code> and list it in <code>data/config.json</code>.</p>
       </div>
-      <a class="btn" href="#/admin/author">Create scenario</a>
     </section>
     <div class="kpi-grid">
       ${kpiCard({ label: "Scenarios", value: state.scenarios.length, hint: "In this library" })}
@@ -1036,9 +1060,9 @@ export function adminScenariosView(state) {
       ${kpiCard({ label: "Open proposals", value: openProposals, hint: "Awaiting review", href: "#/admin/proposals" })}
     </div>
     <div class="btn-row">
-      <a class="btn secondary" href="#/admin/import">Import JSON</a>
       <button class="btn danger" data-action="reset-demo">Reset demo data</button>
     </div>
+    ${howToAddScenarioHtml()}
     <div class="card table-wrap" style="margin-top:1rem">
       <table class="data-table">
         <thead><tr><th>Title</th><th>Id / version</th><th>Status</th><th>Spoke</th><th></th></tr></thead>
@@ -1068,7 +1092,7 @@ export function adminImportView(scenario) {
   return `
     <div class="page-header">
       <h1>${scenario ? "Edit scenario JSON" : "Import or create a scenario"}</h1>
-      <p class="lede">Prefer the <a href="#/admin/author">Create Scenario form</a> for a new incident. This page still accepts a JSON file or paste. JSON is validated before it is stored.</p>
+      <p class="lede">Review the JSON for this scenario. To change the shared library, edit the file under <code>data/scenarios</code> and publish the site.</p>
     </div>
     <form class="card" data-form="import-scenario">
       <div class="field">
@@ -1390,7 +1414,7 @@ export function evidenceLogView(state) {
 // Create or edit a draft ticket. Submitted entries are read-only for the engineer.
 export function evidenceFormView(state, entry) {
   const domains = state.config.capabilityDomains;
-  if (entry && state.role === "engineer" && entry.engineerId !== state.person.id) {
+  if (entry && entry.engineerId !== state.person.id) {
     return errorPage("That write-up belongs to another colleague", "Open Evidence from the sidebar and add your own ticket.");
   }
   if (entry && entry.status !== "draft") {
@@ -1581,7 +1605,7 @@ export function assessorPersonView(state, personId) {
     .slice()
     .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
   const min = readinessMinScore(state);
-  const spokeRows = spokeRowsFor(state, mine);
+  const spokeRows = linkedSpokeRows(state, mine, { assessor: true });
   const requiredComplete = spokeGateComplete(state.readinessConfig, spokeRows);
   const released = mine.filter((item) => item.status === "released");
   const domains = aggregateReleasedDomains(state, personId);
@@ -1601,27 +1625,18 @@ export function assessorPersonView(state, personId) {
     .at(-1);
   const actions = listDevelopmentActions(mine, tickets, personId);
   return `
-    <div class="page-header">
-      <p class="subtle">Assessor · person view</p>
-      <h1>${escapeHtml(found.name)}</h1>
-      <p class="lede">Map, Ready gate, workplace tickets, and the last released recommendation. This is not a certificate.</p>
-    </div>
-    ${latestRec ? readinessBanner(latestRec) : `<div class="callout warn"><p>No assessor recommendation has been released yet.</p></div>`}
-    ${hints.mandatoryUnmet.length ? `<div class="callout danger"><p>Mandatory gaps still stand, including any workplace tickets that scored well.</p><ul>${hints.mandatoryUnmet.map((item) => `<li>${escapeHtml(item.label)}</li>`).join("")}</ul></div>` : ""}
-    ${readinessNetwork(domains, { personName: found.name })}
-    <div class="grid grid-2" style="margin-top:1rem">
-      <section class="card">
-        <h2>Ready gate</h2>
-        <ul class="work-list">
-          ${spokeGateListHtml(spokeRows, mine, { assessor: true })}
-        </ul>
-        <p class="subtle">${spokeGateNote(requiredComplete)}</p>
-      </section>
-      <section class="card">
-        <h2>Development actions</h2>
-        ${actionListHtml(actions, { role: "assessor" })}
-      </section>
-    </div>
+    ${readinessPageHead({
+      title: found.name,
+      lede: "Assessor view. Click a node to inspect the spoke, then open the counted case or start one.",
+      latestRec,
+      spokeRows,
+      hints
+    })}
+    ${readinessNetwork(domains, { personName: found.name, spokeRows })}
+    <section class="card" style="margin-top:1rem">
+      <h2>Development actions</h2>
+      ${actionListHtml(actions, { role: "assessor" })}
+    </section>
     <section class="card" style="margin-top:1rem">
       <h2>Workplace tickets</h2>
       <div class="table-wrap">
@@ -1650,14 +1665,14 @@ const AUTHOR_QUESTION_PROMPTS = [
   "Walk through how you would handle this incident from the first call through to recovery. Write the full response in your own words."
 ];
 
-// Guided form that writes scenario JSON. Administrators can still paste JSON on Import.
+// Guided form that writes scenario JSON for download into the repo.
 export function adminAuthorView(state) {
   const domains = state.config.capabilityDomains;
   const defaultDisclaimer = "This scenario, its mock incident, runbook titles, product names, escalation routes, and organisational procedures are illustrative. Validate them against approved operational sources before use. They are not bank policy.";
   return `
     <div class="page-header">
       <h1>Create Scenario</h1>
-      <p class="lede">Fill the form for a draft that stays in this browser. To put it in the library for everyone, download the JSON and follow the file steps below. You can still <a href="#/admin/import">paste JSON</a> if you already have a file.</p>
+      <p class="lede">Fill the form for a draft in this browser, then download the JSON and add it under <code>data/scenarios</code> so it stays in the repo.</p>
     </div>
     ${howToAddScenarioHtml()}
     <form class="card" data-form="author-scenario">

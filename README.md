@@ -21,11 +21,10 @@ The site is static HTML, CSS, and JavaScript. Content is JSON. It does not conne
 | **Evidence** | Engineer | Redacted prior tickets that an assessor can score |
 | **Readiness** | Engineer, Assessor | Hub-and-spoke map. Ready needs one satisfactory scenario per spoke |
 | **Propose** | Engineer | Suggest a new scenario |
-| **Create Scenario** | Administrator | Author a scenario in this browser, then download JSON for the shared library |
 | **People / review** | Assessor | Score submitted write-ups and release feedback |
 | **Access / criteria** | Administrator | Role access and on-call criteria |
 
-**Roles:** User (engineer), Assessor, Administrator.
+**Roles:** User (engineer), Assessor, Administrator. An administrator also sees the User and Assessor menus, plus Manage.
 
 ---
 
@@ -47,7 +46,7 @@ Then open http://localhost:8080 and hard-refresh after a change.
 
 Attempts stay in this browser. An assessor on another machine cannot see an engineer’s write-up unless they use the same browser profile.
 
-For practice without Entra, choose **Practice on this browser**:
+For practice without Entra, choose **Local Practice Account Sign In**:
 
 | Profile | Role |
 | --- | --- |
@@ -77,7 +76,7 @@ A blank answer is “not answered”, not a zero. Ready needs one released scena
 
 ## Saved in this browser
 
-Attempts, sandbox runs, Reading ticks, workplace tickets, imported scenarios, and theme live in `localStorage` under `incident-lab:`. Reset demo data (administrator) clears practice records in this browser. It does not remove colleagues.
+Attempts, sandbox runs, Reading ticks, workplace tickets, and theme live in `localStorage` under `incident-lab:`. Reset demo data (administrator) clears practice records in this browser. It does not remove colleagues. Scenario files stay in the repo.
 
 ---
 
@@ -119,4 +118,4 @@ Publishing the live site is a Static Web Apps upload. A `git push` does not upda
 
 Spoke ids: `avd-infrastructure`, `networking`, `trm-escalation-ops`, `proxy-solution`, `vendor-management`, `platform-troubleshooting`, `m365-stack`.
 
-The Create Scenario form only saves in this browser until that JSON file is in `data/scenarios/` and listed in `config.json`.
+Do not add scenarios only in the browser. The live library is the files in the repo.
