@@ -1,7 +1,7 @@
 // One function per screen. Each function returns an HTML string.
 // Clicks are handled in app.js by looking for data-action on the element.
 
-import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=79";
+import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=81";
 import {
   pillsForScenario,
   snowCard,
@@ -19,10 +19,11 @@ import {
   formatAttemptMeta,
   roleLabel,
   themeSwitch
-} from "./render.js?v=79";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory, readinessCopy } from "./scoring.js?v=79";
-import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=79";
-import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=79";
+} from "./render.js?v=81";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory, readinessCopy } from "./scoring.js?v=81";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=81";
+import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=81";
+import { preferredArticleLinks } from "./assistant.js?v=81";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -1908,13 +1909,13 @@ function readingLinkKind(href) {
 }
 
 // Destination buttons on a Reading card. WIP cards rely on the banner instead of extra copy.
-function readingOpenButtons(article) {
-  const links = articleLinks(article);
-  if (!links.length) return "";
+function readingOpenButtons(article, links = null) {
+  const shown = Array.isArray(links) ? links : articleLinks(article);
+  if (!shown.length) return "";
   return `
     <div class="reading-open-stack">
       <p class="eyebrow">Open</p>
-      ${links.map((link, index) => {
+      ${shown.map((link, index) => {
         const kind = readingLinkKind(link.href);
         const cls = index === 0 ? "btn reading-open" : "btn secondary reading-open";
         return `<button class="${cls}" type="button" data-action="reading-open" data-reading-id="${escapeHtml(article.id)}" data-reading-href="${escapeHtml(link.href)}"><span class="reading-open-mark" data-kind="${kind.kind}">${escapeHtml(kind.mark)}</span><span class="reading-open-copy"><strong>${escapeHtml(link.label)}</strong><em>${escapeHtml(kind.venue)}</em></span></button>`;
@@ -2320,6 +2321,7 @@ function assistantKindLabel(kind) {
 
 function assistantReplyHtml(reply, catalog) {
   if (!reply) return "";
+  const hay = reply.queryHay || "";
   const articles = (reply.articles || [])
     .map((item) => findReadingArticle(catalog, item.id))
     .filter(Boolean);
@@ -2327,33 +2329,33 @@ function assistantReplyHtml(reply, catalog) {
   const comms = reply.comms || [];
   const questions = reply.questions || [];
   return `
-    ${reply.intro ? `<p>${escapeHtml(reply.intro)}</p>` : ""}
-    ${reply.topic ? `<p class="assistant-match"><span class="pill">${escapeHtml(assistantKindLabel(reply.topic.kind))}</span><span>${escapeHtml(reply.topic.title)}</span></p>` : ""}
+    ${reply.intro ? `<p data-write="text">${escapeHtml(reply.intro)}</p>` : ""}
+    ${reply.topic ? `<p class="assistant-match" data-write="card"><span class="pill">${escapeHtml(assistantKindLabel(reply.topic.kind))}</span><span>${escapeHtml(reply.topic.title)}</span></p>` : ""}
     ${steps.length ? `
       <div class="assistant-block">
-        <p class="eyebrow">Do this first</p>
-        <ol>${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+        <p class="eyebrow" data-write="card">What you should try first</p>
+        <ol>${steps.map((step) => `<li data-write="text">${escapeHtml(step)}</li>`).join("")}</ol>
       </div>` : ""}
     ${comms.length ? `
       <div class="assistant-block">
-        <p class="eyebrow">Comms</p>
-        <ul>${comms.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
+        <p class="eyebrow" data-write="card">Comms</p>
+        <ul>${comms.map((line) => `<li data-write="text">${escapeHtml(line)}</li>`).join("")}</ul>
       </div>` : ""}
     ${articles.length ? `
-      <div class="assistant-block">
-        <p class="eyebrow">Knowledge base</p>
+      <div class="assistant-block" data-write="card">
+        <p class="eyebrow">Open this page</p>
         <div class="assistant-articles">
           ${articles.map((article) => `
             <article class="assistant-article">
               <h3>${escapeHtml(article.title)}</h3>
               <p>${escapeHtml(article.lede)}</p>
-              ${readingOpenButtons(article)}
+              ${readingOpenButtons(article, preferredArticleLinks(article, hay))}
             </article>
           `).join("")}
         </div>
       </div>` : ""}
     ${questions.length ? `
-      <div class="assistant-block">
+      <div class="assistant-block" data-write="card">
         <p class="eyebrow">Need a bit more</p>
         <div class="assistant-chips">
           ${questions.map((question) => `<button type="button" class="assistant-chip" data-action="assistant-prompt" data-prompt="${escapeHtml(question)}">${escapeHtml(question)}</button>`).join("")}
@@ -2362,11 +2364,11 @@ function assistantReplyHtml(reply, catalog) {
   `;
 }
 
-function assistantMessageHtml(message, catalog) {
+function assistantMessageHtml(message, catalog, { write = false } = {}) {
   if (message.role === "user") {
     return `<div class="assistant-msg is-user"><p>${escapeHtml(message.text)}</p></div>`;
   }
-  return `<div class="assistant-msg is-assistant">${assistantReplyHtml(message.reply, catalog)}</div>`;
+  return `<div class="assistant-msg is-assistant"${write ? " data-assistant-write" : ""}>${assistantReplyHtml(message.reply, catalog)}</div>`;
 }
 
 function assistantWelcomeHtml() {
@@ -2394,7 +2396,7 @@ export function assistantView(state) {
     ${broken ? `<div class="callout warn" role="status"><p>The knowledge file did not validate. Reading pages can still match. Fix <code>data/assistant/knowledge.json</code> and refresh.</p></div>` : ""}
     <div class="assistant-shell">
       <div class="assistant-thread" data-assistant-thread>
-        ${messages.length ? messages.map((message) => assistantMessageHtml(message, state.reading)).join("") : assistantWelcomeHtml()}
+        ${messages.length ? messages.map((message, index) => assistantMessageHtml(message, state.reading, { write: Boolean(state.assistantJustSent && index === messages.length - 1 && message.role === "assistant") })).join("") : assistantWelcomeHtml()}
       </div>
       <form class="assistant-composer" data-form="assistant">
         <label class="field">

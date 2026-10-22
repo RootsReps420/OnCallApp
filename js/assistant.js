@@ -1,11 +1,11 @@
 // Retrieval-only Live Assistant. It scores a short note against curated
 // topics and the Reading catalog. It never invents a step or a wiki page.
 
-import { articleIsWip, articleLinks, readingArticles, findReadingCollection, findReadingArticle } from "./content.js?v=79";
+import { articleIsWip, articleLinks, readingArticles, findReadingCollection, findReadingArticle } from "./content.js?v=81";
 
 export const TOPIC_SCORE_MIN = 2;
 export const ARTICLE_SCORE_MIN = 2;
-export const MAX_ARTICLES = 3;
+export const MAX_ARTICLES = 1;
 export const MAX_QUESTIONS = 2;
 
 const STOP = new Set([
@@ -133,29 +133,47 @@ export function rankArticles(reading, hay, intent, topSpokes = []) {
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
 }
 
-function pickArticles(ranked, pinnedIds, reading, limit = MAX_ARTICLES) {
-  const chosen = [];
-  const seen = new Set();
-  const take = (item) => {
-    if (!item || seen.has(item.id) || chosen.length >= limit) return;
-    seen.add(item.id);
-    chosen.push(item);
+function liveArticleRow(id, reading, hay, intent, topSpokes) {
+  const article = findReadingArticle(reading, id);
+  if (!article || articleIsWip(article) || !articleLinks(article).length) return null;
+  const collection = findReadingCollection(reading, article.collectionId);
+  return scoreArticle(article, collection, hay, intent, topSpokes) || {
+    id,
+    article,
+    collection,
+    score: 0,
+    hits: []
   };
-  (pinnedIds || []).forEach((id) => {
-    const article = findReadingArticle(reading, id);
-    if (!article || articleIsWip(article) || !articleLinks(article).length) return;
-    take({
-      id,
-      article,
-      collection: findReadingCollection(reading, article.collectionId),
-      score: 99,
-      hits: ["pinned"]
+}
+
+function pickBestArticle(rows, fallback) {
+  const live = (rows || []).filter(Boolean);
+  if (!live.length) return fallback ? [fallback] : [];
+  const ranked = live.slice().sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  const best = ranked[0].score > 0 ? ranked[0] : (fallback || ranked[0]);
+  return best ? [best] : [];
+}
+
+function pickPinnedArticle(pinnedIds, reading, hay, intent, topSpokes) {
+  const rows = (pinnedIds || []).map((id) => liveArticleRow(id, reading, hay, intent, topSpokes));
+  const firstLive = rows.find(Boolean);
+  return pickBestArticle(rows, firstLive);
+}
+
+export function preferredArticleLinks(article, hay, limit = 1) {
+  const links = articleLinks(article);
+  if (links.length <= 1) return links;
+  const scored = links.map((link) => {
+    let score = 0;
+    significantTokens(link.label).forEach((token) => {
+      if (phraseIn(hay, token)) score += 1.5;
     });
-  });
-  ranked.forEach((item) => {
-    if (item.score >= ARTICLE_SCORE_MIN) take(item);
-  });
-  return chosen;
+    return { label: link.label, href: link.href, score };
+  }).sort((a, b) => b.score - a.score);
+  if (scored[0].score > 0) {
+    return scored.filter((link) => link.score > 0).slice(0, limit).map(({ label, href }) => ({ label, href }));
+  }
+  return [{ label: links[0].label, href: links[0].href }];
 }
 
 function pickQuestions(topicRows, hay) {
@@ -212,8 +230,8 @@ export function answerNote(knowledge, reading, note, priorNotes = []) {
   const articleRows = rankArticles(reading, hay, intent, topSpokes);
   const pinned = matchedTopic?.topic.relatedReadingIds || [];
   const articles = topicOk
-    ? pickArticles([], pinned, reading)
-    : pickArticles(articleRows, [], reading);
+    ? pickPinnedArticle(pinned, reading, hay, intent, topSpokes)
+    : pickBestArticle(articleRows.filter((row) => row.score >= ARTICLE_SCORE_MIN));
   const articleOnly = !topicOk && articles.length && !thin;
 
   if (!topicOk && !articleOnly) {
@@ -222,6 +240,7 @@ export function answerNote(knowledge, reading, note, priorNotes = []) {
       mode: "clarify",
       confidence: "low",
       intent,
+      queryHay: hay,
       intro: thin
         ? "That note is a bit thin. Add the pool type, the error, or the page you need, or tap a question below."
         : "I do not have a confident match yet. A few more words will keep the answer on a real topic instead of a guess.",
@@ -240,7 +259,8 @@ export function answerNote(knowledge, reading, note, priorNotes = []) {
       mode: "articles",
       confidence: "medium",
       intent,
-      intro: "No step list is a strong match, so here are the approved pages that fit the note.",
+      queryHay: hay,
+      intro: "No step list is a strong match, so here is the approved page that fits the note.",
       topic: null,
       steps: [],
       comms: [],
@@ -255,6 +275,7 @@ export function answerNote(knowledge, reading, note, priorNotes = []) {
     mode: "answer",
     confidence: matchedTopic.score >= 6 ? "high" : "medium",
     intent,
+    queryHay: hay,
     intro: `Matched “${matchedTopic.topic.title}” from the curated list.`,
     topic: summariseTopic(matchedTopic),
     steps: [...(matchedTopic.topic.steps || [])],

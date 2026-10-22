@@ -1,12 +1,12 @@
 // Scoring and catalog checks. Not shown in the administrator menu.
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
-import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=79";
-import { validateScenario, validateReadingCatalog, validateSandboxCatalog, validateAssistantKnowledge } from "./validation.js?v=79";
-import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=79";
-import { scoreSandboxRun } from "./sandbox.js?v=79";
-import * as storage from "./storage.js?v=79";
-import { answerNote } from "./assistant.js?v=79";
+import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=81";
+import { validateScenario, validateReadingCatalog, validateSandboxCatalog, validateAssistantKnowledge } from "./validation.js?v=81";
+import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=81";
+import { scoreSandboxRun } from "./sandbox.js?v=81";
+import * as storage from "./storage.js?v=81";
+import { answerNote } from "./assistant.js?v=81";
 
 // A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {
@@ -439,11 +439,12 @@ export function runVerification(readingCatalog, sandboxCatalog, assistantKnowled
     check("Assistant reading pins exist in the Reading catalog", missingPins.length === 0, missingPins.join(", "));
     const livePersonal = answerNote(assistantKnowledge, readingCatalog, "personal can't login");
     check("Live personal note stays on a curated topic", livePersonal.mode === "answer" && livePersonal.topic?.id === "personal-signin");
+    check("Live personal note offers one PAA page", livePersonal.articles.length === 1 && livePersonal.articles[0].id === "ts-paa");
     const liveMs = answerNote(assistantKnowledge, readingCatalog, "Need to engage Microsoft");
     check("Live Microsoft note stays on the engagement topic", liveMs.mode === "answer" && liveMs.topic?.id === "vendor-microsoft");
-    check("Live Microsoft note does not offer the Palo Alto page", !liveMs.articles.some((item) => item.id === "ven-palo-alto"));
+    check("Live Microsoft note offers one page", liveMs.articles.length === 1 && liveMs.articles[0].id !== "ven-palo-alto");
     const liveRota = answerNote(assistantKnowledge, readingCatalog, "where is the rota");
-    check("Live rota note offers the rota article", liveRota.articles.some((item) => item.id === "oc-rota") || liveRota.topic?.id === "rota-lookup");
+    check("Live rota note offers the rota article", liveRota.articles.length === 1 && liveRota.articles[0].id === "oc-rota");
     const liveJunk = answerNote(assistantKnowledge, readingCatalog, "asdf qwerty zxcv");
     check("Live junk note does not invent a wiki page", liveJunk.mode === "clarify" && !liveJunk.articles.length);
   }

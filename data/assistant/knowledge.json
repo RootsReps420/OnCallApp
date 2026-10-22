@@ -63,7 +63,7 @@
       "kind": "troubleshoot",
       "spokeIds": ["platform-troubleshooting", "avd-infrastructure"],
       "signals": ["personal", "paa", "prisma", "cannot sign in", "can't login", "sign in", "desktop won't start", "personal desktop"],
-      "relatedReadingIds": ["ts-paa", "plat-avd-personal", "ts-azure-workbooks"],
+      "relatedReadingIds": ["ts-paa"],
       "clarify": ["Is this a personal desktop or multi-session?", "What exact error does the user see?"],
       "steps": [
         "Confirm with the caller that this is a personal desktop, not multi-session.",
@@ -83,7 +83,7 @@
       "kind": "troubleshoot",
       "spokeIds": ["platform-troubleshooting", "avd-infrastructure"],
       "signals": ["multi-session", "msh", "tsa", "terminal server agent", "host pool", "session host", "pooled"],
-      "relatedReadingIds": ["ts-tsa", "plat-avd-multi-session", "ts-azure-workbooks"],
+      "relatedReadingIds": ["ts-tsa"],
       "clarify": ["Is this multi-session or a personal desktop?", "Which host pool did the user name?"],
       "steps": [
         "Confirm this is multi-session and ask which host pool the user named.",
@@ -103,7 +103,7 @@
       "kind": "lookup",
       "spokeIds": ["trm-escalation-ops"],
       "signals": ["rota", "who is on", "who's on", "who is covering", "on-call rota"],
-      "relatedReadingIds": ["oc-rota", "oc-useful-links", "oc-trm-ops"],
+      "relatedReadingIds": ["oc-rota"],
       "clarify": ["Do you need the rota, or the escalation contacts?"],
       "steps": [
         "Open the Virtual Team on-call rota from Reading and use the live page, not a saved copy.",
@@ -116,7 +116,7 @@
       "kind": "lookup",
       "spokeIds": ["trm-escalation-ops"],
       "signals": ["escalate", "escalation", "who do i call", "engagement process", "trm", "ops contact", "callout"],
-      "relatedReadingIds": ["oc-escalation", "oc-trm-ops", "oc-engineer-runbook"],
+      "relatedReadingIds": ["oc-escalation"],
       "clarify": ["Are you escalating inside the Virtual Team, or to a vendor?"],
       "steps": [
         "Open the on-call escalation and engagement process from Reading and follow the live page.",
@@ -164,7 +164,7 @@
       "kind": "comms",
       "spokeIds": ["trm-escalation-ops"],
       "signals": ["first update", "work note", "tell the business", "stakeholder", "bridge", "customer visible", "what do i say"],
-      "relatedReadingIds": ["oc-engineer-runbook", "oc-escalation"],
+      "relatedReadingIds": ["oc-engineer-runbook"],
       "clarify": ["Who needs the update: the caller, the bridge, or both?"],
       "steps": [
         "Say what you know, what you are checking next, and what you have not confirmed yet.",
@@ -183,7 +183,7 @@
       "kind": "lookup",
       "spokeIds": ["platform-troubleshooting"],
       "signals": ["workbook", "workbooks", "avd studio", "azure workbook", "where do i look"],
-      "relatedReadingIds": ["ts-azure-workbooks", "ts-general"],
+      "relatedReadingIds": ["ts-azure-workbooks"],
       "clarify": ["Do you need the personal workbook, the multi-session workbook, or the how-to page?"],
       "steps": [
         "Open the Azure Workbooks card from Reading. Each button is one live workbook.",

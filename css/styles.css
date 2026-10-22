@@ -3305,3 +3305,42 @@ html[data-theme="light"] .reading-spine {
   justify-content: flex-end;
   gap: 0.55rem;
 }
+
+[data-assistant-write] [data-write].is-writing {
+  opacity: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+}
+
+[data-assistant-write] [data-write="card"].is-written {
+  animation: assistant-card-in 220ms ease-out;
+}
+
+.assistant-msg .is-caret::after {
+  content: "";
+  display: inline-block;
+  width: 0.42em;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  animation: assistant-caret 0.7s step-end infinite;
+}
+
+@keyframes assistant-caret {
+  50% { opacity: 0; }
+}
+
+@keyframes assistant-card-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-assistant-write] [data-write].is-writing { opacity: 1; height: auto; }
+  .assistant-msg .is-caret::after,
+  [data-assistant-write] [data-write="card"].is-written { animation: none; }
+}

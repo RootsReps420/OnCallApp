@@ -2,17 +2,17 @@
 // and the onClick / onSubmit handlers are the only place that writes saved work.
 // The address after #/ decides which screen route() returns.
 
-import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=79";
-import * as storage from "./storage.js?v=79";
-import { loadConfig, loadLibrary, loadReading, loadSandbox, loadAssistant } from "./content.js?v=79";
-import { validateScenario, formatValidationErrors } from "./validation.js?v=79";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=79";
-import * as views from "./views.js?v=79";
-import * as auth from "./auth.js?v=79";
-import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=79";
-import { runVerification } from "./tests.js?v=79";
-import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=79";
-import { answerNote } from "./assistant.js?v=79";
+import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=81";
+import * as storage from "./storage.js?v=81";
+import { loadConfig, loadLibrary, loadReading, loadSandbox, loadAssistant } from "./content.js?v=81";
+import { validateScenario, formatValidationErrors } from "./validation.js?v=81";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=81";
+import * as views from "./views.js?v=81";
+import * as auth from "./auth.js?v=81";
+import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=81";
+import { runVerification } from "./tests.js?v=81";
+import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=81";
+import { answerNote } from "./assistant.js?v=81";
 
 const appRoot = document.getElementById("app");
 // Live page data. It is rebuilt from localStorage on every render.
@@ -98,6 +98,7 @@ async function boot() {
     window.addEventListener("hashchange", () => {
       persistOpenSandboxDrafts();
       persistAssistantDraft();
+      stopAssistantWrite();
       render();
     });
     document.addEventListener("click", onClick);
@@ -130,6 +131,7 @@ function render() {
   if (rendering) return;
   rendering = true;
   try {
+  stopAssistantWrite();
   pauseOpenTimer();
   syncSession();
   state.attempts = storage.getAttempts();
@@ -313,18 +315,104 @@ function bindAssistantPage() {
   const threadEl = document.querySelector("[data-assistant-thread]");
   if (threadEl) threadEl.scrollTop = threadEl.scrollHeight;
   const input = document.querySelector("[data-assistant-input]");
-  if (!input) return;
-  input.addEventListener("input", persistAssistantDraft);
-  input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      askAssistant(input.value);
-    }
-  });
+  if (input) {
+    input.addEventListener("input", persistAssistantDraft);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        askAssistant(input.value);
+      }
+    });
+  }
   if (state.assistantJustSent) {
-    input.focus();
+    input?.focus();
+    playAssistantWrite(threadEl);
     state.assistantJustSent = false;
   }
+}
+
+let assistantWriteTimer = null;
+
+function stopAssistantWrite() {
+  if (assistantWriteTimer) {
+    clearTimeout(assistantWriteTimer);
+    assistantWriteTimer = null;
+  }
+}
+
+function scrollAssistantThread(threadEl) {
+  if (threadEl) threadEl.scrollTop = threadEl.scrollHeight;
+}
+
+function setAssistantAskEnabled(on) {
+  const button = document.querySelector('[data-form="assistant"] button[type="submit"]');
+  if (button) button.disabled = !on;
+}
+
+function playAssistantWrite(threadEl) {
+  stopAssistantWrite();
+  const root = document.querySelector("[data-assistant-write]");
+  if (!root) return;
+  const units = [...root.querySelectorAll("[data-write]")];
+  if (!units.length || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+    root.removeAttribute("data-assistant-write");
+    return;
+  }
+  units.forEach((el) => el.classList.add("is-writing"));
+  setAssistantAskEnabled(false);
+  let index = 0;
+  const finish = () => {
+    setAssistantAskEnabled(true);
+    root.removeAttribute("data-assistant-write");
+    scrollAssistantThread(threadEl);
+  };
+  const next = () => {
+    if (!document.body.contains(root)) {
+      setAssistantAskEnabled(true);
+      return;
+    }
+    if (index >= units.length) {
+      finish();
+      return;
+    }
+    const el = units[index++];
+    el.classList.remove("is-writing");
+    if (el.getAttribute("data-write") === "text") {
+      typeAssistantText(el, threadEl, next);
+      return;
+    }
+    el.classList.add("is-written");
+    scrollAssistantThread(threadEl);
+    assistantWriteTimer = setTimeout(next, 180);
+  };
+  assistantWriteTimer = setTimeout(next, 420);
+}
+
+function typeAssistantText(el, threadEl, done) {
+  const full = el.textContent;
+  el.textContent = "";
+  el.classList.add("is-caret");
+  const chunks = full.split(/(\s+)/);
+  let at = 0;
+  const tick = () => {
+    if (!document.body.contains(el)) {
+      setAssistantAskEnabled(true);
+      return;
+    }
+    if (at >= chunks.length) {
+      el.textContent = full;
+      el.classList.remove("is-caret");
+      scrollAssistantThread(threadEl);
+      assistantWriteTimer = setTimeout(done, 70);
+      return;
+    }
+    el.textContent += chunks[at];
+    at += 1;
+    scrollAssistantThread(threadEl);
+    const just = chunks[at - 1] || "";
+    assistantWriteTimer = setTimeout(tick, just.trim() ? 38 : 0);
+  };
+  tick();
 }
 
 // Open a new practice run on a ticket. Always starts a fresh record, even if one was completed.
