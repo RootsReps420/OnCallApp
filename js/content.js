@@ -1,12 +1,12 @@
 // Loads config.json and the scenario files, then merges any scenarios
 // an administrator has saved in this browser on top of the bundled ones.
 
-import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=75";
-import { getCustomScenarios } from "./storage.js?v=75";
+import { validateScenario, validateReadingCatalog, validateSandboxCatalog, validateAssistantKnowledge } from "./validation.js?v=79";
+import { getCustomScenarios } from "./storage.js?v=79";
 
 // Fetch data/config.json. cache: no-store so a refresh sees file edits.
 export async function loadConfig() {
-  const response = await fetch("data/config.json?v=75", { cache: "no-store" });
+  const response = await fetch("data/config.json?v=79", { cache: "no-store" });
   if (!response.ok) throw new Error("Unable to load application configuration.");
   return response.json();
 }
@@ -88,7 +88,7 @@ const EMPTY_READING = {
 // Fetch the Reading room catalog. A broken file still returns an object so the app can boot.
 export async function loadReading() {
   try {
-    const response = await fetch("data/reading.json?v=75", { cache: "no-store" });
+    const response = await fetch("data/reading.json?v=79", { cache: "no-store" });
     if (!response.ok) throw new Error("Unable to load reading catalog.");
     const catalog = await response.json();
     const check = validateReadingCatalog(catalog);
@@ -173,7 +173,7 @@ const EMPTY_SANDBOX = {
 // Fetch the Incident Sandbox tickets. A broken file still returns an object so the app can boot.
 export async function loadSandbox() {
   try {
-    const response = await fetch("data/sandbox.json?v=75", { cache: "no-store" });
+    const response = await fetch("data/sandbox.json?v=79", { cache: "no-store" });
     if (!response.ok) throw new Error("Unable to load sandbox catalog.");
     const catalog = await response.json();
     const check = validateSandboxCatalog(catalog);
@@ -182,5 +182,26 @@ export async function loadSandbox() {
   } catch (error) {
     console.warn(error);
     return { ...EMPTY_SANDBOX, validation: { ok: false, errors: [{ path: "sandbox.json", message: String(error.message || error) }] } };
+  }
+}
+
+const EMPTY_ASSISTANT = {
+  disclaimer: "Live Assistant knowledge could not be loaded. Serve data/assistant/knowledge.json over HTTP.",
+  synonyms: {},
+  topics: []
+};
+
+// Fetch curated Live Assistant topics. A broken file still returns an object so the app can boot.
+export async function loadAssistant() {
+  try {
+    const response = await fetch("data/assistant/knowledge.json?v=79", { cache: "no-store" });
+    if (!response.ok) throw new Error("Unable to load assistant knowledge.");
+    const catalog = await response.json();
+    const check = validateAssistantKnowledge(catalog);
+    if (!check.ok) console.warn("Assistant knowledge failed validation", check.errors);
+    return { ...catalog, validation: check };
+  } catch (error) {
+    console.warn(error);
+    return { ...EMPTY_ASSISTANT, validation: { ok: false, errors: [{ path: "knowledge.json", message: String(error.message || error) }] } };
   }
 }

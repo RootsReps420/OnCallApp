@@ -286,6 +286,85 @@ export function validateSandboxCatalog(catalog) {
   return { ok: errors.length === 0, errors };
 }
 
+const ASSISTANT_KINDS = new Set(["troubleshoot", "comms", "lookup"]);
+
+// Curated Live Assistant topics. Steps must be first-call text; Reading ids are optional pins.
+export function validateAssistantKnowledge(catalog) {
+  const errors = [];
+  if (!catalog || typeof catalog !== "object" || Array.isArray(catalog)) {
+    return { ok: false, errors: [{ path: "$", message: "Assistant knowledge must be a JSON object." }] };
+  }
+  requireString(errors, "disclaimer", catalog.disclaimer, 20);
+  if (catalog.synonyms != null) {
+    if (!catalog.synonyms || typeof catalog.synonyms !== "object" || Array.isArray(catalog.synonyms)) {
+      fail(errors, "synonyms", "synonyms must be an object of string arrays.");
+    } else {
+      Object.entries(catalog.synonyms).forEach(([key, aliases]) => {
+        if (!requireArray(errors, `synonyms.${key}`, aliases)) return;
+        aliases.forEach((alias, index) => {
+          requireString(errors, `synonyms.${key}[${index}]`, alias);
+        });
+      });
+    }
+  }
+  if (!requireArray(errors, "topics", catalog.topics)) return { ok: false, errors };
+  if (!catalog.topics.length) fail(errors, "topics", "Provide at least one topic.");
+  const ids = new Set();
+  catalog.topics.forEach((topic, index) => {
+    const path = `topics[${index}]`;
+    requireString(errors, `${path}.id`, topic?.id);
+    if (topic?.id) {
+      if (ids.has(topic.id)) fail(errors, `${path}.id`, "Topic ids must be unique.");
+      ids.add(topic.id);
+    }
+    requireString(errors, `${path}.title`, topic?.title, 3);
+    if (!ASSISTANT_KINDS.has(topic?.kind)) {
+      fail(errors, `${path}.kind`, "kind must be troubleshoot, comms, or lookup.");
+    }
+    if (!requireArray(errors, `${path}.signals`, topic?.signals) || !topic.signals.length) {
+      fail(errors, `${path}.signals`, "List the phrases a colleague might type.");
+    } else {
+      topic.signals.forEach((signal, signalIndex) => {
+        requireString(errors, `${path}.signals[${signalIndex}]`, signal);
+      });
+    }
+    if (!requireArray(errors, `${path}.steps`, topic?.steps) || !topic.steps.length) {
+      fail(errors, `${path}.steps`, "List the first-call steps for this topic.");
+    } else {
+      topic.steps.forEach((step, stepIndex) => {
+        requireString(errors, `${path}.steps[${stepIndex}]`, step, 12);
+      });
+    }
+    if (topic?.comms != null) {
+      if (requireArray(errors, `${path}.comms`, topic.comms)) {
+        topic.comms.forEach((line, lineIndex) => {
+          requireString(errors, `${path}.comms[${lineIndex}]`, line, 8);
+        });
+      }
+    }
+    if (topic?.clarify != null) {
+      if (requireArray(errors, `${path}.clarify`, topic.clarify)) {
+        topic.clarify.forEach((line, lineIndex) => {
+          requireString(errors, `${path}.clarify[${lineIndex}]`, line, 8);
+        });
+      }
+    }
+    if (topic?.relatedReadingIds != null) {
+      if (requireArray(errors, `${path}.relatedReadingIds`, topic.relatedReadingIds)) {
+        topic.relatedReadingIds.forEach((id, idIndex) => {
+          requireString(errors, `${path}.relatedReadingIds[${idIndex}]`, id);
+        });
+      }
+    }
+    if (Array.isArray(topic?.spokeIds)) {
+      topic.spokeIds.forEach((spokeId, spokeIndex) => {
+        if (!SPOKE_IDS.has(spokeId)) fail(errors, `${path}.spokeIds[${spokeIndex}]`, "spokeId must be one of the seven readiness spokes.");
+      });
+    }
+  });
+  return { ok: errors.length === 0, errors };
+}
+
 // Join path and message into one block of text for the import form.
 export function formatValidationErrors(errors) {
   return errors.map((error) => `${error.path}: ${error.message}`).join("\n");

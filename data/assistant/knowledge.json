@@ -1,0 +1,225 @@
+{
+  "disclaimer": "Live Assistant is a first-call helper. It matches your note to curated steps and approved Reading pages. It is not bank policy and it does not copy wiki bodies. Check the live title before you treat a page as current.",
+  "authoring": {
+    "whatThisFileIs": "Curated first-call steps. The matcher only repeats steps and Reading ids that you list here. It does not invent commands, portal clicks, or vendor SLAs.",
+    "whatYouAdd": [
+      "A new troubleshooting or comms pattern: add one object to topics in this file.",
+      "A new wiki / SharePoint / Azure page: add it to data/reading.json first (title, lede, spokeIds, https links). Then pin its id here in relatedReadingIds if you want it guaranteed on that topic.",
+      "A new spelling: add it under synonyms so brief notes still match."
+    ],
+    "doNot": [
+      "Do not paste Confluence bodies into this file.",
+      "Do not write az, PowerShell, or portal click paths unless they already exist on a live Reading page you pin.",
+      "Do not add a step you would not say on the first call."
+    ],
+    "topicFields": {
+      "id": "Unique kebab-case id.",
+      "title": "Short name shown above the steps.",
+      "kind": "troubleshoot, comms, or lookup.",
+      "spokeIds": "Optional. One or more of the seven readiness spokes.",
+      "signals": "Phrases a colleague might type, including abbreviations. Longer phrases score higher.",
+      "relatedReadingIds": "Article ids from data/reading.json. The reply will offer Open buttons for those pages.",
+      "clarify": "Questions to ask when the note is too thin for this topic.",
+      "steps": "Ordered first-call checks. One action per string.",
+      "comms": "Optional. Who to tell and what not to promise."
+    },
+    "topicTemplate": {
+      "id": "short-kebab-id",
+      "title": "What the colleague is asking about",
+      "kind": "troubleshoot",
+      "spokeIds": ["platform-troubleshooting"],
+      "signals": ["phrase they might type", "abbreviation"],
+      "relatedReadingIds": ["article-id-from-reading-json"],
+      "clarify": ["One question if the note is thin"],
+      "steps": [
+        "First-call check, in order."
+      ],
+      "comms": [
+        "Who to tell and what not to promise."
+      ]
+    },
+    "afterYouEdit": "Serve the folder locally, hard-refresh, then publish the live site. Bump the ?v= cache query on the next deploy."
+  },
+  "synonyms": {
+    "paa": ["prisma", "prisma access", "prisma access agent", "personal vpn"],
+    "tsa": ["terminal server agent"],
+    "msh": ["multi-session", "multi session", "multisession", "pooled desktop", "pooled"],
+    "personal": ["pers", "personal avd", "personal desktop", "assigned desktop", "assigned vm"],
+    "signin": ["sign in", "sign-in", "log in", "login", "logon", "cannot sign", "can't sign", "unable to sign", "wont start", "won't start"],
+    "rota": ["who's on", "who is on", "on call rota", "on-call rota", "who is covering"],
+    "escalation": ["escalate", "who do i call", "who to call", "engagement process", "call out", "callout"],
+    "microsoft": ["msft", "ms engage", "ms engagement", "critsit", "critical situation"],
+    "palo": ["palo alto", "panw", "pa engagement"],
+    "workbook": ["workbooks", "avd studio", "azure workbook"],
+    "outlook": ["mailbox", "email down", "o365 mail"],
+    "onedrive": ["one drive", "odsp"],
+    "proxy": ["explicit proxy", "zscaler"],
+    "comms": ["work note", "customer visible", "tell the business", "stakeholder", "bridge update", "first update"]
+  },
+  "topics": [
+    {
+      "id": "personal-signin",
+      "title": "Personal AVD sign-in",
+      "kind": "troubleshoot",
+      "spokeIds": ["platform-troubleshooting", "avd-infrastructure"],
+      "signals": ["personal", "paa", "prisma", "cannot sign in", "can't login", "sign in", "desktop won't start", "personal desktop"],
+      "relatedReadingIds": ["ts-paa", "plat-avd-personal", "ts-azure-workbooks"],
+      "clarify": ["Is this a personal desktop or multi-session?", "What exact error does the user see?"],
+      "steps": [
+        "Confirm with the caller that this is a personal desktop, not multi-session.",
+        "Ask for the exact error, when it started, and whether anyone else is affected.",
+        "Open the Prisma Access Agent break-fix page and the personal AVD resources from Reading.",
+        "If you need a current picture of the session, open the personal workbook on the Azure Workbooks card.",
+        "Write what you asked and which page you opened on the ticket before you change anything."
+      ],
+      "comms": [
+        "Tell the caller you have the record and what you will check first.",
+        "Do not promise a fix time until you have confirmed the pool type and the error."
+      ]
+    },
+    {
+      "id": "msh-signin",
+      "title": "Multi-session AVD sign-in",
+      "kind": "troubleshoot",
+      "spokeIds": ["platform-troubleshooting", "avd-infrastructure"],
+      "signals": ["multi-session", "msh", "tsa", "terminal server agent", "host pool", "session host", "pooled"],
+      "relatedReadingIds": ["ts-tsa", "plat-avd-multi-session", "ts-azure-workbooks"],
+      "clarify": ["Is this multi-session or a personal desktop?", "Which host pool did the user name?"],
+      "steps": [
+        "Confirm this is multi-session and ask which host pool the user named.",
+        "Ask for the exact error and whether other users on the same pool are affected.",
+        "Open the Terminal Server Agent break-fix page and the multi-session AVD resources from Reading.",
+        "If you need a current picture of the pool, open the multi-session workbook on the Azure Workbooks card.",
+        "Write the pool name, the error, and which page you opened before you change anything."
+      ],
+      "comms": [
+        "Tell the caller you have the record and whether you are treating this as one user or a pool.",
+        "If more than one user is affected, say that clearly in the first work note."
+      ]
+    },
+    {
+      "id": "rota-lookup",
+      "title": "Who is on call",
+      "kind": "lookup",
+      "spokeIds": ["trm-escalation-ops"],
+      "signals": ["rota", "who is on", "who's on", "who is covering", "on-call rota"],
+      "relatedReadingIds": ["oc-rota", "oc-useful-links", "oc-trm-ops"],
+      "clarify": ["Do you need the rota, or the escalation contacts?"],
+      "steps": [
+        "Open the Virtual Team on-call rota from Reading and use the live page, not a saved copy.",
+        "If you also need phone numbers, open TRM / OPS contact information from the same shelf."
+      ]
+    },
+    {
+      "id": "escalation-path",
+      "title": "Escalation and first contacts",
+      "kind": "lookup",
+      "spokeIds": ["trm-escalation-ops"],
+      "signals": ["escalate", "escalation", "who do i call", "engagement process", "trm", "ops contact", "callout"],
+      "relatedReadingIds": ["oc-escalation", "oc-trm-ops", "oc-engineer-runbook"],
+      "clarify": ["Are you escalating inside the Virtual Team, or to a vendor?"],
+      "steps": [
+        "Open the on-call escalation and engagement process from Reading and follow the live page.",
+        "Confirm who is currently on from the rota before you assume a name.",
+        "If you need numbers, open TRM / OPS contact information. Do not invent a call chain."
+      ],
+      "comms": [
+        "Say who you are calling and why on the ticket before you ring.",
+        "Do not skip the live escalation page because a name is familiar."
+      ]
+    },
+    {
+      "id": "vendor-microsoft",
+      "title": "Microsoft engagement",
+      "kind": "lookup",
+      "spokeIds": ["vendor-management"],
+      "signals": ["microsoft", "ms engage", "engage microsoft", "critsit", "critical situation", "raise with microsoft"],
+      "relatedReadingIds": ["ven-microsoft", "ven-ms-engage"],
+      "clarify": ["Is this a standard Microsoft engagement, or a CritSit?"],
+      "steps": [
+        "Open the Microsoft engagement guide from Reading and follow the live page.",
+        "Use the official Microsoft engagement documentation card for the current aka.ms path.",
+        "Do not invent a severity or a CritSit path that is not on those pages."
+      ],
+      "comms": [
+        "Write that you are opening the Microsoft engagement page, then record the case number the page tells you to keep."
+      ]
+    },
+    {
+      "id": "vendor-palo",
+      "title": "Palo Alto engagement",
+      "kind": "lookup",
+      "spokeIds": ["vendor-management"],
+      "signals": ["palo", "palo alto", "pa engagement", "panw"],
+      "relatedReadingIds": ["ven-palo-alto"],
+      "clarify": ["Is this a Prisma / PAA break-fix, or a vendor call-out to Palo Alto?"],
+      "steps": [
+        "Open the Palo Alto engagement guide from Reading and follow the live page.",
+        "If the user issue is Prisma Access Agent on a personal desktop, use that break-fix page first and only escalate when the live guide says to."
+      ]
+    },
+    {
+      "id": "first-comms",
+      "title": "First update and work notes",
+      "kind": "comms",
+      "spokeIds": ["trm-escalation-ops"],
+      "signals": ["first update", "work note", "tell the business", "stakeholder", "bridge", "customer visible", "what do i say"],
+      "relatedReadingIds": ["oc-engineer-runbook", "oc-escalation"],
+      "clarify": ["Who needs the update: the caller, the bridge, or both?"],
+      "steps": [
+        "Say what you know, what you are checking next, and what you have not confirmed yet.",
+        "Name the caller or the bridge in the note so a colleague can pick the record up.",
+        "Keep a customer-visible update short and free of internal guesswork.",
+        "Open the engineer runbook from Reading if you need the handover or contact pattern."
+      ],
+      "comms": [
+        "Do not promise a fix time you have not confirmed.",
+        "If impact is still unknown, say that plainly."
+      ]
+    },
+    {
+      "id": "workbooks-lookup",
+      "title": "Where to look in Azure",
+      "kind": "lookup",
+      "spokeIds": ["platform-troubleshooting"],
+      "signals": ["workbook", "workbooks", "avd studio", "azure workbook", "where do i look"],
+      "relatedReadingIds": ["ts-azure-workbooks", "ts-general"],
+      "clarify": ["Do you need the personal workbook, the multi-session workbook, or the how-to page?"],
+      "steps": [
+        "Open the Azure Workbooks card from Reading. Each button is one live workbook.",
+        "Use personal or multi-session according to the pool the caller named.",
+        "If you need the how-to, open Platform Troubleshooting - General from the same shelf."
+      ]
+    },
+    {
+      "id": "identity-m365",
+      "title": "Identity and M365 on AVD",
+      "kind": "troubleshoot",
+      "spokeIds": ["m365-stack"],
+      "signals": ["outlook", "onedrive", "teams", "m365", "mailbox", "identity", "email down"],
+      "relatedReadingIds": ["id-support-overview"],
+      "clarify": ["Is the app failing only inside AVD, or on the user's other devices too?"],
+      "steps": [
+        "Ask whether Outlook, OneDrive, or Teams fails only on AVD or on other devices as well.",
+        "Open the identity and M365 support documentation overview from Reading and follow the live page.",
+        "Write which app, which device, and whether the issue is AVD-only before you change anything."
+      ],
+      "comms": [
+        "Do not blame the VDI estate until you know the app also works, or fails, off AVD."
+      ]
+    },
+    {
+      "id": "network-path",
+      "title": "Network and landing-zone pages",
+      "kind": "lookup",
+      "spokeIds": ["networking", "avd-infrastructure"],
+      "signals": ["proxy", "dns", "hub", "landing zone", "az 2.0", "network path", "infoblox"],
+      "relatedReadingIds": ["net-az20-avd-mvd", "net-az20-hub-locations", "net-az20-lz-platformdev-lld"],
+      "clarify": ["Are you looking for the AVD path, a hub location, or a landing-zone design page?"],
+      "steps": [
+        "Open the matching AZ 2.0 design page from Reading rather than guessing a path.",
+        "Use the live title on that page. Do not quote a remembered hop or DNS name from memory."
+      ]
+    }
+  ]
+}

@@ -14,7 +14,8 @@ const KEYS = {
   session: `${ROOT}:session`,
   evidence: `${ROOT}:evidence`,
   reading: `${ROOT}:reading`,
-  sandbox: `${ROOT}:sandbox`
+  sandbox: `${ROOT}:sandbox`,
+  assistant: `${ROOT}:assistant`
 };
 
 // Parse a JSON value from localStorage. A corrupt value falls back instead of breaking the page.
@@ -245,9 +246,34 @@ export function getSandboxRun(id) {
   return getSandboxRuns().find((item) => item.id === id) || null;
 }
 
-// Clear attempts, imports, proposals, ticket write-ups, readiness edits, reading ticks, and sandbox runs. The colleague directory and the signed-in person stay.
+const EMPTY_ASSISTANT_THREAD = { messages: [], draft: "" };
+const ASSISTANT_MESSAGE_CAP = 24;
+
+// Last Live Assistant thread in this browser. Survives a redraw.
+export function getAssistantThread() {
+  const saved = read(KEYS.assistant, EMPTY_ASSISTANT_THREAD);
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return { ...EMPTY_ASSISTANT_THREAD };
+  const messages = Array.isArray(saved.messages) ? saved.messages.slice(-ASSISTANT_MESSAGE_CAP) : [];
+  return { messages, draft: String(saved.draft || "") };
+}
+
+export function saveAssistantThread(thread) {
+  const next = {
+    messages: Array.isArray(thread?.messages) ? thread.messages.slice(-ASSISTANT_MESSAGE_CAP) : [],
+    draft: String(thread?.draft || "")
+  };
+  write(KEYS.assistant, next);
+  return next;
+}
+
+export function clearAssistantThread() {
+  write(KEYS.assistant, { ...EMPTY_ASSISTANT_THREAD });
+  return { ...EMPTY_ASSISTANT_THREAD };
+}
+
+// Clear attempts, imports, proposals, ticket write-ups, readiness edits, reading ticks, sandbox runs, and the Live Assistant thread. The colleague directory and the signed-in person stay.
 export function resetDemoData() {
-  [KEYS.attempts, KEYS.customScenarios, KEYS.proposals, KEYS.readinessConfig, KEYS.reviews, KEYS.evidence, KEYS.reading, KEYS.sandbox].forEach((key) => {
+  [KEYS.attempts, KEYS.customScenarios, KEYS.proposals, KEYS.readinessConfig, KEYS.reviews, KEYS.evidence, KEYS.reading, KEYS.sandbox, KEYS.assistant].forEach((key) => {
     localStorage.removeItem(key);
   });
 }
@@ -262,6 +288,7 @@ export function exportStore() {
     readinessConfig: getReadinessConfig(null),
     readingProgress: getReadingProgress(),
     sandboxRuns: getSandboxRuns(),
+    assistantThread: getAssistantThread(),
     exportedAt: new Date().toISOString()
   };
 }

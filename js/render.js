@@ -1,8 +1,8 @@
 // Shared pieces of HTML: the sidebar, top bar, status pills, evidence, and charts.
 // Page-specific screens live in views.js. This file does not change stored data.
 
-import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=75";
-import { readinessCopy, scoreLabel } from "./scoring.js?v=75";
+import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=79";
+import { readinessCopy, scoreLabel } from "./scoring.js?v=79";
 
 // Screen name for a stored role. engineer is shown as User.
 export function roleLabel(role) {
@@ -40,6 +40,7 @@ function icon(name, size = 18) {
     verify: `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`,
     reading: `<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>`,
     sandbox: `<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/>`,
+    assistant: `<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>`,
     search: `<circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/>`,
     bell: `<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>`,
     sun: `<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>`,
@@ -132,6 +133,7 @@ function navFor(role, path) {
         ["#/library", "SevA Scenarios", "library"],
         ["#/sandbox", "Incident Sandbox", "sandbox"],
         ["#/reading", "Reading", "reading"],
+        ["#/assistant", "Live Assistant", "assistant", "WIP"],
         ["#/readiness", "Readiness", "readiness"]
       ], path);
   }
@@ -151,6 +153,7 @@ function navFor(role, path) {
         ["#/library", "SevA Scenarios", "library"],
         ["#/sandbox", "Incident Sandbox", "sandbox"],
         ["#/reading", "Reading", "reading"],
+        ["#/assistant", "Live Assistant", "assistant", "WIP"],
         ["#/evidence", "Evidence", "evidence"],
         ["#/readiness", "Readiness", "readiness"]
       ], path)
@@ -161,6 +164,7 @@ function navFor(role, path) {
     ["#/library", "SevA Scenarios", "library"],
     ["#/sandbox", "Incident Sandbox", "sandbox"],
     ["#/reading", "Reading", "reading"],
+    ["#/assistant", "Live Assistant", "assistant", "WIP"],
     ["#/evidence", "Evidence", "evidence"],
     ["#/readiness", "Readiness", "readiness"]
   ], path)
@@ -178,6 +182,7 @@ function isCurrentNav(hrefPath, path) {
   if (hrefPath === "/reading" && path.startsWith("/reading")) return true;
   if (hrefPath === "/library" && path.startsWith("/library")) return true;
   if (hrefPath === "/sandbox" && path.startsWith("/sandbox")) return true;
+  if (hrefPath === "/assistant" && path.startsWith("/assistant")) return true;
   return false;
 }
 

@@ -1,11 +1,12 @@
 // Scoring and catalog checks. Not shown in the administrator menu.
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
-import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=75";
-import { validateScenario, validateReadingCatalog, validateSandboxCatalog } from "./validation.js?v=75";
-import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=75";
-import { scoreSandboxRun } from "./sandbox.js?v=75";
-import * as storage from "./storage.js?v=75";
+import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=79";
+import { validateScenario, validateReadingCatalog, validateSandboxCatalog, validateAssistantKnowledge } from "./validation.js?v=79";
+import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=79";
+import { scoreSandboxRun } from "./sandbox.js?v=79";
+import * as storage from "./storage.js?v=79";
+import { answerNote } from "./assistant.js?v=79";
 
 // A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {
@@ -120,7 +121,7 @@ function fixtureScenario() {
 }
 
 // Run the checks and return { name, ok, detail } rows for the Verification page.
-export function runVerification(readingCatalog, sandboxCatalog) {
+export function runVerification(readingCatalog, sandboxCatalog, assistantKnowledge) {
   const results = [];
   const check = (name, condition, detail = "") => {
     results.push({ name, ok: Boolean(condition), detail });
@@ -355,6 +356,96 @@ export function runVerification(readingCatalog, sandboxCatalog) {
   if (sandboxCatalog) {
     const liveSandbox = validateSandboxCatalog(sandboxCatalog);
     check("Bundled sandbox catalog validates", liveSandbox.ok, liveSandbox.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));
+  }
+
+  const assistantReading = {
+    disclaimer: "Illustrative reading catalog used only by assistant verification.",
+    collections: [
+      { id: "troubleshooting", title: "Troubleshooting", spine: "Fix", folio: "03", tone: "fix", summary: "Break-fix pages for PAA and TSA." },
+      { id: "on-call", title: "On-call procedures", spine: "On-call", folio: "01", tone: "ops", summary: "Rota and first-hour pages." }
+    ],
+    articles: [
+      {
+        id: "ts-paa",
+        collectionId: "troubleshooting",
+        title: "Platform Troubleshooting - Prisma Access Agent",
+        lede: "Initial break-fix support for Prisma Access Agent on personal AVD.",
+        source: "Confluence",
+        sourceLabel: "ENGTR · Prisma",
+        minutes: 6,
+        spokeIds: ["platform-troubleshooting"],
+        href: "https://example.com/paa",
+        links: [{ label: "PAA break-fix", href: "https://example.com/paa" }],
+        sections: [{ heading: "On the rail", paragraphs: ["Open the live break-fix page from the rail."] }]
+      },
+      {
+        id: "oc-rota",
+        collectionId: "on-call",
+        title: "Virtual Team - On Call Rota",
+        lede: "Find who is on before you assume you are alone.",
+        source: "Confluence",
+        sourceLabel: "On-call rota",
+        minutes: 4,
+        spokeIds: ["trm-escalation-ops"],
+        href: "https://example.com/rota",
+        links: [{ label: "Rota page", href: "https://example.com/rota" }],
+        sections: [{ heading: "On the rail", paragraphs: ["Open the live rota page from the rail."] }]
+      }
+    ]
+  };
+  const assistantFixture = {
+    disclaimer: "Illustrative assistant knowledge used only by verification.",
+    synonyms: { signin: ["sign in", "login", "can't login"], rota: ["who is on"] },
+    topics: [{
+      id: "personal-signin",
+      title: "Personal AVD sign-in",
+      kind: "troubleshoot",
+      spokeIds: ["platform-troubleshooting"],
+      signals: ["personal", "paa", "cannot sign in", "sign in"],
+      relatedReadingIds: ["ts-paa"],
+      clarify: ["Is this a personal desktop or multi-session?"],
+      steps: ["Confirm this is a personal desktop, not multi-session."],
+      comms: ["Tell the caller you have the record."]
+    }, {
+      id: "rota-lookup",
+      title: "Who is on call",
+      kind: "lookup",
+      spokeIds: ["trm-escalation-ops"],
+      signals: ["rota", "who is on"],
+      relatedReadingIds: ["oc-rota"],
+      clarify: ["Do you need the rota or the contacts?"],
+      steps: ["Open the Virtual Team on-call rota from Reading."]
+    }]
+  };
+  const assistantOk = validateAssistantKnowledge(assistantFixture);
+  check("Assistant knowledge fixture validates", assistantOk.ok, assistantOk.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));
+  const personal = answerNote(assistantFixture, assistantReading, "personal can't login");
+  check("Personal sign-in note matches the personal topic", personal.mode === "answer" && personal.topic?.id === "personal-signin");
+  check("Personal sign-in note offers the PAA article", personal.articles.some((item) => item.id === "ts-paa"));
+  check("Personal sign-in note repeats only curated steps", personal.steps.length === 1 && /personal desktop/i.test(personal.steps[0]));
+  const rota = answerNote(assistantFixture, assistantReading, "rota");
+  check("Rota note can answer from the rota topic or article", (rota.mode === "answer" && rota.topic?.id === "rota-lookup") || rota.articles.some((item) => item.id === "oc-rota"));
+  const junk = answerNote(assistantFixture, assistantReading, "asdf qwerty zxcv");
+  check("Junk note asks a question instead of guessing", junk.mode === "clarify" && !junk.articles.length && !junk.steps.length);
+  const followUp = answerNote(assistantFixture, assistantReading, "it's personal", ["can't login"]);
+  check("A brief follow-up still uses earlier words", followUp.topic?.id === "personal-signin" || followUp.articles.some((item) => item.id === "ts-paa"));
+  const junkAfter = answerNote(assistantFixture, assistantReading, "asdf qwerty zxcv", ["personal can't login"]);
+  check("A full junk note ignores earlier context", junkAfter.mode === "clarify" && !junkAfter.articles.length);
+  if (assistantKnowledge) {
+    const liveKnowledge = validateAssistantKnowledge(assistantKnowledge);
+    check("Bundled assistant knowledge validates", liveKnowledge.ok, liveKnowledge.errors?.map((item) => `${item.path}: ${item.message}`).join("; "));
+    const readingIds = new Set((readingCatalog?.articles || []).map((item) => item.id));
+    const missingPins = (assistantKnowledge.topics || []).flatMap((topic) => topic.relatedReadingIds || []).filter((id) => !readingIds.has(id));
+    check("Assistant reading pins exist in the Reading catalog", missingPins.length === 0, missingPins.join(", "));
+    const livePersonal = answerNote(assistantKnowledge, readingCatalog, "personal can't login");
+    check("Live personal note stays on a curated topic", livePersonal.mode === "answer" && livePersonal.topic?.id === "personal-signin");
+    const liveMs = answerNote(assistantKnowledge, readingCatalog, "Need to engage Microsoft");
+    check("Live Microsoft note stays on the engagement topic", liveMs.mode === "answer" && liveMs.topic?.id === "vendor-microsoft");
+    check("Live Microsoft note does not offer the Palo Alto page", !liveMs.articles.some((item) => item.id === "ven-palo-alto"));
+    const liveRota = answerNote(assistantKnowledge, readingCatalog, "where is the rota");
+    check("Live rota note offers the rota article", liveRota.articles.some((item) => item.id === "oc-rota") || liveRota.topic?.id === "rota-lookup");
+    const liveJunk = answerNote(assistantKnowledge, readingCatalog, "asdf qwerty zxcv");
+    check("Live junk note does not invent a wiki page", liveJunk.mode === "clarify" && !liveJunk.articles.length);
   }
 
   const key = "incident-lab:attempts";

@@ -1,7 +1,7 @@
 // One function per screen. Each function returns an HTML string.
 // Clicks are handled in app.js by looking for data-action on the element.
 
-import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=75";
+import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=79";
 import {
   pillsForScenario,
   snowCard,
@@ -19,10 +19,10 @@ import {
   formatAttemptMeta,
   roleLabel,
   themeSwitch
-} from "./render.js?v=75";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory, readinessCopy } from "./scoring.js?v=75";
-import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=75";
-import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=75";
+} from "./render.js?v=79";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory, readinessCopy } from "./scoring.js?v=79";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=79";
+import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=79";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {
@@ -142,6 +142,7 @@ export function dashboardView(state) {
         <a class="btn" href="#/library">Open SevA Scenarios</a>
         <a class="btn secondary" href="#/sandbox">Incident Sandbox</a>
         <a class="btn secondary" href="#/reading">Reading</a>
+        <a class="btn secondary" href="#/assistant">Live Assistant</a>
       </div>
     </section>
     <div class="filter-row">
@@ -2308,6 +2309,104 @@ export function sandboxFeedbackView(state, runId) {
       <button class="btn" type="button" data-action="sandbox-start" data-ticket-id="${escapeHtml(run.ticketId)}">Practise this ticket again</button>
       <a class="btn secondary" href="#/sandbox">All sandbox tickets</a>
     </p>
+  `;
+}
+
+function assistantKindLabel(kind) {
+  if (kind === "comms") return "Comms";
+  if (kind === "lookup") return "Lookup";
+  return "Troubleshoot";
+}
+
+function assistantReplyHtml(reply, catalog) {
+  if (!reply) return "";
+  const articles = (reply.articles || [])
+    .map((item) => findReadingArticle(catalog, item.id))
+    .filter(Boolean);
+  const steps = reply.steps || [];
+  const comms = reply.comms || [];
+  const questions = reply.questions || [];
+  return `
+    ${reply.intro ? `<p>${escapeHtml(reply.intro)}</p>` : ""}
+    ${reply.topic ? `<p class="assistant-match"><span class="pill">${escapeHtml(assistantKindLabel(reply.topic.kind))}</span><span>${escapeHtml(reply.topic.title)}</span></p>` : ""}
+    ${steps.length ? `
+      <div class="assistant-block">
+        <p class="eyebrow">Do this first</p>
+        <ol>${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+      </div>` : ""}
+    ${comms.length ? `
+      <div class="assistant-block">
+        <p class="eyebrow">Comms</p>
+        <ul>${comms.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
+      </div>` : ""}
+    ${articles.length ? `
+      <div class="assistant-block">
+        <p class="eyebrow">Knowledge base</p>
+        <div class="assistant-articles">
+          ${articles.map((article) => `
+            <article class="assistant-article">
+              <h3>${escapeHtml(article.title)}</h3>
+              <p>${escapeHtml(article.lede)}</p>
+              ${readingOpenButtons(article)}
+            </article>
+          `).join("")}
+        </div>
+      </div>` : ""}
+    ${questions.length ? `
+      <div class="assistant-block">
+        <p class="eyebrow">Need a bit more</p>
+        <div class="assistant-chips">
+          ${questions.map((question) => `<button type="button" class="assistant-chip" data-action="assistant-prompt" data-prompt="${escapeHtml(question)}">${escapeHtml(question)}</button>`).join("")}
+        </div>
+      </div>` : ""}
+  `;
+}
+
+function assistantMessageHtml(message, catalog) {
+  if (message.role === "user") {
+    return `<div class="assistant-msg is-user"><p>${escapeHtml(message.text)}</p></div>`;
+  }
+  return `<div class="assistant-msg is-assistant">${assistantReplyHtml(message.reply, catalog)}</div>`;
+}
+
+function assistantWelcomeHtml() {
+  return `
+    <div class="assistant-msg is-assistant is-welcome">
+      <p>${escapeHtml("LBG Assistant - Here to help and provide support! I am in beta, so please be patient if my replies aren't as in-depth.")}</p>
+    </div>
+  `;
+}
+
+// Retrieval helper: a short note in, curated steps and Reading pages out.
+export function assistantView(state) {
+  const knowledge = state.assistant || { topics: [], disclaimer: "" };
+  const thread = state.assistantThread || { messages: [], draft: "" };
+  const messages = thread.messages || [];
+  const broken = knowledge.validation && knowledge.validation.ok === false;
+  return `
+    <section class="assistant-hero">
+      <div>
+        <p class="eyebrow">On-call helper ${readingWipChip()}</p>
+        <h1>Live Assistant</h1>
+        <p class="lede">Responsive assistant pulling data from pre-existing high marked P1 examples for troubleshooting &amp; troubleshooting documentation</p>
+      </div>
+    </section>
+    ${broken ? `<div class="callout warn" role="status"><p>The knowledge file did not validate. Reading pages can still match. Fix <code>data/assistant/knowledge.json</code> and refresh.</p></div>` : ""}
+    <div class="assistant-shell">
+      <div class="assistant-thread" data-assistant-thread>
+        ${messages.length ? messages.map((message) => assistantMessageHtml(message, state.reading)).join("") : assistantWelcomeHtml()}
+      </div>
+      <form class="assistant-composer" data-form="assistant">
+        <label class="field">
+          <span>Current scenario</span>
+          <textarea name="note" data-assistant-input rows="3" placeholder="Personal desktop cannot sign in. User sees an error after MFA.">${escapeHtml(thread.draft || "")}</textarea>
+        </label>
+        <div class="assistant-composer-row">
+          <button class="btn ghost" type="button" data-action="assistant-clear">Clear thread</button>
+          <button class="btn" type="submit">Ask</button>
+        </div>
+      </form>
+    </div>
   `;
 }
 

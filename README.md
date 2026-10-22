@@ -18,6 +18,7 @@ The site is static HTML, CSS, and JavaScript. Content is JSON. It does not conne
 | **SevA Scenarios** | Engineer, Assessor | Written assessments. One write-up per scenario. An assessor scores it 0–3 |
 | **Incident Sandbox** | Engineer | Interactive ServiceNow-style tickets. Instant feedback out of 5. Not marked by an assessor and does not count on Ready |
 | **Reading** | Everyone | Approved live pages (Confluence, SharePoint, ServiceNow, Azure, Microsoft Learn). The app does not copy wiki bodies |
+| **Live Assistant** | Everyone | WIP. Type a short note; the page matches curated first-call steps and Reading articles. No live model |
 | **Evidence** | Engineer | Redacted prior tickets that an assessor can score |
 | **Readiness** | Engineer, Assessor | Hub-and-spoke map. Ready needs one satisfactory scenario per spoke |
 | **Propose** | Engineer | Suggest a new scenario |
@@ -89,14 +90,16 @@ Attempts, sandbox runs, Reading ticks, workplace tickets, and theme live in `loc
 | `js/app.js` | Starts the app and handles `#/` routes |
 | `js/views.js` | HTML for each screen |
 | `js/render.js` | Sidebar, tickets, charts, readiness map |
-| `js/content.js` | Loads config, scenarios, Reading, and sandbox JSON |
+| `js/content.js` | Loads config, scenarios, Reading, sandbox, and assistant JSON |
+| `js/assistant.js` | Matches a note to curated steps and Reading articles |
 | `js/auth.js` | Microsoft sign-in |
 | `js/scoring.js` | 0–3 scores and Ready |
 | `js/sandbox.js` | Sandbox 0–5 feedback |
 | `js/storage.js` | This browser’s saved data |
 | `js/validation.js` | Checks scenario and catalog JSON |
 | `data/config.json` | App name, Entra ids, spokes, list of scenario files |
-| `data/reading.json` | Reading shelves and links |
+| `data/reading.json` | Reading shelves and links. Live Assistant also offers these pages |
+| `data/assistant/knowledge.json` | Live Assistant topics, synonyms, and Reading pins |
 | `data/sandbox.json` | Practice ServiceNow tickets |
 | `data/scenarios/` | SevA scenario files |
 | `staticwebapp.config.json` | Azure Static Web Apps routing |
@@ -119,3 +122,26 @@ Publishing the live site is a Static Web Apps upload. A `git push` does not upda
 Spoke ids: `avd-infrastructure`, `networking`, `trm-escalation-ops`, `proxy-solution`, `vendor-management`, `platform-troubleshooting`, `m365-stack`.
 
 Do not add scenarios only in the browser. The live library is the files in the repo.
+
+---
+
+## Add Live Assistant topics
+
+The assistant is retrieval only. It repeats steps you write and opens Reading pages. It does not call a model.
+
+**New wiki / knowledge-base page**
+
+1. Add the article to `data/reading.json` (`id`, `title`, `lede`, `spokeIds`, `https` links).
+2. Publish. The assistant can match on title and lede by itself.
+3. If a topic should always offer that page, add the article `id` to `relatedReadingIds` on the topic.
+
+**New first-call steps**
+
+1. Open `data/assistant/knowledge.json`. The `authoring` object is the field list and a `topicTemplate`.
+2. Copy the template into `topics`. Keep `id` unique.
+3. `signals` are phrases a colleague might type (`paa`, `cannot sign in`).
+4. `steps` are first-call checks only. Do not invent portal clicks, az commands, or vendor SLAs.
+5. Pin Reading ids in `relatedReadingIds`.
+6. Add spellings under `synonyms` when brief notes would otherwise miss.
+
+Serve locally, hard-refresh, then publish. Bump the `?v=` cache query on the next deploy.

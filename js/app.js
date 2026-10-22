@@ -2,16 +2,17 @@
 // and the onClick / onSubmit handlers are the only place that writes saved work.
 // The address after #/ decides which screen route() returns.
 
-import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=75";
-import * as storage from "./storage.js?v=75";
-import { loadConfig, loadLibrary, loadReading, loadSandbox } from "./content.js?v=75";
-import { validateScenario, formatValidationErrors } from "./validation.js?v=75";
-import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=75";
-import * as views from "./views.js?v=75";
-import * as auth from "./auth.js?v=75";
-import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=75";
-import { runVerification } from "./tests.js?v=75";
-import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=75";
+import { createId, nowIso, parseHash, navigate, downloadJson, escapeHtml } from "./util.js?v=79";
+import * as storage from "./storage.js?v=79";
+import { loadConfig, loadLibrary, loadReading, loadSandbox, loadAssistant } from "./content.js?v=79";
+import { validateScenario, formatValidationErrors } from "./validation.js?v=79";
+import { layout, errorPage, roleLabel, bindReadinessGraph } from "./render.js?v=79";
+import * as views from "./views.js?v=79";
+import * as auth from "./auth.js?v=79";
+import { buildCriterionResults, scoreObjectiveQuestion } from "./scoring.js?v=79";
+import { runVerification } from "./tests.js?v=79";
+import { scoreSandboxRun, findSandboxTicket } from "./sandbox.js?v=79";
+import { answerNote } from "./assistant.js?v=79";
 
 const appRoot = document.getElementById("app");
 // Live page data. It is rebuilt from localStorage on every render.
@@ -32,7 +33,10 @@ const state = {
   readingProgress: {},      // opened / read ticks for Reading
   sandbox: null,            // data/sandbox.json practice tickets
   sandboxRuns: [],          // sandbox practice runs in this browser
-  activeSandboxRunId: ""    // the ticket currently open in the sandbox form
+  activeSandboxRunId: "",   // the ticket currently open in the sandbox form
+  assistant: null,          // data/assistant/knowledge.json
+  assistantThread: { messages: [], draft: "" },
+  assistantJustSent: false
 };
 
 // Match the saved session id to a colleague. A stale id is cleared.
@@ -70,6 +74,8 @@ async function refreshLibrary() {
   state.readingProgress = storage.getReadingProgress();
   state.sandbox = await loadSandbox();
   state.sandboxRuns = storage.getSandboxRuns();
+  state.assistant = await loadAssistant();
+  state.assistantThread = storage.getAssistantThread();
   state.attempts
     .filter((item) => item.status === "in-progress")
     .forEach((item) => ensureWrittenAttempt(item));
@@ -91,6 +97,7 @@ async function boot() {
     if (!location.hash) location.hash = "#/dashboard";
     window.addEventListener("hashchange", () => {
       persistOpenSandboxDrafts();
+      persistAssistantDraft();
       render();
     });
     document.addEventListener("click", onClick);
@@ -100,6 +107,7 @@ async function boot() {
     window.addEventListener("beforeunload", () => {
       pauseOpenTimer();
       persistOpenSandboxDrafts();
+      persistAssistantDraft();
     });
     render();
     if (authResult.fromRedirect && authResult.person) {
@@ -130,6 +138,7 @@ function render() {
   state.readinessConfig = storage.getReadinessConfig(state.config.readinessCriteria);
   state.readingProgress = storage.getReadingProgress();
   state.sandboxRuns = storage.getSandboxRuns();
+  state.assistantThread = storage.getAssistantThread();
   const { parts, path } = parseHash();
   state.flash = "";
   document.documentElement.classList.toggle("is-signed-out", !state.person);
@@ -148,6 +157,7 @@ function render() {
     bindReadinessGraph();
     bindPageFilters();
     bindAttemptTimer();
+    bindAssistantPage();
   }
   const main = document.getElementById("main");
   if (main && document.activeElement === document.body) {
@@ -183,6 +193,7 @@ function route(parts) {
     state.readingProgress = storage.getReadingProgress();
     return views.readingPageView(state, extra);
   }
+  if (area === "assistant") return views.assistantView(state);
   if (area === "scenario") return views.scenarioIntroView(state, findScenario(id));
   if (area === "assess") return views.workspaceView(state, ensureWrittenAttempt(storage.getAttempt(id)));
   if (area === "review") return views.reviewAnswersView(ensureWrittenAttempt(storage.getAttempt(id)));
@@ -269,6 +280,51 @@ function persistSandboxDrafts(runId) {
 function persistOpenSandboxDrafts() {
   const runId = document.querySelector("[data-sandbox-run]")?.getAttribute("data-sandbox-run");
   if (runId) persistSandboxDrafts(runId);
+}
+
+function persistAssistantDraft() {
+  const input = document.querySelector("[data-assistant-input]");
+  if (!input) return;
+  const thread = storage.getAssistantThread();
+  thread.draft = input.value;
+  storage.saveAssistantThread(thread);
+  state.assistantThread = thread;
+}
+
+function askAssistant(raw) {
+  const note = String(raw || "").trim();
+  if (!note) return;
+  const thread = storage.getAssistantThread();
+  const prior = thread.messages.filter((item) => item.role === "user").map((item) => item.text).slice(-3);
+  const reply = answerNote(state.assistant, state.reading, note, prior);
+  thread.messages = [
+    ...thread.messages,
+    { id: createId("ask"), role: "user", text: note, at: nowIso() },
+    { id: createId("ans"), role: "assistant", reply, at: nowIso() }
+  ];
+  thread.draft = "";
+  storage.saveAssistantThread(thread);
+  state.assistantThread = thread;
+  state.assistantJustSent = true;
+  render();
+}
+
+function bindAssistantPage() {
+  const threadEl = document.querySelector("[data-assistant-thread]");
+  if (threadEl) threadEl.scrollTop = threadEl.scrollHeight;
+  const input = document.querySelector("[data-assistant-input]");
+  if (!input) return;
+  input.addEventListener("input", persistAssistantDraft);
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      askAssistant(input.value);
+    }
+  });
+  if (state.assistantJustSent) {
+    input.focus();
+    state.assistantJustSent = false;
+  }
 }
 
 // Open a new practice run on a ticket. Always starts a fresh record, even if one was completed.
@@ -413,6 +469,7 @@ function onClick(event) {
     return;
   }
   if (action === "reading-open") {
+    persistAssistantDraft();
     const href = button.getAttribute("data-reading-href") || "";
     const readingId = button.getAttribute("data-reading-id") || "";
     storage.markReadingOpened(readingId);
@@ -422,6 +479,17 @@ function onClick(event) {
   }
   if (action === "reading-done") {
     storage.markReadingRead(button.getAttribute("data-reading-id") || "");
+    render();
+    return;
+  }
+  if (action === "assistant-prompt") {
+    persistAssistantDraft();
+    askAssistant(button.getAttribute("data-prompt") || "");
+    return;
+  }
+  if (action === "assistant-clear") {
+    storage.clearAssistantThread();
+    state.assistantThread = storage.getAssistantThread();
     render();
     return;
   }
@@ -656,6 +724,7 @@ function onSubmit(event) {
   if (type === "add-person") return addPerson(form);
   if (type === "evidence") return saveEvidenceForm(form);
   if (type === "evidence-review") return saveEvidenceReview(form);
+  if (type === "assistant") return askAssistant(String(new FormData(form).get("note") || ""));
 }
 
 // Append a colleague. Only an administrator can do this.
@@ -939,7 +1008,7 @@ function verificationView() {
   let results = [];
   let crashed = "";
   try {
-    results = runVerification(state.reading, state.sandbox);
+    results = runVerification(state.reading, state.sandbox, state.assistant);
   } catch (error) {
     crashed = String(error?.message || error);
   }
