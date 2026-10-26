@@ -1,12 +1,12 @@
 // Scoring and catalog checks. Not shown in the administrator menu.
 // These fixtures are not the real scenarios. They prove the scoring rules.
 
-import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=81";
-import { validateScenario, validateReadingCatalog, validateSandboxCatalog, validateAssistantKnowledge } from "./validation.js?v=81";
-import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=81";
-import { scoreSandboxRun } from "./sandbox.js?v=81";
-import * as storage from "./storage.js?v=81";
-import { answerNote } from "./assistant.js?v=81";
+import { scoreObjectiveQuestion, creditToScore, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, EVIDENCE_WEIGHT, splitActions, isAttemptSatisfactory, spokeGateStatus, allSpokesSatisfied } from "./scoring.js?v=82";
+import { validateScenario, validateReadingCatalog, validateSandboxCatalog, validateAssistantKnowledge } from "./validation.js?v=82";
+import { continueReading, isNewerVersion, mergeScenarios, sortScenarios } from "./content.js?v=82";
+import { scoreSandboxRun } from "./sandbox.js?v=82";
+import * as storage from "./storage.js?v=82";
+import { answerNote } from "./assistant.js?v=82";
 
 // A tiny single-choice question with full, partial, and zero credit.
 function fixtureQuestionSingle() {

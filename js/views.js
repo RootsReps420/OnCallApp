@@ -1,7 +1,7 @@
 // One function per screen. Each function returns an HTML string.
 // Clicks are handled in app.js by looking for data-action on the element.
 
-import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=81";
+import { escapeHtml, formatDateTime, formatDate, nl } from "./util.js?v=82";
 import {
   pillsForScenario,
   snowCard,
@@ -19,11 +19,11 @@ import {
   formatAttemptMeta,
   roleLabel,
   themeSwitch
-} from "./render.js?v=81";
-import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory, readinessCopy } from "./scoring.js?v=81";
-import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=81";
-import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=81";
-import { preferredArticleLinks } from "./assistant.js?v=81";
+} from "./render.js?v=82";
+import { SCORE_SCALE, buildCriterionResults, summariseDomains, attemptOutcomeHints, applyEvidenceWeight, listDevelopmentActions, gateMinScore, spokeGateStatus, spokeGateComplete, isAttemptSatisfactory, readinessCopy } from "./scoring.js?v=82";
+import { publishedScenarios, readingCollections, readingArticles, findReadingCollection, findReadingArticle, articlesForCollection, continueReading, articleLinks, articleIsWip, collectionIsIncomplete } from "./content.js?v=82";
+import { SANDBOX_STATES, scoreSandboxRun, findSandboxTicket, latestSandboxRun } from "./sandbox.js?v=82";
+import { preferredArticleLinks } from "./assistant.js?v=82";
 
 // Newest attempt for one scenario, by start time.
 function latestAttempt(attempts, scenarioId) {

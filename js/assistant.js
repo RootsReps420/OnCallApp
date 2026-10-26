@@ -1,7 +1,7 @@
 // Retrieval-only Live Assistant. It scores a short note against curated
 // topics and the Reading catalog. It never invents a step or a wiki page.
 
-import { articleIsWip, articleLinks, readingArticles, findReadingCollection, findReadingArticle } from "./content.js?v=81";
+import { articleIsWip, articleLinks, readingArticles, findReadingCollection, findReadingArticle } from "./content.js?v=82";
 
 export const TOPIC_SCORE_MIN = 2;
 export const ARTICLE_SCORE_MIN = 2;

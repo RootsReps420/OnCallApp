@@ -1,8 +1,8 @@
 // Shared pieces of HTML: the sidebar, top bar, status pills, evidence, and charts.
 // Page-specific screens live in views.js. This file does not change stored data.
 
-import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=81";
-import { readinessCopy, scoreLabel } from "./scoring.js?v=81";
+import { escapeHtml, formatDateTime, nl, percent } from "./util.js?v=82";
+import { readinessCopy, scoreLabel } from "./scoring.js?v=82";
 
 // Screen name for a stored role. engineer is shown as User.
 export function roleLabel(role) {
