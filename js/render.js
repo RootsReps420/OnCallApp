@@ -110,7 +110,7 @@ export function layout({ config, role, path, body, theme = "dark", person = null
   `;
 }
 
-// One labelled group of sidebar links, such as Practice or Manage.
+// One labelled group of sidebar links, such as On Call or Manage.
 function navSection(title, items, path) {
   return `
     <p class="nav-label">${title}</p>
@@ -122,20 +122,35 @@ function navSection(title, items, path) {
   `;
 }
 
+// Reading, SevA, and evidence. Overview and Readiness stay here as on-call status.
+function onCallNav(role) {
+  const items = [];
+  if (role !== "assessor") items.push(["#/dashboard", "Overview", "overview"]);
+  items.push(
+    ["#/reading", "Reading", "reading"],
+    ["#/library", "SevA Scenarios", "library"]
+  );
+  if (role !== "assessor") items.push(["#/evidence", "Evidence", "evidence"]);
+  items.push(["#/readiness", "Readiness", "readiness"]);
+  return items;
+}
+
+// Live incident practice: sandbox tickets and the first-call helper.
+function incidentNav() {
+  return [
+    ["#/sandbox", "Incident Sandbox", "sandbox"],
+    ["#/assistant", "Live Assistant", "assistant", "WIP"]
+  ];
+}
+
 // Links for the signed-in role. Users, assessors, and administrators do not share one menu.
 function navFor(role, path) {
+  const practice = navSection("On Call", onCallNav(role), path) + navSection("Incident", incidentNav(), path);
   if (role === "assessor") {
     return navSection("Review", [
       ["#/assessor", "Overview", "queue"],
       ["#/assessor/people", "People", "people"]
-    ], path)
-      + navSection("Practice", [
-        ["#/library", "SevA Scenarios", "library"],
-        ["#/sandbox", "Incident Sandbox", "sandbox"],
-        ["#/reading", "Reading", "reading"],
-        ["#/assistant", "Live Assistant", "assistant", "WIP"],
-        ["#/readiness", "Readiness", "readiness"]
-      ], path);
+    ], path) + practice;
   }
   if (role === "administrator") {
     return navSection("Manage", [
@@ -148,27 +163,10 @@ function navFor(role, path) {
         ["#/assessor", "Overview", "queue"],
         ["#/assessor/people", "People", "people"]
       ], path)
-      + navSection("Practice", [
-        ["#/dashboard", "Overview", "overview"],
-        ["#/library", "SevA Scenarios", "library"],
-        ["#/sandbox", "Incident Sandbox", "sandbox"],
-        ["#/reading", "Reading", "reading"],
-        ["#/assistant", "Live Assistant", "assistant", "WIP"],
-        ["#/evidence", "Evidence", "evidence"],
-        ["#/readiness", "Readiness", "readiness"]
-      ], path)
+      + practice
       + navSection("Contribute", [["#/propose", "Propose", "propose"]], path);
   }
-  return navSection("Practice", [
-    ["#/dashboard", "Overview", "overview"],
-    ["#/library", "SevA Scenarios", "library"],
-    ["#/sandbox", "Incident Sandbox", "sandbox"],
-    ["#/reading", "Reading", "reading"],
-    ["#/assistant", "Live Assistant", "assistant", "WIP"],
-    ["#/evidence", "Evidence", "evidence"],
-    ["#/readiness", "Readiness", "readiness"]
-  ], path)
-    + navSection("Contribute", [["#/propose", "Propose", "propose"]], path);
+  return practice + navSection("Contribute", [["#/propose", "Propose", "propose"]], path);
 }
 
 // Which link is the current page, including a few child routes such as a review.

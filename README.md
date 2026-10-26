@@ -25,6 +25,8 @@ The site is static HTML, CSS, and JavaScript. Content is JSON. It does not conne
 | **People / review** | Assessor | Score submitted write-ups and release feedback |
 | **Access / criteria** | Administrator | Role access and on-call criteria |
 
+The left nav splits **On Call** (Overview, Reading, SevA Scenarios, Evidence, Readiness) from **Incident** (Incident Sandbox, Live Assistant).
+
 **Roles:** User (engineer), Assessor, Administrator. An administrator also sees the User and Assessor menus, plus Manage.
 
 ---
